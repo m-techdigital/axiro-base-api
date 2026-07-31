@@ -1,3 +1,74 @@
 <?php
-namespace App\Http\Controllers; use App\Http\Requests\ProductRequest; use App\Models\Product; use Illuminate\Http\Request; use Illuminate\Support\Str;
-class ProductController extends Controller { public function index(Request $r){$q=Product::query()->when($r->keyword,fn($q,$v)=>$q->where(fn($x)=>$x->where('code','like',"%$v%")->orWhere('name','like',"%$v%")))->when($r->status,fn($q,$v)=>$q->where('status',$v))->latest(); $p=$q->paginate(min(100,max(1,(int)$r->input('per_page',20)))); return success_response($p->items(),'Thành công',200,['pagination'=>['current_page'=>$p->currentPage(),'last_page'=>$p->lastPage(),'per_page'=>$p->perPage(),'total'=>$p->total()]]);} public function store(ProductRequest $r){$d=$r->validated();$d['slug']=$d['slug']??Str::slug($d['name']);$d['created_by']=$d['updated_by']=user_id();return success_response(Product::create($d), 'Đã tạo',201);} public function show(Product $product){return success_response($product);} public function update(ProductRequest $r,Product $product){$d=$r->validated();$d['slug']=$d['slug']??Str::slug($d['name']);$d['updated_by']=user_id();$product->update($d);return success_response($product->fresh());} public function destroy(Product $product){if($product->transactions()->exists())return error_response('Sản phẩm đã phát sinh giao dịch nên không thể xóa.',null,409);$product->delete();return success_response();}}
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\Common\ListQueryRequest;
+use App\Http\Requests\ProductRequest;
+use App\Http\Responses\ApiResponse;
+use App\Models\Product;
+use App\Support\Query\AppliesListQuery;
+use Illuminate\Support\Str;
+
+class ProductController extends Controller
+{
+    use AppliesListQuery;
+
+    public function index(ListQueryRequest $request)
+    {
+        $query = $this->applyListFilters(
+            Product::query(),
+            $request,
+            ['code', 'name'],
+            ['status'],
+            ['id', 'code', 'name', 'price', 'status', 'created_at'],
+        );
+
+        return ApiResponse::paginated($query->paginate($request->perPage()));
+    }
+
+    public function store(ProductRequest $request)
+    {
+        $data = $this->prepare($request->validated(), true);
+
+        return ApiResponse::success(Product::create($data), 'Đã tạo sản phẩm.', 201);
+    }
+
+    public function show(Product $product)
+    {
+        return ApiResponse::success($product);
+    }
+
+    public function update(ProductRequest $request, Product $product)
+    {
+        $product->update($this->prepare($request->validated()));
+
+        return ApiResponse::success($product->fresh(), 'Đã cập nhật sản phẩm.');
+    }
+
+    public function destroy(Product $product)
+    {
+        if ($product->transactions()->exists()) {
+            return ApiResponse::error(
+                'Sản phẩm đã phát sinh giao dịch nên không thể xóa.',
+                null,
+                409,
+            );
+        }
+
+        $product->delete();
+
+        return ApiResponse::success(message: 'Đã xóa sản phẩm.');
+    }
+
+    private function prepare(array $data, bool $creating = false): array
+    {
+        $data['slug'] ??= Str::slug($data['name']);
+        $data['updated_by'] = user_id();
+
+        if ($creating) {
+            $data['created_by'] = user_id();
+        }
+
+        return $data;
+    }
+}

@@ -1,0 +1,7 @@
+<?php
+use App\Http\Controllers\{AuditLogController,AuthController,ContractController,CustomerAuthController,CustomerController,AdminActionCenterController,CustomerDocumentController,CustomerListingController,CustomerMediaController,CustomerNotificationController,CustomerProductController,CustomerProfileController,CustomerTransactionController,CustomerWalletController,DashboardController,DisputeController,DocumentTemplateController,GeneratedDocumentController,ListingController,MarketplaceController,PaymentController,ProductController,TransactionController,WalletAdminController,CustomerSecurityController,MarketplacePaymentSettingController,MarketplaceContractController,RuntimeController,CustomerPayoutController,PayoutAdminController,MarketplaceOperationsController,MarketplaceOperationsAdminController,MarketplaceTrustController,MarketplaceContentController,MarketplaceTrustAdminController};
+use Illuminate\Support\Facades\Route;
+Route::get('runtime', RuntimeController::class);
+Route::get('marketplace-contract', MarketplaceContractController::class);
+Route::get('marketplace/listings',[MarketplaceController::class,'index']);
+Route::get('marketplace/listings/{listingCode}',[MarketplaceController::class,'show']);Route::get('marketplace/listings/{listing}/reviews',[MarketplaceContentController::class,'listingReviews']);Route::get('content',[MarketplaceContentController::class,'index']);Route::get('content/slug/{slug}',[MarketplaceContentController::class,'bySlug']);Route::get('content/{contentEntry}',[MarketplaceContentController::class,'show']);

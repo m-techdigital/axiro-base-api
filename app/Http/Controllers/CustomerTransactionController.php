@@ -1,19 +1,83 @@
 <?php
+
 namespace App\Http\Controllers;
-use App\Models\MarketplaceDispute;
+
+use App\Http\Requests\Customer\OpenDisputeRequest;
+use App\Http\Requests\Customer\SubmitPaymentRequest;
+use App\Http\Requests\Customer\TransactionActionRequest;
+use App\Http\Requests\Customer\TransactionCreateRequest;
+use App\Http\Responses\ApiResponse;
 use App\Models\ProductListing;
 use App\Models\Transaction;
 use App\Models\TransactionPayment;
 use App\Services\Marketplace\TransactionLifecycleService;
 use App\Services\Payments\MarketplaceQrService;
 use Illuminate\Http\Request;
-class CustomerTransactionController extends Controller {
- public function index(Request $r){$id=auth('customer_api')->id();$q=Transaction::with(['product','listing.rentalRates','buyer:id,code,name','seller:id,code,name','contract','payments','documents.acceptances'])->where(fn($x)=>$x->where('buyer_customer_id',$id)->orWhere('seller_customer_id',$id));if($r->filled('role'))$q->where($r->string('role')==='seller'?'seller_customer_id':'buyer_customer_id',$id);if($r->filled('status'))$q->where('status',$r->string('status'));return success_response($q->latest()->paginate($r->integer('per_page',20)));}
- public function show(Transaction $transaction,TransactionLifecycleService $service){$this->authorizeParty($transaction);$loaded=$transaction->load(['product','listing.rentalRates','buyer:id,code,name,avatar_url','seller:id,code,name,avatar_url','contract','payments','events','disputes:id,transaction_id,status,reason,description,resolved_at','checkpoints.customer:id,code,name']);$loaded->setAttribute('current_role',$transaction->buyer_customer_id===auth('customer_api')->id()?'buyer':'seller');$loaded->setAttribute('allowed_actions',$service->allowedActions($transaction,auth('customer_api')->id()));return success_response($loaded);}
- public function createFromListing(Request $r,ProductListing $listing,TransactionLifecycleService $service){$d=$r->validate(['purchase_mode'=>'nullable|in:full,deposit,installment','initial_payment_amount'=>'nullable|numeric|min:0','installment_count'=>'nullable|integer|min:2|max:12','rental_rate_id'=>'nullable|exists:listing_rental_rates,id','rental_period'=>'nullable|integer|min:1','rental_period_unit'=>'nullable|in:hour,day,week,month','rental_period_count'=>'nullable|integer|min:1|max:365','rental_billing_mode'=>'nullable|in:upfront,periodic','rental_billing_cycle_unit'=>'nullable|in:hour,day,week,month','rental_billing_cycle_count'=>'nullable|integer|min:1|max:365','installment_interval_unit'=>'nullable|in:day,week,month','installment_interval_count'=>'nullable|integer|min:1|max:90','rental_start_at'=>'nullable|required_if:listing_type,rental|date','rental_end_at'=>'nullable|required_if:listing_type,rental|date|after:rental_start_at','due_date'=>'nullable|date','payment_method'=>'nullable|in:wallet,bank,momo,card','note'=>'nullable|string|max:2000']);return success_response($service->createFromListing($listing,auth('customer_api')->id(),$d),'Đã tạo',201);}
- public function paymentQr(Transaction $transaction,TransactionPayment $payment,MarketplaceQrService $qr){$this->authorizeParty($transaction);abort_unless($payment->transaction_id===$transaction->id,404);return success_response($qr->make($payment->code,$payment->amount));}
- public function submitPayment(Request $r,Transaction $transaction,TransactionPayment $payment,TransactionLifecycleService $service){$this->authorizeParty($transaction);abort_unless($payment->transaction_id===$transaction->id,404);$d=$r->validate(['payment_method'=>'required|in:wallet,bank,momo,card','reference'=>'nullable|string|max:150','note'=>'nullable|string|max:1000']);return success_response($service->submitPayment($payment,auth('customer_api')->id(),$d));}
- public function action(Request $r,Transaction $transaction,TransactionLifecycleService $service){$this->authorizeParty($transaction);$d=$r->validate(['action'=>'required|in:seller_handover,buyer_receive,renter_return,lessor_receive_return,complete']);return success_response($service->transition($transaction,$d['action'],'customer',auth('customer_api')->id()));}
- public function openDispute(Request $r,Transaction $transaction,TransactionLifecycleService $service){$this->authorizeParty($transaction);$d=$r->validate(['reason'=>'required|in:not_as_described,cannot_login,recalled,late_handover,damage,other','description'=>'required|string|max:5000','evidence'=>'nullable|array','evidence.*'=>'string|max:2048']);return success_response($service->openDispute($transaction,auth('customer_api')->id(),$d),'Đã tạo',201);}
- private function authorizeParty(Transaction $t):void{abort_unless(in_array(auth('customer_api')->id(),[$t->buyer_customer_id,$t->seller_customer_id],true),403);}
+
+class CustomerTransactionController extends Controller
+{
+    public function index(Request $request)
+    {
+        $customerId = auth('customer_api')->id();
+        $query = Transaction::with(['product', 'listing.rentalRates', 'buyer:id,code,name', 'seller:id,code,name', 'contract', 'payments', 'documents.acceptances'])
+            ->where(fn ($nested) => $nested->where('buyer_customer_id', $customerId)->orWhere('seller_customer_id', $customerId));
+        if ($request->filled('role')) {
+            $query->where($request->string('role') === 'seller' ? 'seller_customer_id' : 'buyer_customer_id', $customerId);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->string('status'));
+        }
+
+        return ApiResponse::paginated($query->latest()->paginate(min(100, max(1, $request->integer('per_page', 20)))));
+    }
+
+    public function show(Transaction $transaction, TransactionLifecycleService $service)
+    {
+        $this->authorizeParty($transaction);
+        $loaded = $transaction->load(['product', 'listing.rentalRates', 'buyer:id,code,name,avatar_url', 'seller:id,code,name,avatar_url', 'contract', 'payments', 'events', 'disputes:id,transaction_id,status,reason,description,resolved_at', 'checkpoints.customer:id,code,name']);
+        $loaded->setAttribute('current_role', $transaction->buyer_customer_id === auth('customer_api')->id() ? 'buyer' : 'seller');
+        $loaded->setAttribute('allowed_actions', $service->allowedActions($transaction, auth('customer_api')->id()));
+
+        return ApiResponse::success($loaded);
+    }
+
+    public function createFromListing(TransactionCreateRequest $request, ProductListing $listing, TransactionLifecycleService $service)
+    {
+        return ApiResponse::success($service->createFromListing($listing, auth('customer_api')->id(), $request->validated()), 'Đã tạo giao dịch.', 201);
+    }
+
+    public function paymentQr(Transaction $transaction, TransactionPayment $payment, MarketplaceQrService $qr)
+    {
+        $this->authorizeParty($transaction);
+        abort_unless($payment->transaction_id === $transaction->id, 404);
+
+        return ApiResponse::success($qr->make($payment->code, $payment->amount));
+    }
+
+    public function submitPayment(SubmitPaymentRequest $request, Transaction $transaction, TransactionPayment $payment, TransactionLifecycleService $service)
+    {
+        $this->authorizeParty($transaction);
+        abort_unless($payment->transaction_id === $transaction->id, 404);
+
+        return ApiResponse::success($service->submitPayment($payment, auth('customer_api')->id(), $request->validated()));
+    }
+
+    public function action(TransactionActionRequest $request, Transaction $transaction, TransactionLifecycleService $service)
+    {
+        $this->authorizeParty($transaction);
+
+        return ApiResponse::success($service->transition($transaction, $request->validated('action'), 'customer', auth('customer_api')->id()));
+    }
+
+    public function openDispute(OpenDisputeRequest $request, Transaction $transaction, TransactionLifecycleService $service)
+    {
+        $this->authorizeParty($transaction);
+
+        return ApiResponse::success($service->openDispute($transaction, auth('customer_api')->id(), $request->validated()), 'Đã tạo tranh chấp.', 201);
+    }
+
+    private function authorizeParty(Transaction $transaction): void
+    {
+        abort_unless(in_array(auth('customer_api')->id(), [$transaction->buyer_customer_id, $transaction->seller_customer_id], true), 403);
+    }
 }

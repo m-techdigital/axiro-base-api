@@ -1,3 +1,141 @@
 <?php
-namespace App\Http\Controllers; use App\Http\Requests\TransactionRequest; use App\Models\Transaction; use App\Services\Marketplace\TransactionLifecycleService; use App\Services\AuditTrailService; use Illuminate\Http\Request;
-class TransactionController extends Controller { private function total(array $d): string{return number_format((float)$d['transaction_value']+(float)($d['service_fee']??0)+(float)($d['deposit_amount']??0)-(float)($d['discount']??0),2,'.','');} public function index(Request $r){$q=Transaction::with(['product','listing.rentalRates','buyer:id,code,name','seller:id,code,name','contract'])->when($r->keyword,fn($q,$v)=>$q->where('code','like',"%$v%"))->when($r->status,fn($q,$v)=>$q->where('status',$v))->latest();$p=$q->paginate(min(100,max(1,(int)$r->input('per_page',20))));return success_response($p->items(),'Thành công',200,['pagination'=>['current_page'=>$p->currentPage(),'last_page'=>$p->lastPage(),'per_page'=>$p->perPage(),'total'=>$p->total()]]);} public function store(TransactionRequest $r){$d=$r->validated();$d['total_payable']=$this->total($d);$d['created_by']=$d['updated_by']=user_id();$m=Transaction::create($d);return success_response($m->load(['product','listing.rentalRates','buyer:id,code,name','seller:id,code,name']),'Đã tạo',201);} public function show(Transaction $transaction, AuditTrailService $audit){$loaded=$transaction->load(['product','listing.rentalRates','buyer:id,code,name,avatar_url','seller:id,code,name,avatar_url','contract','payments.customer:id,code,name','events','disputes.openedBy:id,code,name','checkpoints.customer:id,code,name','documents.template:id,code,name,type','documents.acceptances.customer:id,code,name']);$loaded->setAttribute('audit_history',$audit->forTransaction($transaction->id));return success_response($loaded);} public function update(TransactionRequest $r,Transaction $transaction){$d=$r->validated();$d['total_payable']=$this->total($d);$d['updated_by']=user_id();$transaction->update($d);return success_response($transaction->fresh()->load(['product','listing.rentalRates','buyer:id,code,name','seller:id,code,name']));} public function action(Request $request,Transaction $transaction,TransactionLifecycleService $service){$data=$request->validate(['action'=>'required|in:force_handover,force_return,complete,cancel,reopen','note'=>'nullable|string|max:2000']);return success_response($service->adminTransition($transaction,$data['action'],user_id(),$data['note']??null));} public function destroy(Transaction $transaction){if($transaction->contract()->exists())return error_response('Giao dịch đã có hợp đồng nên không thể xóa.',null,409);$transaction->delete();return success_response();}}
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\Admin\TransactionActionRequest;
+use App\Http\Requests\Common\ListQueryRequest;
+use App\Http\Requests\TransactionRequest;
+use App\Http\Responses\ApiResponse;
+use App\Models\Transaction;
+use App\Services\AuditTrailService;
+use App\Services\Marketplace\TransactionLifecycleService;
+use App\Support\Query\AppliesListQuery;
+
+class TransactionController extends Controller
+{
+    use AppliesListQuery;
+
+    public function index(ListQueryRequest $request)
+    {
+        $query = $this->applyListFilters(
+            Transaction::with([
+                'product',
+                'listing.rentalRates',
+                'buyer:id,code,name',
+                'seller:id,code,name',
+                'contract',
+            ]),
+            $request,
+            ['code'],
+            ['status'],
+            ['id', 'code', 'status', 'transaction_date', 'total_payable', 'created_at'],
+        );
+
+        return ApiResponse::paginated($query->paginate($request->perPage()));
+    }
+
+    public function store(TransactionRequest $request)
+    {
+        $data = $this->prepare($request->validated(), true);
+        $transaction = Transaction::create($data);
+
+        return ApiResponse::success(
+            $transaction->load([
+                'product',
+                'listing.rentalRates',
+                'buyer:id,code,name',
+                'seller:id,code,name',
+            ]),
+            'Đã tạo giao dịch.',
+            201,
+        );
+    }
+
+    public function show(Transaction $transaction, AuditTrailService $audit)
+    {
+        $loaded = $transaction->load([
+            'product',
+            'listing.rentalRates',
+            'buyer:id,code,name,avatar_url',
+            'seller:id,code,name,avatar_url',
+            'contract',
+            'payments.customer:id,code,name',
+            'events',
+            'disputes.openedBy:id,code,name',
+            'checkpoints.customer:id,code,name',
+            'documents.template:id,code,name,type',
+            'documents.acceptances.customer:id,code,name',
+        ]);
+
+        $loaded->setAttribute('audit_history', $audit->forTransaction($transaction->id));
+
+        return ApiResponse::success($loaded);
+    }
+
+    public function update(TransactionRequest $request, Transaction $transaction)
+    {
+        $transaction->update($this->prepare($request->validated()));
+
+        return ApiResponse::success(
+            $transaction->fresh()->load([
+                'product',
+                'listing.rentalRates',
+                'buyer:id,code,name',
+                'seller:id,code,name',
+            ]),
+            'Đã cập nhật giao dịch.',
+        );
+    }
+
+    public function action(
+        TransactionActionRequest $request,
+        Transaction $transaction,
+        TransactionLifecycleService $service,
+    ) {
+        $data = $request->validated();
+
+        return ApiResponse::success(
+            $service->adminTransition(
+                $transaction,
+                $data['action'],
+                user_id(),
+                $data['note'] ?? null,
+            ),
+        );
+    }
+
+    public function destroy(Transaction $transaction)
+    {
+        if ($transaction->contract()->exists()) {
+            return ApiResponse::error(
+                'Giao dịch đã có hợp đồng nên không thể xóa.',
+                null,
+                409,
+            );
+        }
+
+        $transaction->delete();
+
+        return ApiResponse::success(message: 'Đã xóa giao dịch.');
+    }
+
+    private function prepare(array $data, bool $creating = false): array
+    {
+        $data['total_payable'] = number_format(
+            (float) $data['transaction_value']
+                + (float) ($data['service_fee'] ?? 0)
+                + (float) ($data['deposit_amount'] ?? 0)
+                - (float) ($data['discount'] ?? 0),
+            2,
+            '.',
+            '',
+        );
+        $data['updated_by'] = user_id();
+
+        if ($creating) {
+            $data['created_by'] = user_id();
+        }
+
+        return $data;
+    }
+}

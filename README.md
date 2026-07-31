@@ -60,3 +60,15 @@ SEED_MARKETPLACE_DEMO=true
 ```
 
 Leave the variable unset or set it to `false` outside local/demo environments to avoid creating sample customers, listings, transactions, wallets, notifications, or documents.
+
+
+## Parent-aligned API foundation
+See `docs/canonical/README.md` and `docs/adr/0001-parent-aligned-api-foundation.md`.
+
+## Parent-parallel foundation
+
+Mini API mirrors the AXIRO parent foundation conventions for contracts, requests, resources, responses, route groups and reusable test fixtures. See `docs/canonical/PARENT_PARALLEL_DEVELOPMENT.md`.
+
+## Deep parent foundation
+
+Xem `docs/canonical/DEEP_PARENT_FOUNDATION.md`. API Mini giữ FormRequest, error envelope, correlation context và password policy canonical nhưng không thêm multi-tenant hoặc domain nặng ngoài phạm vi.

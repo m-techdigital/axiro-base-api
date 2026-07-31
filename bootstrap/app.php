@@ -4,6 +4,7 @@ use App\Http\Middleware\ApiAuthenticate;
 use App\Http\Middleware\AuditMutatingRequest;
 use App\Http\Middleware\CustomerAuthenticate;
 use App\Http\Middleware\RequestAuditContext;
+use App\Http\Responses\ApiExceptionResponse;
 use App\Services\AuditTrailService;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -21,26 +22,13 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (AuthenticationException $exception, $request) {
-            return response()->json([
-                'status' => ['success' => false, 'code' => 401, 'message' => 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn.'],
-                'error_code' => 'UNAUTHENTICATED',
-                'errors' => null,
-                'meta' => ['request_id' => $request->attributes->get('request_id')],
-            ], 401);
+            return ApiExceptionResponse::unauthenticated($request);
         });
         $exceptions->render(function (ValidationException $exception, $request) {
             $errors = $exception->errors();
             app(AuditTrailService::class)->validationFailure($request, $errors);
-            return response()->json([
-                'status' => ['success' => false, 'code' => 422, 'message' => 'Dữ liệu chưa hợp lệ. Vui lòng kiểm tra các trường được đánh dấu.'],
-                'message' => 'Dữ liệu chưa hợp lệ. Vui lòng kiểm tra các trường được đánh dấu.',
-                'error_code' => 'VALIDATION_FAILED',
-                'errors' => $errors,
-                'meta' => [
-                    'request_id' => $request->attributes->get('request_id'),
-                    'correlation_id' => $request->attributes->get('correlation_id'),
-                ],
-            ], 422);
+
+            return ApiExceptionResponse::validation($request, $errors);
         });
         $exceptions->shouldRenderJsonWhen(fn () => true);
     })->create();

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\CorrelationContext;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -13,12 +14,19 @@ class RequestAuditContext
     {
         $requestId = trim((string) $request->headers->get('X-Request-ID'));
         $correlationId = trim((string) $request->headers->get('X-Correlation-ID'));
-        $request->attributes->set('request_id', Str::isUuid($requestId) ? $requestId : (string) Str::uuid());
-        $request->attributes->set('correlation_id', Str::isUuid($correlationId) ? $correlationId : (string) Str::uuid());
+        $requestId = Str::isUuid($requestId) ? strtolower($requestId) : (string) Str::uuid();
+        $correlationId = CorrelationContext::normalize($correlationId) ?? $requestId;
+
+        $request->attributes->set('request_id', $requestId);
+        $request->attributes->set('correlation_id', $correlationId);
         $request->attributes->set('audit_started_at', microtime(true));
-        $response = $next($request);
-        $response->headers->set('X-Request-ID', $request->attributes->get('request_id'));
-        $response->headers->set('X-Correlation-ID', $request->attributes->get('correlation_id'));
-        return $response;
+
+        return CorrelationContext::run($correlationId, function () use ($request, $next, $requestId, $correlationId): Response {
+            $response = $next($request);
+            $response->headers->set('X-Request-ID', $requestId);
+            $response->headers->set('X-Correlation-ID', $correlationId);
+
+            return $response;
+        });
     }
 }

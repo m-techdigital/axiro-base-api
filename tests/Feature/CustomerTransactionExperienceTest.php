@@ -33,6 +33,6 @@ class CustomerTransactionExperienceTest extends TestCase
         WalletTransaction::create(['code'=>'NAP-001','idempotency_key'=>'deposit:test','customer_id'=>$customer->id,'type'=>'deposit_request','direction'=>'credit','balance_bucket'=>'available','amount'=>200000,'available_before'=>0,'available_after'=>0,'held_before'=>0,'held_after'=>0,'balance_after'=>0,'status'=>'submitted','payment_method'=>'bank','occurred_at'=>now()]);
 
         $this->actingAs($customer, 'customer_api')->getJson('/api/v1/customer/wallet/transactions')->assertOk()->assertJsonCount(0, 'data.transactions.data');
-        $this->actingAs($customer, 'customer_api')->getJson('/api/v1/customer/wallet/deposits')->assertOk()->assertJsonPath('data.data.0.code', 'NAP-001');
+        $this->actingAs($customer, 'customer_api')->getJson('/api/v1/customer/wallet/deposits')->assertOk()->assertJsonPath('data.0.code', 'NAP-001');
     }
 }

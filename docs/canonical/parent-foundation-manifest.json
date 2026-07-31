@@ -1,0 +1,8 @@
+{
+  "source": "mylands-api-develop-20260801-ec917b6",
+  "strategy": "bounded-subset-mirror",
+  "canonical_roots": ["app/Contracts", "app/Http/Requests", "app/Http/Resources", "app/Http/Responses", "app/Repositories", "app/Services", "app/Support", "routes/api", "tests/Support"],
+  "route_groups": ["auth", "public", "customer", "admin"],
+  "excluded_parent_domains": ["accounting", "crm", "hr", "payroll", "reports", "projects", "company-scope", "rbac"],
+  "compatibility_rule": "same foundation names and contracts when the mini owns the same need"
+}

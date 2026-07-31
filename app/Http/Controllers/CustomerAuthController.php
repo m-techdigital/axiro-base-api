@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Customer\LoginCustomerRequest;
+use App\Http\Requests\Customer\RegisterCustomerRequest;
+use App\Http\Requests\Customer\VerifyTwoFactorRequest;
 use App\Services\Auth\CustomerAuthService;
 use App\Support\RefreshTokenCookie;
 use Illuminate\Http\Request;
@@ -10,25 +13,20 @@ class CustomerAuthController extends Controller
 {
     public function __construct(private CustomerAuthService $service) {}
 
-    public function register(Request $request)
+    public function register(RegisterCustomerRequest $request)
     {
-        $data = $request->validate([
-            'username' => 'required|string|max:80|unique:customers,username',
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255|unique:customers,email',
-            'phone' => 'nullable|string|max:30|unique:customers,phone',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
-        return $this->respond($this->service->register($data));
+        return $this->respond($this->service->register($request->validated()));
     }
 
-    public function login(Request $request)
+    public function login(LoginCustomerRequest $request)
     {
-        $field = filter_var($request->input('login'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        $validated = $request->validated();
+        $field = filter_var($validated['login'], FILTER_VALIDATE_EMAIL)
+            ? 'email'
+            : 'username';
         $data = $this->service->login([
-            $field => $request->input('login'),
-            'password' => $request->input('password'),
+            $field => $validated['login'],
+            'password' => $validated['password'],
         ]);
 
         if (! $data) {
@@ -42,17 +40,20 @@ class CustomerAuthController extends Controller
         return $this->respond($data);
     }
 
-    public function verifyTwoFactor(Request $request)
+    public function verifyTwoFactor(VerifyTwoFactorRequest $request)
     {
-        $data = $request->validate([
-            'challenge_token' => 'required|string',
-            'code' => 'required|string|max:20',
-        ]);
-
-        $result = $this->service->completeTwoFactor($data['challenge_token'], $data['code']);
+        $data = $request->validated();
+        $result = $this->service->completeTwoFactor(
+            $data['challenge_token'],
+            $data['code'],
+        );
 
         if (! $result) {
-            return error_response('Mã xác thực không đúng, đã dùng hoặc đã hết hạn.', null, 422);
+            return error_response(
+                'Mã xác thực không đúng, đã dùng hoặc đã hết hạn.',
+                null,
+                422,
+            );
         }
 
         return $this->respond($result);
@@ -60,15 +61,29 @@ class CustomerAuthController extends Controller
 
     public function refresh(Request $request)
     {
-        $token = (string) $request->cookie(config('auth.customer_refresh_cookie.name'));
+        $token = (string) $request->cookie(
+            config('auth.customer_refresh_cookie.name'),
+        );
+
         if ($token === '') {
-            return error_response('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', null, 401);
+            return error_response(
+                'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+                null,
+                401,
+            );
         }
 
         $data = $this->service->refresh($token);
+
         if (! $data) {
-            return error_response('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', null, 401)
-                ->withoutCookie(RefreshTokenCookie::forget(config('auth.customer_refresh_cookie.name'), 'auth.customer_refresh_cookie'));
+            return error_response(
+                'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+                null,
+                401,
+            )->withoutCookie(RefreshTokenCookie::forget(
+                config('auth.customer_refresh_cookie.name'),
+                'auth.customer_refresh_cookie',
+            ));
         }
 
         return $this->respond($data);
@@ -77,13 +92,22 @@ class CustomerAuthController extends Controller
     public function me()
     {
         $customer = auth('customer_api')->user()?->load('wallet');
+
         if (! $customer) {
             return success_response(null);
         }
 
         $data = $customer->only([
-            'id', 'code', 'username', 'name', 'email', 'phone', 'status',
-            'avatar_url', 'last_login_at', 'email_verified_at',
+            'id',
+            'code',
+            'username',
+            'name',
+            'email',
+            'phone',
+            'status',
+            'avatar_url',
+            'last_login_at',
+            'email_verified_at',
         ]);
         $data['balance'] = $customer->wallet?->available_balance ?? '0.00';
         $data['held_balance'] = $customer->wallet?->held_balance ?? '0.00';
@@ -94,18 +118,30 @@ class CustomerAuthController extends Controller
 
     public function logout(Request $request)
     {
-        $this->service->logout((string) $request->cookie(config('auth.customer_refresh_cookie.name')));
+        $this->service->logout((string) $request->cookie(
+            config('auth.customer_refresh_cookie.name'),
+        ));
 
         return success_response(null, 'Đã đăng xuất.')
-            ->withoutCookie(RefreshTokenCookie::forget(config('auth.customer_refresh_cookie.name'), 'auth.customer_refresh_cookie'));
+            ->withoutCookie(RefreshTokenCookie::forget(
+                config('auth.customer_refresh_cookie.name'),
+                'auth.customer_refresh_cookie',
+            ));
     }
 
     private function respond(array $data)
     {
         $model = $data['customer']->load('wallet');
         $customer = $model->only([
-            'id', 'code', 'username', 'name', 'email', 'phone', 'status',
-            'avatar_url', 'email_verified_at',
+            'id',
+            'code',
+            'username',
+            'name',
+            'email',
+            'phone',
+            'status',
+            'avatar_url',
+            'email_verified_at',
         ]);
         $customer['balance'] = $model->wallet?->available_balance ?? '0.00';
         $customer['held_balance'] = $model->wallet?->held_balance ?? '0.00';
