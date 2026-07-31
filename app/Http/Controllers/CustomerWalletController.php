@@ -19,6 +19,10 @@ class CustomerWalletController extends Controller
 
         $transactions = WalletTransaction::query()
             ->where('customer_id', $customerId)
+            ->where(function ($query) {
+                $query->where('type', '!=', 'deposit_request')
+                    ->orWhere('status', 'confirmed');
+            })
             ->when($request->type, fn ($query, $value) => $query->where('type', $value))
             ->when($request->status, fn ($query, $value) => $query->where('status', $value))
             ->when($request->transaction_id, fn ($query, $value) => $query->where('transaction_id', $value))
@@ -32,9 +36,25 @@ class CustomerWalletController extends Controller
                 'available_balance' => $wallet->available_balance,
                 'held_balance' => $wallet->held_balance,
                 'total_balance' => bcadd((string) $wallet->available_balance, (string) $wallet->held_balance, 2),
+                'pending_deposit_balance' => WalletTransaction::query()->where('customer_id', $customerId)->where('type', 'deposit_request')->whereIn('status', ['draft', 'submitted'])->sum('amount'),
             ],
             'transactions' => $transactions,
         ]);
+    }
+
+
+    public function deposits(Request $request)
+    {
+        $customerId = auth('customer_api')->id();
+        $items = WalletTransaction::query()
+            ->where('customer_id', $customerId)
+            ->where('type', 'deposit_request')
+            ->latest('occurred_at')
+            ->latest()
+            ->paginate(min(100, max(1, $request->integer('per_page', 20))))
+            ->through(fn (WalletTransaction $entry) => $this->presentDeposit($entry));
+
+        return success_response($items);
     }
 
     public function deposit(Request $request, MarketplaceQrService $qrService)
@@ -123,6 +143,9 @@ class CustomerWalletController extends Controller
 
     private function presentLedgerEntry(WalletTransaction $entry): array
     {
+        $balanceBefore = $entry->balance_bucket === 'held'
+            ? $entry->held_before
+            : $entry->available_before;
         $balanceAfter = $entry->balance_bucket === 'held'
             ? $entry->held_after
             : $entry->available_after;
@@ -133,6 +156,7 @@ class CustomerWalletController extends Controller
             'direction' => $entry->direction,
             'balance_bucket' => $entry->balance_bucket,
             'amount' => $entry->amount,
+            'balance_before' => $balanceBefore,
             'balance_after' => $balanceAfter,
             'status' => $entry->status,
             'occurred_at' => $entry->occurred_at,
@@ -149,6 +173,8 @@ class CustomerWalletController extends Controller
             'payment_method' => $entry->payment_method,
             'metadata' => $entry->metadata,
             'proof_image_url' => $entry->proof_image_url,
+            'external_reference' => $entry->external_reference,
+            'note' => $entry->note,
             'review_note' => $entry->review_note,
             'occurred_at' => $entry->occurred_at,
             'submitted_at' => $entry->submitted_at,

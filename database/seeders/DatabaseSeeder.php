@@ -20,6 +20,15 @@ class DatabaseSeeder extends Seeder
         );
 
 
+        $seedDemoData = filter_var(
+            env('SEED_MARKETPLACE_DEMO', app()->environment(['local', 'testing'])),
+            FILTER_VALIDATE_BOOL,
+        );
+
+        if (! $seedDemoData) {
+            return;
+        }
+
         \App\Models\MarketplacePaymentSetting::query()->firstOrCreate(
             ['is_active' => true],
             [

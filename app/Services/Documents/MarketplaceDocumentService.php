@@ -34,7 +34,8 @@ class MarketplaceDocumentService
     public function ensureForTransaction(Transaction $transaction): Collection
     {
         $transaction->loadMissing(['product','listing','buyer','seller','contract','payments','events','disputes','checkpoints']);
-        $types = ['platform_transaction_record', $transaction->transaction_type === 'rental' ? 'rental_contract' : 'sale_contract', 'payment_confirmation'];
+        $types = [$transaction->transaction_type === 'rental' ? 'rental_contract' : 'sale_contract'];
+        if ($transaction->payments->contains(fn ($payment) => in_array($payment->status, ['submitted', 'confirmed'], true))) $types[] = 'payment_confirmation';
         if ($transaction->purchase_mode === 'installment') $types[] = 'installment_appendix';
         if ($transaction->purchase_mode === 'deposit' || (float) $transaction->deposit_amount > 0) $types[] = 'deposit_confirmation';
         if (in_array($transaction->status, ['handover_pending','handed_over','active','return_pending','returned','completed','disputed'], true)) {
@@ -47,7 +48,7 @@ class MarketplaceDocumentService
         if ((float) $transaction->refunded_amount > 0) $types[] = 'refund_settlement';
         if ($transaction->status === 'completed') $types[] = 'completion_minutes';
         foreach (array_unique($types) as $type) $this->generate($transaction, $type);
-        return GeneratedDocument::query()->where('transaction_id', $transaction->id)->with(['template','acceptances.customer:id,code,name'])->orderBy('id')->get();
+        return GeneratedDocument::query()->where('transaction_id', $transaction->id)->whereIn('document_type', array_unique($types))->with(['template','acceptances.customer:id,code,name'])->orderBy('id')->get();
     }
 
     public function generate(Transaction $transaction, string $type, ?int $adminId = null, bool $regenerate = false): GeneratedDocument

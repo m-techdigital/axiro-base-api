@@ -1,6 +1,6 @@
 {
   "contract_name": "axiro-mini-marketplace",
-  "contract_version": "1.6.0",
+  "contract_version": "2026-08-01.2",
   "api_version": "v65",
   "source_architecture": "AXIRO parent canonical marketplace patterns",
   "response_contract": {
@@ -208,7 +208,6 @@
     "GET /customer/transactions",
     "GET /customer/transactions/{transaction}",
     "POST /customer/listings/{listing}/transact",
-    "POST /customer/transactions/{transaction}/cancel",
     "POST /customer/transactions/{transaction}/actions",
     "GET /customer/transactions/{transaction}/payments/{payment}/qr",
     "POST /customer/transactions/{transaction}/payments/{payment}/submit",
@@ -223,6 +222,7 @@
     "POST /customer/notifications/{notification}/read",
     "GET /customer/wallet/transactions",
     "POST /customer/wallet/deposit/bank",
+    "GET /customer/wallet/deposits",
     "GET /customer/wallet/deposits/{walletTransaction}",
     "POST /customer/wallet/deposits/{walletTransaction}/proof",
     "GET /customer/payouts",
@@ -230,6 +230,7 @@
     "POST /customer/payout-accounts",
     "POST /customer/withdrawals",
     "GET /customer/cases",
+    "GET /customer/cases/{case}",
     "POST /customer/transactions/{transaction}/cases",
     "POST /customer/cases/{case}/messages",
     "GET /customer/transactions/{transaction}/asset-snapshots",

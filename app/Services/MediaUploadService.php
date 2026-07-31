@@ -17,7 +17,7 @@ class MediaUploadService
             $path = $file->storeAs($directory, $filename, 'public');
 
             return [
-                'url' => Storage::disk('public')->url($path),
+                'url' => '/storage/'.ltrim($path, '/'),
                 'path' => $path,
                 'name' => $file->getClientOriginalName(),
                 'size' => (int) $file->getSize(),

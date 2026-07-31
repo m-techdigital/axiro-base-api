@@ -69,6 +69,8 @@ class MarketplaceDemoSeeder extends Seeder
     /** @param array<string, Customer> $customers */
     private function wallets(array $customers, User $admin): void
     {
+        WalletTransaction::query()->whereIn('code', ['WAL-DEMO-002', 'WAL-DEMO-003'])->delete();
+
         $balances = [
             'buyer' => 2_450_000,
             'seller' => 4_820_000,
@@ -86,8 +88,8 @@ class MarketplaceDemoSeeder extends Seeder
 
         $rows = [
             ['code' => 'WAL-DEMO-001', 'customer' => 'buyer', 'type' => 'deposit', 'direction' => 'credit', 'amount' => 1_000_000, 'balance_after' => 2_450_000, 'available_before' => 1_450_000, 'available_after' => 2_450_000, 'held_before' => 0, 'held_after' => 0, 'balance_bucket' => 'available', 'occurred_at' => now()->subDays(8), 'status' => 'confirmed', 'payment_method' => 'bank', 'external_reference' => 'VCB-DEMO-001', 'confirmed_at' => now()->subDays(8), 'note' => 'Nạp tiền ngân hàng đã được quản trị viên xác nhận.'],
-            ['code' => 'WAL-DEMO-002', 'customer' => 'buyer', 'type' => 'deposit', 'direction' => 'credit', 'amount' => 500_000, 'balance_after' => 2_450_000, 'available_before' => 1_450_000, 'available_after' => 2_450_000, 'held_before' => 0, 'held_after' => 0, 'balance_bucket' => 'available', 'occurred_at' => now()->subDays(8), 'status' => 'pending', 'payment_method' => 'bank', 'external_reference' => 'VCB-DEMO-PENDING', 'note' => 'Yêu cầu nạp tiền đang chờ đối soát.'],
-            ['code' => 'WAL-DEMO-003', 'customer' => 'renter', 'type' => 'deposit', 'direction' => 'credit', 'amount' => 200_000, 'balance_after' => 1_300_000, 'available_before' => 1_300_000, 'available_after' => 1_300_000, 'held_before' => 0, 'held_after' => 0, 'balance_bucket' => 'available', 'occurred_at' => now()->subDays(2), 'status' => 'rejected', 'payment_method' => 'card', 'external_reference' => 'CARD-DEMO-REJECT', 'note' => 'Mã thẻ hoặc mệnh giá không đúng.'],
+            ['code' => 'NAP-DEMO-PENDING', 'customer' => 'buyer', 'type' => 'deposit_request', 'direction' => 'credit', 'amount' => 500_000, 'balance_after' => 2_450_000, 'available_before' => 2_450_000, 'available_after' => 2_450_000, 'held_before' => 0, 'held_after' => 0, 'balance_bucket' => 'available', 'occurred_at' => now()->subDays(2), 'submitted_at' => now()->subDays(2), 'status' => 'submitted', 'payment_method' => 'bank', 'external_reference' => 'VCB-DEMO-PENDING', 'note' => 'Yêu cầu nạp tiền đang chờ đối soát; chưa làm thay đổi số dư.'],
+            ['code' => 'NAP-DEMO-REJECTED', 'customer' => 'renter', 'type' => 'deposit_request', 'direction' => 'credit', 'amount' => 200_000, 'balance_after' => 1_300_000, 'available_before' => 1_300_000, 'available_after' => 1_300_000, 'held_before' => 0, 'held_after' => 0, 'balance_bucket' => 'available', 'occurred_at' => now()->subDay(), 'submitted_at' => now()->subDays(2), 'status' => 'rejected', 'payment_method' => 'bank', 'external_reference' => 'BANK-DEMO-REJECT', 'review_note' => 'Không tìm thấy giao dịch khớp với chứng từ đã gửi.', 'note' => 'Yêu cầu nạp tiền bị từ chối; chưa làm thay đổi số dư.'],
         ];
 
         foreach ($rows as $row) {
@@ -127,7 +129,7 @@ class MarketplaceDemoSeeder extends Seeder
                     'status' => 'active',
                     'description' => 'Dữ liệu mẫu được tạo theo vòng đời canonical của AXIRO để kiểm thử trên MBN và AXIRO Admin.',
                     'image_url' => $image,
-                    'image_urls' => [$image, $image],
+                    'image_urls' => [$image],
                     'owner_customer_id' => $owner->id,
                     'created_by' => $admin->id,
                     'updated_by' => $admin->id,
@@ -362,7 +364,7 @@ class MarketplaceDemoSeeder extends Seeder
             ],
             'cancelled' => [
                 ['created', 'customer', $customers['renter']->id, 'Đã tạo giao dịch', null],
-                ['cancelled', 'customer', $customers['renter']->id, 'Đã hủy trước thanh toán', 'Tin đăng được mở lại sau khi hủy.'],
+                ['cancelled', 'user', $admin->id, 'Giao dịch đã được đóng', 'Quản trị viên đóng giao dịch trước khi phát sinh thanh toán; tin đăng được mở lại.'],
             ],
         ];
 

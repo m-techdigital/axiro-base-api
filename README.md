@@ -50,3 +50,13 @@ CUSTOMER_AUTH_REFRESH_COOKIE_SAME_SITE=none
 FRONTEND_URL=https://www.example.com
 FRONTEND_URLS=https://www.example.com
 ```
+
+## Demo seed data
+
+Marketplace demo records are created only in `local` and `testing` by default. Production-like environments must opt in explicitly:
+
+```env
+SEED_MARKETPLACE_DEMO=true
+```
+
+Leave the variable unset or set it to `false` outside local/demo environments to avoid creating sample customers, listings, transactions, wallets, notifications, or documents.

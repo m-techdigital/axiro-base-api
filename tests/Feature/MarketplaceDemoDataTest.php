@@ -59,8 +59,8 @@ class MarketplaceDemoDataTest extends TestCase
         $this->assertDatabaseHas('marketplace_disputes', ['code' => 'DSP-DEMO-RESOLVED', 'status' => 'resolved']);
 
         $this->assertDatabaseHas('wallet_transactions', ['code' => 'WAL-DEMO-001', 'status' => 'confirmed']);
-        $this->assertDatabaseHas('wallet_transactions', ['code' => 'WAL-DEMO-002', 'status' => 'pending']);
-        $this->assertDatabaseHas('wallet_transactions', ['code' => 'WAL-DEMO-003', 'status' => 'rejected']);
+        $this->assertDatabaseHas('wallet_transactions', ['code' => 'NAP-DEMO-PENDING', 'type' => 'deposit_request', 'status' => 'submitted']);
+        $this->assertDatabaseHas('wallet_transactions', ['code' => 'NAP-DEMO-REJECTED', 'type' => 'deposit_request', 'status' => 'rejected']);
 
         $this->assertGreaterThanOrEqual(1, MarketplaceDispute::query()->where('status', 'open')->count());
         $this->assertGreaterThanOrEqual(7, TransactionPayment::query()->count());
