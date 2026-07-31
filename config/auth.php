@@ -124,6 +124,11 @@ return [
 
     'customer_refresh_cookie' => [
         'name' => env('CUSTOMER_AUTH_REFRESH_COOKIE', 'customer_refresh_token'),
+        'ttl_days' => (int) env('CUSTOMER_AUTH_REFRESH_COOKIE_TTL_DAYS', env('AUTH_REFRESH_COOKIE_TTL_DAYS', 30)),
+        'path' => env('CUSTOMER_AUTH_REFRESH_COOKIE_PATH', '/'),
+        'domain' => (($customerRefreshCookieDomain = env('CUSTOMER_AUTH_REFRESH_COOKIE_DOMAIN', env('AUTH_REFRESH_COOKIE_DOMAIN'))) !== null && trim((string) $customerRefreshCookieDomain) !== '') ? trim((string) $customerRefreshCookieDomain) : null,
+        'secure' => filter_var(env('CUSTOMER_AUTH_REFRESH_COOKIE_SECURE', env('AUTH_REFRESH_COOKIE_SECURE', false)), FILTER_VALIDATE_BOOL),
+        'same_site' => env('CUSTOMER_AUTH_REFRESH_COOKIE_SAME_SITE', env('AUTH_REFRESH_COOKIE_SAME_SITE', 'lax')),
     ],
 
     'customer_access_ttl_minutes' => (int) env('CUSTOMER_AUTH_ACCESS_TTL_MINUTES', 43200),

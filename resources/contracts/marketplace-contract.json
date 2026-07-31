@@ -195,6 +195,7 @@
     "POST /auth/customer/reset-password",
     "POST /auth/customer/verify-email",
     "PUT /customer/profile",
+    "POST /customer/profile/avatar",
     "POST /customer/profile/email-change",
     "PUT /customer/profile/password",
     "POST /customer/media/images",

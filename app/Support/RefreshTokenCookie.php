@@ -6,27 +6,38 @@ use Symfony\Component\HttpFoundation\Cookie;
 
 class RefreshTokenCookie
 {
-    public static function make(string $name, string $token): Cookie
+    public static function make(string $name, string $token, string $configKey = 'auth.refresh_cookie'): Cookie
     {
+        $settings = (array) config($configKey, []);
+
         return cookie(
             $name,
             $token,
-            (int) config('auth.refresh_cookie.ttl_days', 30) * 1440,
-            '/',
-            config('auth.refresh_cookie.domain'),
-            (bool) config('auth.refresh_cookie.secure', false),
+            (int) ($settings['ttl_days'] ?? 30) * 1440,
+            (string) ($settings['path'] ?? '/'),
+            $settings['domain'] ?? null,
+            (bool) ($settings['secure'] ?? false),
             true,
             false,
-            (string) config('auth.refresh_cookie.same_site', 'lax'),
+            self::sameSite($settings['same_site'] ?? 'lax'),
         );
     }
 
-    public static function forget(string $name): Cookie
+    public static function forget(string $name, string $configKey = 'auth.refresh_cookie'): Cookie
     {
+        $settings = (array) config($configKey, []);
+
         return cookie()->forget(
             $name,
-            '/',
-            config('auth.refresh_cookie.domain'),
+            (string) ($settings['path'] ?? '/'),
+            $settings['domain'] ?? null,
         );
+    }
+
+    private static function sameSite(mixed $value): string
+    {
+        $sameSite = strtolower((string) $value);
+
+        return in_array($sameSite, ['lax', 'strict', 'none'], true) ? $sameSite : 'lax';
     }
 }

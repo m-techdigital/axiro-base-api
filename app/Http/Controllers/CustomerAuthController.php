@@ -68,7 +68,7 @@ class CustomerAuthController extends Controller
         $data = $this->service->refresh($token);
         if (! $data) {
             return error_response('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', null, 401)
-                ->withoutCookie(RefreshTokenCookie::forget(config('auth.customer_refresh_cookie.name')));
+                ->withoutCookie(RefreshTokenCookie::forget(config('auth.customer_refresh_cookie.name'), 'auth.customer_refresh_cookie'));
         }
 
         return $this->respond($data);
@@ -97,7 +97,7 @@ class CustomerAuthController extends Controller
         $this->service->logout((string) $request->cookie(config('auth.customer_refresh_cookie.name')));
 
         return success_response(null, 'Đã đăng xuất.')
-            ->withoutCookie(RefreshTokenCookie::forget(config('auth.customer_refresh_cookie.name')));
+            ->withoutCookie(RefreshTokenCookie::forget(config('auth.customer_refresh_cookie.name'), 'auth.customer_refresh_cookie'));
     }
 
     private function respond(array $data)
@@ -117,6 +117,7 @@ class CustomerAuthController extends Controller
         ])->withCookie(RefreshTokenCookie::make(
             config('auth.customer_refresh_cookie.name'),
             $data['refresh_token'],
+            'auth.customer_refresh_cookie',
         ));
     }
 }

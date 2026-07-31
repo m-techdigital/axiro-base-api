@@ -133,4 +133,76 @@ class CustomerAuthenticationHardeningTest extends TestCase
         $this->assertSame('strict', $cookie->getSameSite());
         $this->assertSame('/', $cookie->getPath());
     }
+    public function test_customer_session_survives_a_fresh_page_bootstrap_via_cookie_refresh(): void
+    {
+        $customer = Customer::create([
+            'code' => 'CUS-RELOAD',
+            'username' => 'reload-customer',
+            'name' => 'Reload Customer',
+            'email' => 'reload-customer@example.test',
+            'password' => 'password123',
+            'status' => 'active',
+        ]);
+        CustomerWallet::create(['customer_id' => $customer->id]);
+
+        $login = $this->postJson('/api/v1/auth/customer/login', [
+            'login' => 'reload-customer',
+            'password' => 'password123',
+        ])->assertOk();
+
+        $cookieName = config('auth.customer_refresh_cookie.name');
+        $cookie = collect($login->headers->getCookies())
+            ->first(fn ($candidate) => $candidate->getName() === $cookieName);
+        $this->assertNotNull($cookie);
+
+        $refreshToken = $cookie->getValue();
+        if (! CustomerRefreshToken::where('token', hash('sha256', $refreshToken))->exists()) {
+            $refreshToken = Crypt::decryptString($refreshToken);
+        }
+
+        // Simulate a completely fresh browser page: no in-memory access token,
+        // only the persistent HttpOnly refresh cookie remains.
+        $refresh = $this->call(
+            'POST',
+            '/api/v1/auth/customer/refresh',
+            [],
+            [$cookieName => $refreshToken],
+            [],
+            ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json'],
+            '{}',
+        )->assertOk();
+
+        $accessToken = $refresh->json('data.access_token');
+        $this->assertNotEmpty($accessToken);
+
+        $this->withHeader('Authorization', 'Bearer '.$accessToken)
+            ->getJson('/api/v1/auth/customer/me')
+            ->assertOk()
+            ->assertJsonPath('data.username', 'reload-customer');
+    }
+
+    public function test_customer_cookie_has_independent_cross_origin_configuration(): void
+    {
+        config()->set('auth.customer_refresh_cookie', [
+            'name' => 'customer_refresh_token',
+            'ttl_days' => 30,
+            'path' => '/',
+            'domain' => '.example.test',
+            'secure' => true,
+            'same_site' => 'none',
+        ]);
+
+        $cookie = RefreshTokenCookie::make(
+            'customer_refresh_token',
+            'plain-token',
+            'auth.customer_refresh_cookie',
+        );
+
+        $this->assertSame('.example.test', $cookie->getDomain());
+        $this->assertSame('/', $cookie->getPath());
+        $this->assertTrue($cookie->isSecure());
+        $this->assertTrue($cookie->isHttpOnly());
+        $this->assertSame('none', $cookie->getSameSite());
+    }
+
 }

@@ -85,7 +85,7 @@ class CustomerAuthService
             // avoids concurrent tabs rotating the same cookie and logging each other out.
             $stored->update([
                 'last_used_at' => now(),
-                'expires_at' => now()->addDays((int) config('auth.refresh_cookie.ttl_days', 30)),
+                'expires_at' => now()->addDays((int) config('auth.customer_refresh_cookie.ttl_days', 30)),
                 'ip_address' => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ]);
@@ -123,7 +123,7 @@ class CustomerAuthService
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
             'last_used_at' => now(),
-            'expires_at' => now()->addDays((int) config('auth.refresh_cookie.ttl_days', 30)),
+            'expires_at' => now()->addDays((int) config('auth.customer_refresh_cookie.ttl_days', 30)),
         ]);
 
         return [
