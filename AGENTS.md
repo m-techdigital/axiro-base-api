@@ -28,3 +28,11 @@ Run targeted tests, `ParentFoundationContractTest`, full PHPUnit and Pint on cha
 - List endpoints should use `ListQueryRequest` and `AppliesListQuery` when their query contract matches.
 - Sorting must use an allowlist and pagination must be capped centrally.
 - Format changed PHP with Pint and run `ParentListFoundationContractTest` before handoff.
+
+## Parent-source selection policy
+
+AXIRO cha phải được kiểm tra trước khi thêm foundation. Nếu cha không có abstraction generic tương ứng, foundation Mini phải ghi rõ `mini_bounded` trong `docs/canonical/parent-base-provenance.json`, không được tuyên bố exact parity. Không port RBAC/company/project/accounting/report/HR chỉ để giống cây thư mục cha.
+
+## Parent-source rule
+
+Do not import parent company, RBAC, project, accounting or report dependencies into Mini foundation code. Every shared abstraction must be identified as an exact source, parent pattern, Mini-bounded owner or explicit exclusion.

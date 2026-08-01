@@ -3,6 +3,7 @@
 namespace App\Support\Query;
 
 use App\Http\Requests\Common\ListQueryRequest;
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 
 trait AppliesListQuery
@@ -14,6 +15,8 @@ trait AppliesListQuery
         array $exactFilters = ['status'],
         array $sortableColumns = [],
         string $defaultSort = 'id',
+        ?string $dateColumn = 'created_at',
+        array $customFilters = [],
     ): Builder {
         $keyword = $request->keyword();
 
@@ -26,13 +29,26 @@ trait AppliesListQuery
             });
         }
 
-        foreach ($exactFilters as $filter) {
-            if ($request->filled($filter)) {
-                $query->where($filter, $request->validated($filter));
+        foreach ($request->filters(array_keys($exactFilters) === range(0, count($exactFilters) - 1) ? $exactFilters : array_keys($exactFilters)) as $filter => $value) {
+            $column = $exactFilters[$filter] ?? $filter;
+            $query->where($column, $value);
+        }
+
+        foreach ($customFilters as $field => $callback) {
+            if ($request->filled($field) && $callback instanceof Closure) {
+                $callback($query, $request->validated($field), $request);
             }
         }
 
-        $sortBy = (string) $request->validated('sort_by', $defaultSort);
+        if ($dateColumn && $request->filled('date_from')) {
+            $query->whereDate($dateColumn, '>=', $request->validated('date_from'));
+        }
+
+        if ($dateColumn && $request->filled('date_to')) {
+            $query->whereDate($dateColumn, '<=', $request->validated('date_to'));
+        }
+
+        $sortBy = $request->sortBy($defaultSort);
         if (! in_array($sortBy, $sortableColumns ?: [$defaultSort], true)) {
             $sortBy = $defaultSort;
         }

@@ -1,0 +1,77 @@
+{
+  "source": {
+    "api_zip": "mylands-api-develop-20260801-ec917b6.zip"
+  },
+  "policy": "Inspect AXIRO parent first. Copy only dependency-closed, domain-neutral sources; keep explicit Mini-bounded owners where parent code depends on company/RBAC/domain infrastructure.",
+  "entries": [
+    {
+      "mini_path": "app/Http/Requests/Common/ListQueryRequest.php",
+      "mode": "mini_bounded",
+      "note": "Parent has domain-specific list requests rather than one generic ListQueryRequest; Mini keeps a bounded common request for its small module set."
+    },
+    {
+      "mini_path": "app/Support/Query/AppliesListQuery.php",
+      "mode": "mini_bounded",
+      "note": "Bounded list query helper for the current single-admin/multi-customer scope. It does not claim parity with parent model Filterable/Sortable traits."
+    },
+    {
+      "mini_path": "app/Http/Responses/ApiResponse.php",
+      "mode": "mini_bounded",
+      "note": "Preserves Mini marketplace contract headers and correlation metadata."
+    },
+    {
+      "mini_path": "app/Http/Requests/ApiFormRequest.php",
+      "mode": "parent_pattern",
+      "note": "Uses the same FormRequest/validation-envelope convention, adapted to Mini response contract."
+    },
+    {
+      "mini_path": "routes/api.php",
+      "mode": "parent_pattern",
+      "note": "Audience route composition is retained without importing parent domain routes."
+    },
+    {
+      "mini_path": "tests/Support/CreatesMarketplaceFixtures.php",
+      "mode": "mini_domain",
+      "note": "Marketplace-specific fixture owner; no equivalent parent fixture is copied."
+    },
+    {
+      "mini_path": "app/Repositories/BaseRepository.php",
+      "mode": "mini_bounded",
+      "note": "Mini repository only owns model/query creation. Parent BaseRepository depends on company scopes, Filterable/Sortable/Pagy contracts and is intentionally not copied."
+    }
+  ],
+  "excluded": [
+    {
+      "path": "app/Services/Accounting",
+      "reason": "Outside Mini scope."
+    },
+    {
+      "path": "app/Services/Reports",
+      "reason": "Outside Mini scope."
+    },
+    {
+      "path": "app/Services/HrOperations",
+      "reason": "Outside Mini scope."
+    },
+    {
+      "path": "app/Services/Approvals",
+      "reason": "Outside Mini scope."
+    },
+    {
+      "path": "app/Services/Calendar",
+      "reason": "Outside Mini scope."
+    },
+    {
+      "path": "app/Services/CompanyMemberService.php",
+      "reason": "No company/member scope in Mini."
+    },
+    {
+      "path": "app/Models/Traits/Filterable.php",
+      "reason": "Parent trait is coupled to global request(), relation groups, custom helpers and parent sort/pagy stack; Mini keeps explicit request/query ownership."
+    },
+    {
+      "path": "app/Repositories/BaseRepositoryInterface.php",
+      "reason": "Parent interface includes company-aware pagination contracts not owned by Mini."
+    }
+  ]
+}

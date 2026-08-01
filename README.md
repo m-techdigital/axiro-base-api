@@ -72,3 +72,7 @@ Mini API mirrors the AXIRO parent foundation conventions for contracts, requests
 ## Deep parent foundation
 
 Xem `docs/canonical/DEEP_PARENT_FOUNDATION.md`. API Mini giữ FormRequest, error envelope, correlation context và password policy canonical nhưng không thêm multi-tenant hoặc domain nặng ngoài phạm vi.
+
+## AXIRO parent source alignment
+
+Mini API remains a bounded single-admin / multi-customer system. Parent foundations are copied only when dependency-closed and domain-neutral. Query helpers and repositories that differ from the parent are documented as Mini-owned bounded abstractions in `docs/canonical/parent-base-provenance.json`.
