@@ -21,3 +21,8 @@ This API base must preserve the AXIRO response envelope, `/api/v1` routing, Form
 
 Development merge is acceptable for the API base. Do not port parent accounting, report, RBAC, company, project, department, reservation, or inventory code into this base unless a future product explicitly changes the base boundary.
 
+## Cleanup Note
+
+- Removed local PHPUnit cache output `.phpunit.result.cache`; it is generated output and should not be committed.
+- No source, migration, route, or test file was removed during cleanup.
+- Keep future runtime/test cache files out of Git.
