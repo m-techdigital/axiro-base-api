@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AuditLog;
+use App\Models\Transaction;
 use App\Support\AuditPayloadSanitizer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -14,9 +15,12 @@ class AuditTrailService
     public function log(array $payload): ?AuditLog
     {
         try {
-            if (!Schema::hasTable('audit_logs')) return null;
+            if (! Schema::hasTable('audit_logs')) {
+                return null;
+            }
             $request = request();
             [$actorType, $actorId] = $this->actor();
+
             return AuditLog::query()->create([
                 'audit_type' => $payload['audit_type'] ?? 'business_trail',
                 'event_type' => $payload['event_type'] ?? 'changed',
@@ -45,6 +49,7 @@ class AuditTrailService
             ]);
         } catch (\Throwable $exception) {
             report($exception);
+
             return null;
         }
     }
@@ -54,6 +59,7 @@ class AuditTrailService
         [$contextType, $contextId] = $this->contextFor($model);
         $entityType = Str::snake(class_basename($model));
         $changedFields = array_values(array_unique(array_merge(array_keys($old), array_keys($new))));
+
         return $this->log([
             'audit_type' => 'business_trail',
             'event_type' => $event,
@@ -99,31 +105,51 @@ class AuditTrailService
 
     public function actor(): array
     {
-        if (auth('api')->check()) return ['admin', auth('api')->id()];
-        if (auth('customer_api')->check()) return ['customer', auth('customer_api')->id()];
+        if (auth('api')->check()) {
+            return ['admin', auth('api')->id()];
+        }
+        if (auth('customer_api')->check()) {
+            return ['customer', auth('customer_api')->id()];
+        }
+
         return [app()->runningInConsole() ? 'system' : 'guest', null];
     }
 
     private function contextFor(Model $model): array
     {
-        if ($model->getAttribute('transaction_id')) return ['transaction', $model->getAttribute('transaction_id')];
-        if ($model instanceof \App\Models\Transaction) return ['transaction', $model->getKey()];
-        if ($model->getAttribute('listing_id')) return ['product_listing', $model->getAttribute('listing_id')];
-        if ($model->getAttribute('product_id')) return ['product', $model->getAttribute('product_id')];
+        if ($model->getAttribute('transaction_id')) {
+            return ['transaction', $model->getAttribute('transaction_id')];
+        }
+        if ($model instanceof Transaction) {
+            return ['transaction', $model->getKey()];
+        }
+        if ($model->getAttribute('product_id')) {
+            return ['product', $model->getAttribute('product_id')];
+        }
+        if ($model->getAttribute('product_id')) {
+            return ['product', $model->getAttribute('product_id')];
+        }
+
         return [null, null];
     }
 
     private function riskLevel(array $payload): string
     {
         $event = $payload['event_type'] ?? '';
-        if (str_contains($event, 'delete') || str_contains($event, 'reject') || str_contains($event, 'cancel') || str_contains($event, 'dispute')) return 'high';
-        if (($payload['status_code'] ?? 200) >= 400) return 'warning';
+        if (str_contains($event, 'delete') || str_contains($event, 'reject') || str_contains($event, 'cancel') || str_contains($event, 'dispute')) {
+            return 'high';
+        }
+        if (($payload['status_code'] ?? 200) >= 400) {
+            return 'warning';
+        }
+
         return 'normal';
     }
 
     private function eventTitle(string $entityType, string $event): string
     {
         $labels = ['created' => 'được tạo', 'updated' => 'được cập nhật', 'deleted' => 'bị xóa', 'restored' => 'được khôi phục'];
+
         return Str::headline($entityType).' '.($labels[$event] ?? $event);
     }
 
@@ -131,6 +157,7 @@ class AuditTrailService
     {
         $code = $model->getAttribute('code') ?: $model->getKey();
         $suffix = $fields ? ' Các trường thay đổi: '.implode(', ', $fields).'.' : '';
+
         return sprintf('%s #%s %s.%s', class_basename($model), $code, $event, $suffix);
     }
 }

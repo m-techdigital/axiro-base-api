@@ -60,5 +60,4 @@ class MarketplaceWalletDefaultsRegressionTest extends TestCase
         $this->assertDatabaseHas('wallet_transactions', ['idempotency_key' => 'transfer:test:debit']);
         $this->assertDatabaseHas('wallet_transactions', ['idempotency_key' => 'transfer:test:credit']);
     }
-
 }

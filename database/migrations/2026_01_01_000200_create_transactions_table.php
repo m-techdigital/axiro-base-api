@@ -1,15 +1,18 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-return new class extends Migration {
-    public function up(): void {
+
+return new class extends Migration
+{
+    public function up(): void
+    {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->string('code', 50)->unique();
             $table->string('transaction_type', 20)->index();
             $table->string('purchase_mode', 20)->default('full')->index();
-            $table->foreignId('listing_id')->nullable()->constrained('product_listings')->restrictOnDelete();
             $table->foreignId('product_id')->constrained()->restrictOnDelete();
             $table->foreignId('buyer_customer_id')->constrained('customers')->restrictOnDelete();
             $table->foreignId('seller_customer_id')->constrained('customers')->restrictOnDelete();
@@ -51,5 +54,9 @@ return new class extends Migration {
             $table->index(['seller_customer_id', 'status']);
         });
     }
-    public function down(): void { Schema::dropIfExists('transactions'); }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('transactions');
+    }
 };

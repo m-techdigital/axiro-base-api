@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\AuditLog;
 use App\Models\Customer;
-use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -34,8 +33,8 @@ class AuditAndValidationContractTest extends TestCase
         $user = User::factory()->create(['username' => 'admin', 'password' => 'password']);
         $token = auth('api')->login($user);
         $this->withHeader('Authorization', 'Bearer '.$token)->postJson('/api/v1/products', [
-            'code' => 'AUD-001', 'name' => 'Sản phẩm kiểm tra', 'product_type' => 'game_account',
-            'status' => 'active', 'price' => 100000,
+            'code' => 'AUD-001', 'name' => 'Sản phẩm kiểm tra', 'product_type' => 'game_account', 'game_code' => 'ninja_school', 'offer_modes' => ['sell'],
+            'status' => 'active', 'sale_price' => 100000,
         ])->assertCreated();
 
         $this->assertDatabaseHas('audit_logs', ['audit_type' => 'business_trail', 'event_type' => 'created', 'entity_type' => 'product']);

@@ -5,9 +5,9 @@ namespace Tests\Feature;
 use App\Models\Customer;
 use App\Models\MarketplaceDispute;
 use App\Models\MarketplaceNotification;
-use App\Models\TransactionCheckpoint;
-use App\Models\ProductListing;
+use App\Models\Product;
 use App\Models\Transaction;
+use App\Models\TransactionCheckpoint;
 use App\Models\TransactionPayment;
 use App\Models\WalletTransaction;
 use Database\Seeders\DatabaseSeeder;
@@ -28,9 +28,9 @@ class MarketplaceDemoDataTest extends TestCase
         $this->assertDatabaseHas('customers', ['username' => 'lessor', 'status' => 'active']);
         $this->assertDatabaseHas('customers', ['username' => 'dispute', 'status' => 'active']);
 
-        $this->assertSame(2, ProductListing::query()->where('status', 'published')->count());
-        $this->assertDatabaseHas('product_listings', ['code' => 'LST-AVA-0701', 'status' => 'pending_review']);
-        $this->assertDatabaseHas('product_listings', ['code' => 'LST-NSO-0801', 'status' => 'rejected']);
+        $this->assertSame(2, Product::query()->where('approval_status', 'approved')->where('is_published', true)->count());
+        $this->assertDatabaseHas('products', ['code' => 'AVA-0701', 'approval_status' => 'pending', 'is_published' => false]);
+        $this->assertDatabaseHas('products', ['code' => 'NSO-0801', 'approval_status' => 'rejected', 'is_published' => false]);
 
         $installment = Transaction::query()->where('code', 'TRX-DEMO-INSTALLMENT')->firstOrFail();
         $this->assertSame('partially_paid', $installment->status);

@@ -30,8 +30,11 @@ class BaseWorkflowTest extends TestCase
         $product = $this->postJson('/api/v1/products', [
             'code' => 'P-001',
             'name' => 'Product',
+            'product_type' => 'game_account',
+            'game_code' => 'ninja_school',
+            'offer_modes' => ['sell'],
             'status' => 'active',
-            'price' => 100,
+            'sale_price' => 100,
         ], $headers)->assertCreated()->json('data');
 
         $transaction = $this->postJson('/api/v1/transactions', [
@@ -43,7 +46,7 @@ class BaseWorkflowTest extends TestCase
             'transaction_value' => 100,
             'service_fee' => 10,
             'discount' => 5,
-            'deposit_amount' => 0,
+            'sale_deposit_amount' => 0,
             'paid_amount' => 0,
             'transaction_date' => '2026-07-29',
             'status' => 'pending_payment',

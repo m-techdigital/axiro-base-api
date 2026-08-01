@@ -1,9 +1,13 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-return new class extends Migration {
-    public function up(): void {
+
+return new class extends Migration
+{
+    public function up(): void
+    {
         Schema::create('marketplace_fee_policies', function (Blueprint $table) {
             $table->id();
             $table->string('code', 50)->unique();
@@ -75,16 +79,18 @@ return new class extends Migration {
             $table->unique(['transaction_id', 'stage', 'actor_type', 'actor_id'], 'asset_snapshot_actor_unique');
         });
     }
-    public function down(): void {
+
+    public function down(): void
+    {
         Schema::dropIfExists('transaction_asset_snapshots');
         Schema::dropIfExists('marketplace_platform_ledger_entries');
         Schema::dropIfExists('marketplace_case_messages');
         Schema::table('marketplace_disputes', function (Blueprint $table) {
             $table->dropForeign(['assigned_to']);
-            $table->dropColumn(['case_type','priority','assigned_to','due_at','last_message_at']);
+            $table->dropColumn(['case_type', 'priority', 'assigned_to', 'due_at', 'last_message_at']);
         });
         Schema::table('transactions', function (Blueprint $table) {
-            $table->dropColumn(['buyer_fee_amount','seller_fee_amount','tax_amount','seller_net_amount','fee_policy_version','fee_snapshot']);
+            $table->dropColumn(['buyer_fee_amount', 'seller_fee_amount', 'tax_amount', 'seller_net_amount', 'fee_policy_version', 'fee_snapshot']);
         });
         Schema::dropIfExists('marketplace_fee_policies');
     }

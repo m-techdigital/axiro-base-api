@@ -10,6 +10,7 @@ class WalletLedgerEntryResource extends ApiResource
     {
         $before = $this->balance_bucket === 'held' ? $this->held_before : $this->available_before;
         $after = $this->balance_bucket === 'held' ? $this->held_after : $this->available_after;
+
         return [
             'id' => $this->id,
             'type' => $this->type,

@@ -1,0 +1,49 @@
+{
+  "version": "2026-08-02",
+  "parent_sources": {
+    "admin": "mylands-admin-develop-20260801-d0af27d9.zip",
+    "api": "mylands-api-develop-20260801-98fe973.zip"
+  },
+  "product": {
+    "shared": [
+      "product_type",
+      "offer_modes:sell,rent",
+      "approval_status",
+      "is_published",
+      "availability_status",
+      "selection_context",
+      "hold_history_version"
+    ],
+    "mini_specific": [
+      "game_code",
+      "server_name",
+      "level",
+      "installment_enabled",
+      "installment_terms",
+      "rental_rates",
+      "customer_owner"
+    ],
+    "excluded": [
+      "company_id",
+      "project_id",
+      "assigned_to",
+      "crm_reservation",
+      "accounting",
+      "reports",
+      "hr_payroll"
+    ]
+  },
+  "classification": [
+    "exact_source",
+    "mechanical_conversion",
+    "bounded_adapter",
+    "mini_bounded",
+    "deferred",
+    "excluded"
+  ],
+  "required_checks": {
+    "admin": ["format", "source-closure", "check-all", "lint", "build"],
+    "api": ["pint", "php-l", "migrate-fresh-seed", "targeted-tests", "integrity", "full-tests"],
+    "mbn": ["format", "base-first", "api-contract", "check-all", "lint", "build"]
+  }
+}

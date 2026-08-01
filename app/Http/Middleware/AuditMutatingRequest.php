@@ -20,8 +20,12 @@ class AuditMutatingRequest
 
     public function terminate(Request $request, Response $response): void
     {
-        if (!in_array($request->method(), self::METHODS, true) || $response->getStatusCode() === 422) return;
-        if (Str::is(['api/v1/login', 'api/v1/refresh', 'api/v1/auth/customer/login', 'api/v1/auth/customer/refresh'], trim($request->path(), '/'))) return;
+        if (! in_array($request->method(), self::METHODS, true) || $response->getStatusCode() === 422) {
+            return;
+        }
+        if (Str::is(['api/v1/login', 'api/v1/refresh', 'api/v1/auth/customer/login', 'api/v1/auth/customer/refresh'], trim($request->path(), '/'))) {
+            return;
+        }
         $started = (float) $request->attributes->get('audit_started_at', microtime(true));
         app(AuditTrailService::class)->log([
             'audit_type' => 'system_operation',

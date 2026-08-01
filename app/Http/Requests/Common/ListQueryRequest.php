@@ -29,7 +29,9 @@ class ListQueryRequest extends ApiFormRequest
         return [
             'keyword' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'string', 'max:100'],
-            'listing_type' => ['nullable', 'string', 'max:100'],
+            'product_type' => ['nullable', 'string', 'max:100'],
+            'offer_mode' => ['nullable', 'in:sell,rent,installment'],
+            'transaction_type' => ['nullable', 'string', 'max:100'],
             'type' => ['nullable', 'string', 'max:100'],
             'payment_type' => ['nullable', 'string', 'max:100'],
             'priority' => ['nullable', 'string', 'max:100'],

@@ -50,6 +50,7 @@ class ParentDependencyClosureContractTest extends TestCase
 
             if (str_ends_with($path, '.php')) {
                 $this->assertFileDoesNotExist($absolutePath);
+
                 continue;
             }
 

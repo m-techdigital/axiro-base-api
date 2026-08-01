@@ -3,12 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Customer;
-use App\Models\CustomerWallet;
 use App\Models\CustomerRefreshToken;
+use App\Models\CustomerWallet;
 use App\Services\Auth\CustomerTwoFactorService;
 use App\Support\RefreshTokenCookie;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -133,6 +133,7 @@ class CustomerAuthenticationHardeningTest extends TestCase
         $this->assertSame('strict', $cookie->getSameSite());
         $this->assertSame('/', $cookie->getPath());
     }
+
     public function test_customer_session_survives_a_fresh_page_bootstrap_via_cookie_refresh(): void
     {
         $customer = Customer::create([
@@ -204,5 +205,4 @@ class CustomerAuthenticationHardeningTest extends TestCase
         $this->assertTrue($cookie->isHttpOnly());
         $this->assertSame('none', $cookie->getSameSite());
     }
-
 }

@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class PruneAuditLogs extends Command
 {
     protected $signature = 'audit:prune {--dry-run : Chỉ thống kê, không xóa dữ liệu}';
+
     protected $description = 'Xóa nhật ký đã hết thời hạn lưu giữ theo cấu hình';
 
     public function handle(): int
@@ -21,11 +22,13 @@ class PruneAuditLogs extends Command
 
         if ($this->option('dry-run')) {
             $this->info("Có {$count} nhật ký đủ điều kiện xóa.");
+
             return self::SUCCESS;
         }
 
         $deleted = $general->delete() + $validation->delete();
         $this->info("Đã xóa {$deleted} nhật ký hết thời hạn lưu giữ.");
+
         return self::SUCCESS;
     }
 }

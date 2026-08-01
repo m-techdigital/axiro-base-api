@@ -2,98 +2,63 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ProductListing;
+use App\Enums\ProductSelectionContext;
+use App\Models\Product;
+use App\Services\ProductSelectionService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class MarketplaceController extends Controller
 {
+    public function __construct(private ProductSelectionService $selection) {}
+
     public function index(Request $request)
     {
-        $query = ProductListing::query()
-            ->with(['product', 'owner:id,code,name,avatar_url', 'rentalRates'])
-            ->where('status', 'published');
-
-        if ($request->filled('listing_type')) {
-            $query->where('listing_type', $request->string('listing_type'));
+        $mode = $request->input('offer_mode') ?? $request->input('transaction_type');
+        $mode = match ($mode) {
+            'sale', 'purchase' => 'sell', 'rental' => 'rent', 'installment' => 'sell', default => $mode
+        };
+        $query = $this->selection->apply(Product::with(['owner:id,code,name,avatar_url', 'rentalRates', 'offerModes']), ProductSelectionContext::PUBLIC_MARKETPLACE, $mode);
+        if ($request->input('transaction_type') === 'installment') {
+            $query->where('installment_enabled', true);
         }
-
         if ($request->filled('product_type')) {
-            $productType = $request->string('product_type')->toString();
-            $query->whereHas('product', fn (Builder $product) => $product
-                ->where('product_type', $productType)
-                ->orWhere('game_code', $productType));
+            $query->where('product_type', $request->string('product_type'));
         }
-
         if ($request->filled('game_code')) {
-            $query->whereHas('product', fn (Builder $product) => $product
-                ->where('game_code', $request->string('game_code')));
+            $query->where('game_code', $request->string('game_code'));
         }
-
-        if ($request->filled('code')) {
-            $query->where('code', 'like', '%'.$request->string('code').'%');
-        }
-
-        if ($request->filled('username')) {
-            $identity = $request->string('username')->toString();
-            $query->whereHas('product', fn (Builder $product) => $product
-                ->where('name', 'like', "%{$identity}%")
-                ->orWhere('code', 'like', "%{$identity}%")
-                ->orWhere('attributes->character_name', 'like', "%{$identity}%"));
-        }
-
         if ($request->filled('keyword')) {
             $keyword = $request->string('keyword')->toString();
-            $query->where(fn (Builder $listing) => $listing
-                ->where('title', 'like', "%{$keyword}%")
-                ->orWhere('code', 'like', "%{$keyword}%")
-                ->orWhereHas('product', fn (Builder $product) => $product
-                    ->where('name', 'like', "%{$keyword}%")));
+            $query->where(fn (Builder $q) => $q->where('name', 'like', "%{$keyword}%")->orWhere('code', 'like', "%{$keyword}%")->orWhere('server_name', 'like', "%{$keyword}%"));
         }
-
         if ($request->filled('price')) {
             $price = preg_replace('/[^0-9]/', '', $request->string('price')->toString());
             if ($price !== '') {
-                $query->where(fn (Builder $listing) => $listing
-                    ->where('sale_price', '<=', (int) $price)
-                    ->orWhere('rental_price', '<=', (int) $price));
+                $query->where(fn (Builder $q) => $q->where('sale_price', '<=', (int) $price)->orWhere('rental_price', '<=', (int) $price));
             }
         }
-
         if ($request->filled('level')) {
-            $query->whereHas('product', fn (Builder $product) => $product
-                ->where('level', 'like', '%'.$request->string('level').'%'));
+            $query->where('level', 'like', '%'.$request->string('level').'%');
         }
-
         if ($request->filled('server')) {
-            $query->whereHas('product', fn (Builder $product) => $product
-                ->where('server_name', 'like', '%'.$request->string('server').'%'));
+            $query->where('server_name', 'like', '%'.$request->string('server').'%');
         }
-
         foreach (['class', 'planet', 'land', 'sex'] as $attribute) {
             if ($request->filled($attribute)) {
-                $query->whereHas('product', fn (Builder $product) => $product
-                    ->where("attributes->{$attribute}", $request->string($attribute)->toString()));
+                $query->where("attributes->{$attribute}", $request->string($attribute)->toString());
             }
         }
 
-        $perPage = max(1, min($request->integer('per_page', 20), 60));
-
-        return success_response($query->latest('id')->paginate($perPage));
+        return success_response($query->latest('id')->paginate(max(1, min($request->integer('per_page', 20), 60))));
     }
 
-    public function show(string $listingCode)
+    public function show(string $productCode)
     {
-        $listing = ProductListing::query()
-            ->where('code', $listingCode)
-            ->orWhere('id', $listingCode)
-            ->firstOrFail();
+        $product = Product::where('code', $productCode)->orWhere('id', $productCode)->firstOrFail();
+        $isOwner = auth('customer_api')->id() === $product->owner_customer_id;
+        abort_unless(($product->approval_status === 'approved' && $product->is_published) || $isOwner, 404);
 
-        abort_unless(
-            in_array($listing->status, ['published', 'reserved'], true) || auth('customer_api')->id() === $listing->owner_customer_id,
-            404
-        );
-
-        return success_response($listing->load(['product', 'owner:id,code,name,avatar_url', 'rentalRates']));
+        return success_response($product->load(['owner:id,code,name,avatar_url', 'rentalRates', 'offerModes']));
     }
 }

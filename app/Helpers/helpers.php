@@ -38,6 +38,6 @@ if (! function_exists('pagy_success_response')) {
 if (! function_exists('error_response')) {
     function error_response(string $message = 'Không thể xử lý yêu cầu.', mixed $errors = null, int $code = 400): JsonResponse
     {
-        return ApiResponse::error($message,$errors,$code);
+        return ApiResponse::error($message, $errors, $code);
     }
 }

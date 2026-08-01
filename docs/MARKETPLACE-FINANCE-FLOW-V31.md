@@ -55,7 +55,7 @@ Customer tạo `deposit_request`. Admin xác nhận mới phát sinh một bút 
 
 ## Cho thuê
 
-Tin cho thuê có nhiều `listing_rental_rates`, ví dụ 6 giờ, 1 ngày, 3 ngày, 1 tuần.
+Sản phẩm cho thuê có nhiều `product_rental_rates`, ví dụ 6 giờ, 1 ngày, 3 ngày, 1 tuần.
 
 Mỗi gói có:
 

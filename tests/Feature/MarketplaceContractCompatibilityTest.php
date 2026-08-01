@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Support\MarketplaceContract;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class MarketplaceContractCompatibilityTest extends TestCase
@@ -39,11 +39,13 @@ class MarketplaceContractCompatibilityTest extends TestCase
         $this->assertContains('POST /wallet-deposits/{walletTransaction}/confirm', $contract['admin_endpoints']);
         $this->assertContains('POST /customer/documents/{generatedDocument}/accept', $contract['customer_endpoints']);
     }
+
     public function test_declared_endpoints_exist_in_laravel_router(): void
     {
         $contract = json_decode((string) file_get_contents(resource_path('contracts/marketplace-contract.json')), true);
         $routes = collect(app('router')->getRoutes()->getRoutes())->flatMap(function ($route) {
             $uri = '/'.preg_replace('#^api/v1/?#', '', $route->uri());
+
             return collect($route->methods())->reject(fn ($method) => $method === 'HEAD')->map(fn ($method) => $method.' '.$uri);
         })->values();
 
@@ -54,5 +56,4 @@ class MarketplaceContractCompatibilityTest extends TestCase
             $this->assertContains($normalize($declared), $normalizedRoutes, 'Missing declared route: '.$declared);
         }
     }
-
 }

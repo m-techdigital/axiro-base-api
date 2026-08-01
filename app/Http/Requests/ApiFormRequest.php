@@ -9,7 +9,10 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 abstract class ApiFormRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool
+    {
+        return true;
+    }
 
     protected function failedValidation(Validator $validator): void
     {

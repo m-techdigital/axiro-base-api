@@ -1,5 +1,7 @@
 <?php
+
 $origins = array_filter(array_map('trim', explode(',', (string) env('FRONTEND_URLS', env('FRONTEND_URL', 'http://127.0.0.1:5173,http://127.0.0.1:5174')))));
+
 return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
     'allowed_methods' => ['*'],

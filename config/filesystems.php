@@ -17,7 +17,7 @@ return [
             'root' => storage_path('app/public'),
 
             // 👇 sửa chỗ này cho chuẩn
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/') . '/storage',
+            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
 
             'visibility' => 'public',
             'throw' => false,

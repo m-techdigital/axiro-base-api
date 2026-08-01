@@ -12,9 +12,13 @@ trait TracksAuditHistory
         static::updated(function ($model) {
             $changes = $model->getChanges();
             unset($changes['updated_at']);
-            if ($changes === []) return;
+            if ($changes === []) {
+                return;
+            }
             $old = [];
-            foreach (array_keys($changes) as $field) $old[$field] = $model->getOriginal($field);
+            foreach (array_keys($changes) as $field) {
+                $old[$field] = $model->getOriginal($field);
+            }
             app(AuditTrailService::class)->modelChanged($model, 'updated', $old, $changes);
         });
         static::deleted(fn ($model) => app(AuditTrailService::class)->modelChanged($model, 'deleted', $model->getAttributes(), []));

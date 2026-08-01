@@ -2,7 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\{Customer,MarketplaceDispute,Product,ProductListing,Transaction,WalletTransaction};
+use App\Models\Customer;
+use App\Models\MarketplaceDispute;
+use App\Models\Product;
+use App\Models\Transaction;
+use App\Models\WalletTransaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -70,16 +74,16 @@ class CustomerSupportAndWalletTest extends TestCase
             'product_type' => 'game_account',
             'game_code' => 'ninja_school',
             'status' => 'active',
-            'price' => '100000.00',
+            'sale_price' => '100000.00',
             'owner_customer_id' => $seller->id,
         ]);
-        $listing = ProductListing::create([
+        $listing = Product::create([
             'code' => 'LST-CASE-TEST',
             'product_id' => $product->id,
             'owner_customer_id' => $seller->id,
-            'listing_type' => 'sale',
-            'status' => 'published',
-            'title' => 'Tin đăng kiểm thử hỗ trợ',
+            'approval_status' => 'approved', 'is_published' => true,
+            'status' => 'active', 'approval_status' => 'approved', 'is_published' => true, 'availability_status' => 'available',
+            'name' => 'Tin đăng kiểm thử hỗ trợ',
             'sale_price' => '100000.00',
             'published_at' => now(),
         ]);
@@ -87,8 +91,7 @@ class CustomerSupportAndWalletTest extends TestCase
             'code' => 'TRX-CASE-TEST',
             'transaction_type' => 'purchase',
             'purchase_mode' => 'full',
-            'listing_id' => $listing->id,
-            'product_id' => $product->id,
+            'product_id' => $listing->id,
             'buyer_customer_id' => $buyer->id,
             'seller_customer_id' => $seller->id,
             'transaction_value' => '100000.00',

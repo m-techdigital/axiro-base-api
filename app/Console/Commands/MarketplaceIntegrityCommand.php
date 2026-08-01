@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Product;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -44,14 +45,7 @@ class MarketplaceIntegrityCommand extends Command
                 ->havingRaw('COUNT(*) > 1')
                 ->get()
                 ->count()),
-            $this->countCheck('published_listing_inactive_product', 'Tin đã xuất bản nhưng sản phẩm không hoạt động', 'product_listings', fn () => DB::table('product_listings')
-                ->join('products', 'products.id', '=', 'product_listings.product_id')
-                ->where('product_listings.status', 'published')
-                ->whereNull('product_listings.deleted_at')
-                ->where(function ($query): void {
-                    $query->where('products.status', '!=', 'active')->orWhereNotNull('products.deleted_at');
-                })
-                ->count(), [], ['products']),
+            $this->countCheck('published_product_without_offer', 'Sản phẩm đã xuất bản nhưng không có mục đích giao dịch', 'products', fn () => DB::table('products')->where('is_published', true)->whereNotExists(fn ($q) => $q->selectRaw('1')->from('model_offer_modes')->whereColumn('model_offer_modes.model_id', 'products.id')->where('model_offer_modes.model_type', Product::class))->count()),
         ];
 
         $failures = collect($checks)->where('count', '>', 0)->values();

@@ -36,3 +36,7 @@ AXIRO cha phải được kiểm tra trước khi thêm foundation. Nếu cha kh
 ## Parent-source rule
 
 Do not import parent company, RBAC, project, accounting or report dependencies into Mini foundation code. Every shared abstraction must be identified as an exact source, parent pattern, Mini-bounded owner or explicit exclusion.
+
+## Mandatory parent-first workflow
+
+Before changing architecture, base components, CSS, hooks, Product, Transaction, payment, availability, documents, migrations or API contracts, read `docs/canonical/PARENT_FIRST_DEVELOPMENT_POLICY.md` and update `docs/canonical/parent-integration-matrix.json` when the parent source or integration decision changes. Do not start implementation until the parent owner, dependencies, consumers, tests and integration classification are recorded.

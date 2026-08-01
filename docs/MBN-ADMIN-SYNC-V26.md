@@ -2,7 +2,7 @@
 
 ## Nguồn chuẩn
 
-Các vòng đời Customer, Product Listing, Transaction, Payment, Contract và Dispute được rút gọn từ AXIRO cha. AXIRO Mini API là chủ sở hữu duy nhất của trạng thái; MBN và Admin chỉ gửi hành động hợp lệ và đọc lại dữ liệu sau khi xử lý.
+Các vòng đời Customer, Product, Transaction, Payment, Generated Document và Dispute được rút gọn từ AXIRO cha. AXIRO Mini API là chủ sở hữu duy nhất của trạng thái; MBN và Admin chỉ gửi hành động hợp lệ và đọc lại dữ liệu sau khi xử lý.
 
 ## Mốc xác nhận hai phía
 
@@ -40,4 +40,4 @@ Mỗi mốc được lưu tại `transaction_checkpoints`, đồng thời ghi `t
 - `POST /api/v1/customer/notifications/{notification}/read`
 - `POST /api/v1/customer/notifications/read-all`
 
-Thông báo được tạo khi tin đăng được duyệt/từ chối, giao dịch được tạo, thanh toán được gửi/xác nhận/từ chối, bàn giao/hoàn trả thay đổi, tranh chấp được mở/xử lý hoặc quản trị viên can thiệp.
+Thông báo được tạo khi sản phẩm được duyệt/từ chối, giao dịch được tạo, thanh toán được gửi/xác nhận/từ chối, bàn giao/hoàn trả thay đổi, tranh chấp được mở/xử lý hoặc quản trị viên can thiệp.

@@ -24,7 +24,7 @@ class MarketplaceDocumentTemplateValidator
         'refund_settlement' => ['{{refunded_amount}}', '{{refund_reason}}'],
         'completion_minutes' => ['{{completed_at}}', '{{status}}'],
         'security_checklist' => ['{{product_security_state}}', '{{handover_time}}'],
-        'platform_transaction_record' => ['{{listing_code}}', '{{transaction_type}}', '{{purchase_mode}}'],
+        'platform_transaction_record' => ['{{product_code}}', '{{product_type}}', '{{transaction_type}}', '{{purchase_mode}}'],
     ];
 
     public function validateOrFail(string $type, string $html): void
@@ -34,7 +34,9 @@ class MarketplaceDocumentTemplateValidator
             $errors[] = 'Nội dung mẫu quá ngắn; cần có đầy đủ phạm vi, thông tin các bên, nghĩa vụ, xử lý vi phạm và xác nhận.';
         }
         foreach (array_unique([...self::REQUIRED_COMMON, ...(self::REQUIRED_BY_TYPE[$type] ?? [])]) as $field) {
-            if (!str_contains($html, $field)) $errors[] = "Thiếu trường trộn bắt buộc {$field}.";
+            if (! str_contains($html, $field)) {
+                $errors[] = "Thiếu trường trộn bắt buộc {$field}.";
+            }
         }
         $plain = mb_strtolower(preg_replace('/\s+/u', ' ', strip_tags($html)) ?? '');
         $requiredSections = [
@@ -48,10 +50,12 @@ class MarketplaceDocumentTemplateValidator
             'sửa đổi điều khoản' => ['/sửa đổi điều khoản/u', '/phiên bản áp dụng/u'],
         ];
         foreach ($requiredSections as $label => $patterns) {
-            if (!collect($patterns)->contains(fn (string $pattern) => preg_match($pattern, $plain) === 1)) {
+            if (! collect($patterns)->contains(fn (string $pattern) => preg_match($pattern, $plain) === 1)) {
                 $errors[] = "Thiếu nội dung bắt buộc liên quan đến {$label}.";
             }
         }
-        if ($errors) throw ValidationException::withMessages(['content_html' => $errors]);
+        if ($errors) {
+            throw ValidationException::withMessages(['content_html' => $errors]);
+        }
     }
 }

@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Customer;
 use App\Models\Product;
-use App\Models\ProductListing;
 use App\Models\Transaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -44,16 +43,16 @@ class MarketplaceMediaAndPrivacyTest extends TestCase
             'product_type' => 'game_account',
             'game_code' => 'ninja_school',
             'status' => 'active',
-            'price' => 100000,
+            'sale_price' => 100000,
             'owner_customer_id' => $seller->id,
         ]);
-        $listing = ProductListing::create([
+        $listing = Product::create([
             'code' => 'LST-PRIVACY-001',
             'product_id' => $product->id,
             'owner_customer_id' => $seller->id,
-            'listing_type' => 'sale',
-            'status' => 'published',
-            'title' => 'Tin kiểm tra quyền riêng tư',
+            'approval_status' => 'approved', 'is_published' => true,
+            'status' => 'active', 'approval_status' => 'approved', 'is_published' => true, 'availability_status' => 'available',
+            'name' => 'Tin kiểm tra quyền riêng tư',
             'sale_price' => 100000,
             'installment_interval_unit' => 'week',
             'installment_interval_count' => 1,
@@ -62,14 +61,13 @@ class MarketplaceMediaAndPrivacyTest extends TestCase
         $transaction = Transaction::create([
             'code' => 'TRX-PRIVACY-001',
             'transaction_type' => 'purchase',
-            'listing_id' => $listing->id,
-            'product_id' => $product->id,
+            'product_id' => $listing->id,
             'buyer_customer_id' => $buyer->id,
             'seller_customer_id' => $seller->id,
             'transaction_value' => 100000,
             'service_fee' => 0,
             'discount' => 0,
-            'deposit_amount' => 0,
+            'sale_deposit_amount' => 0,
             'total_payable' => 100000,
             'paid_amount' => 0,
             'status' => 'pending_payment',

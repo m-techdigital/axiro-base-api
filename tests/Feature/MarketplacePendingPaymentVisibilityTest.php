@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Customer;
 use App\Models\Product;
-use App\Models\ProductListing;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -25,25 +24,18 @@ class MarketplacePendingPaymentVisibilityTest extends TestCase
         return ['Authorization' => 'Bearer '.auth('api')->login($admin)];
     }
 
-    private function listing(Customer $seller): ProductListing
+    private function listing(Customer $seller): Product
     {
-        $product = Product::create([
+        return Product::create([
             'code' => 'NSO-PENDING-001',
             'name' => 'Ninja School Pending Payment',
             'product_type' => 'game_account',
             'game_code' => 'ninja_school',
+            'owner_customer_id' => $seller->id,
             'status' => 'active',
-            'price' => 500000,
-            'owner_customer_id' => $seller->id,
-        ]);
-
-        return ProductListing::create([
-            'code' => 'LST-PENDING-001',
-            'product_id' => $product->id,
-            'owner_customer_id' => $seller->id,
-            'listing_type' => 'sale',
-            'status' => 'published',
-            'title' => 'Tin chờ thanh toán',
+            'approval_status' => 'approved',
+            'is_published' => true,
+            'availability_status' => 'available',
             'sale_price' => 500000,
             'published_at' => now(),
         ]);
@@ -55,17 +47,17 @@ class MarketplacePendingPaymentVisibilityTest extends TestCase
         $seller = Customer::factory()->create();
         $listing = $this->listing($seller);
 
-        $transaction = $this->postJson('/api/v1/customer/listings/'.$listing->id.'/transact', [], $this->headers($buyer))
+        $transaction = $this->postJson('/api/v1/customer/products/'.$listing->id.'/transact', ['transaction_type' => 'sale'], $this->headers($buyer))
             ->assertCreated()
             ->assertJsonPath('data.status', 'pending_payment')
             ->json('data');
 
-        $this->assertDatabaseHas('product_listings', [
+        $this->assertDatabaseHas('products', [
             'id' => $listing->id,
-            'status' => 'published',
+            'status' => 'active', 'approval_status' => 'approved', 'is_published' => true, 'availability_status' => 'available',
         ]);
 
-        $this->getJson('/api/v1/marketplace/listings/'.$listing->code, $this->headers($buyer))
+        $this->getJson('/api/v1/marketplace/products/'.$listing->code, $this->headers($buyer))
             ->assertOk()
             ->assertJsonPath('data.code', $listing->code);
 
@@ -80,7 +72,7 @@ class MarketplacePendingPaymentVisibilityTest extends TestCase
         $seller = Customer::factory()->create();
         $listing = $this->listing($seller);
 
-        $transaction = $this->postJson('/api/v1/customer/listings/'.$listing->id.'/transact', [], $this->headers($buyer))
+        $transaction = $this->postJson('/api/v1/customer/products/'.$listing->id.'/transact', ['transaction_type' => 'sale'], $this->headers($buyer))
             ->assertCreated()
             ->json('data');
 
@@ -94,12 +86,12 @@ class MarketplacePendingPaymentVisibilityTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.status', 'confirmed');
 
-        $this->assertDatabaseHas('product_listings', [
+        $this->assertDatabaseHas('products', [
             'id' => $listing->id,
-            'status' => 'reserved',
+            'availability_status' => 'held',
         ]);
 
-        $this->getJson('/api/v1/marketplace/listings/'.$listing->code, $this->headers($buyer))
+        $this->getJson('/api/v1/marketplace/products/'.$listing->code, $this->headers($buyer))
             ->assertOk()
             ->assertJsonPath('data.code', $listing->code);
     }

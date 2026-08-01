@@ -160,8 +160,8 @@ class CustomerTwoFactorService
     }
 
     /**
-     * @param bool $persistRecoveryConsumption Set false only when the caller already holds a lock
-     *                                         and wants to defer persistence to a later update.
+     * @param  bool  $persistRecoveryConsumption  Set false only when the caller already holds a lock
+     *                                            and wants to defer persistence to a later update.
      */
     public function verifyForCustomer(
         Customer $customer,

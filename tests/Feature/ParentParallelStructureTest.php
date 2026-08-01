@@ -24,8 +24,8 @@ class ParentParallelStructureTest extends TestCase
         }
 
         $routes = file_get_contents(base_path('routes/api.php'));
-        $this->assertStringContainsString("api/auth.php", $routes);
-        $this->assertStringContainsString("api/customer.php", $routes);
-        $this->assertStringContainsString("api/admin.php", $routes);
+        $this->assertStringContainsString('api/auth.php', $routes);
+        $this->assertStringContainsString('api/customer.php', $routes);
+        $this->assertStringContainsString('api/admin.php', $routes);
     }
 }

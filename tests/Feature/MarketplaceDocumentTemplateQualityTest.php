@@ -18,6 +18,8 @@ class MarketplaceDocumentTemplateQualityTest extends TestCase
         $this->seed();
         $this->assertGreaterThanOrEqual(13, DocumentTemplate::query()->count());
         DocumentTemplate::query()->each(function (DocumentTemplate $template) {
+            $this->assertStringNotContainsString('{{listing_', $template->content_html, $template->code);
+            $this->assertStringNotContainsString('{{listing_type}}', $template->content_html, $template->code);
             $plain = strip_tags($template->content_html);
             $this->assertGreaterThan(500, mb_strlen($plain), $template->code);
             $this->assertStringContainsString('quyền và nghĩa vụ', mb_strtolower($plain));

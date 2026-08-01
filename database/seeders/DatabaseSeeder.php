@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\MarketplaceFeePolicy;
+use App\Models\MarketplacePaymentSetting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -19,6 +20,7 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
+        $this->call(OfferModeSeeder::class);
 
         $seedDemoData = filter_var(
             env('SEED_MARKETPLACE_DEMO', app()->environment(['local', 'testing'])),
@@ -29,7 +31,7 @@ class DatabaseSeeder extends Seeder
             return;
         }
 
-        \App\Models\MarketplacePaymentSetting::query()->firstOrCreate(
+        MarketplacePaymentSetting::query()->firstOrCreate(
             ['is_active' => true],
             [
                 'bank_id' => env('MARKETPLACE_BANK_ID', 'MB'),

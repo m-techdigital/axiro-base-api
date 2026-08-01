@@ -4,6 +4,7 @@ namespace App\Services\Auth;
 
 use App\Models\Customer;
 use App\Models\CustomerRefreshToken;
+use App\Models\CustomerWallet;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -23,7 +24,7 @@ class CustomerAuthService
                 'password' => $data['password'],
                 'status' => 'active',
             ]);
-            \App\Models\CustomerWallet::firstOrCreate(['customer_id' => $customer->id]);
+            CustomerWallet::firstOrCreate(['customer_id' => $customer->id]);
 
             return $this->issue($customer);
         });
@@ -39,11 +40,16 @@ class CustomerAuthService
         $customer = $guard->user();
         if ($customer->status !== 'active') {
             $guard->logout();
+
             return null;
         }
 
         if ($this->twoFactor->enabled($customer)) {
-            try { $guard->logout(); } catch (\Throwable) {}
+            try {
+                $guard->logout();
+            } catch (\Throwable) {
+            }
+
             return [
                 'two_factor_required' => true,
                 'challenge_token' => $this->twoFactor->issueChallenge($customer),
@@ -101,7 +107,10 @@ class CustomerAuthService
     public function logout(?string $refreshToken = null): void
     {
         $customer = $this->guard()->user();
-        try { $this->guard()->logout(); } catch (\Throwable) {}
+        try {
+            $this->guard()->logout();
+        } catch (\Throwable) {
+        }
 
         if (! $customer || ! $refreshToken) {
             return;

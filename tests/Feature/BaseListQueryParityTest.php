@@ -13,7 +13,7 @@ class BaseListQueryParityTest extends TestCase
         $request = file_get_contents(app_path('Http/Requests/Common/ListQueryRequest.php'));
         $trait = file_get_contents(app_path('Support/Query/AppliesListQuery.php'));
 
-        foreach (['keyword', 'status', 'listing_type', 'payment_type', 'transaction_id', 'customer_id', 'date_from', 'date_to', 'sort_by', 'sort_direction', 'per_page'] as $field) {
+        foreach (['keyword', 'status', 'product_type', 'offer_mode', 'payment_type', 'transaction_id', 'customer_id', 'date_from', 'date_to', 'sort_by', 'sort_direction', 'per_page'] as $field) {
             $this->assertStringContainsString("'{$field}'", $request);
         }
 

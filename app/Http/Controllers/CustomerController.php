@@ -44,7 +44,7 @@ class CustomerController extends Controller
     public function show(Customer $customer)
     {
         return ApiResponse::success(
-            $customer->load(['wallet', 'products', 'listings']),
+            $customer->load(['wallet', 'products']),
         );
     }
 

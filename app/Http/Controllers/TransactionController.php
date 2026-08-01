@@ -20,7 +20,7 @@ class TransactionController extends Controller
         $query = $this->applyListFilters(
             Transaction::with([
                 'product',
-                'listing.rentalRates',
+                'product.rentalRates',
                 'buyer:id,code,name',
                 'seller:id,code,name',
                 'contract',
@@ -42,7 +42,7 @@ class TransactionController extends Controller
         return ApiResponse::success(
             $transaction->load([
                 'product',
-                'listing.rentalRates',
+                'product.rentalRates',
                 'buyer:id,code,name',
                 'seller:id,code,name',
             ]),
@@ -55,7 +55,7 @@ class TransactionController extends Controller
     {
         $loaded = $transaction->load([
             'product',
-            'listing.rentalRates',
+            'product.rentalRates',
             'buyer:id,code,name,avatar_url',
             'seller:id,code,name,avatar_url',
             'contract',
@@ -79,7 +79,7 @@ class TransactionController extends Controller
         return ApiResponse::success(
             $transaction->fresh()->load([
                 'product',
-                'listing.rentalRates',
+                'product.rentalRates',
                 'buyer:id,code,name',
                 'seller:id,code,name',
             ]),

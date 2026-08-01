@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Customer;
 use App\Models\Product;
-use App\Models\ProductListing;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -35,25 +34,26 @@ class MarketplaceWorkflowTest extends TestCase
             'product_type' => 'game_account',
             'game_code' => 'ninja_school',
             'status' => 'active',
-            'price' => 900000,
+            'sale_price' => 900000,
             'owner_customer_id' => $seller->id,
         ]);
-        $listing = ProductListing::create([
+        $listing = Product::create([
             'code' => 'LST-NSO-1001',
             'product_id' => $product->id,
             'owner_customer_id' => $seller->id,
-            'listing_type' => 'sale',
-            'status' => 'published',
-            'title' => 'Bán Ninja School 1001',
+            'approval_status' => 'approved', 'is_published' => true,
+            'status' => 'active', 'approval_status' => 'approved', 'is_published' => true, 'availability_status' => 'available',
+            'name' => 'Bán Ninja School 1001',
             'sale_price' => 900000,
-            'deposit_amount' => 100000,
-            'allow_installment' => true,
+            'sale_deposit_amount' => 100000,
+            'installment_enabled' => true,
             'max_installment_count' => 3,
             'minimum_initial_payment' => 400000,
             'published_at' => now(),
         ]);
 
-        $transaction = $this->postJson('/api/v1/customer/listings/'.$listing->id.'/transact', [
+        $transaction = $this->postJson('/api/v1/customer/products/'.$listing->id.'/transact', [
+            'transaction_type' => 'sale',
             'purchase_mode' => 'installment',
             'initial_payment_amount' => 400000,
             'installment_count' => 3,
@@ -76,11 +76,11 @@ class MarketplaceWorkflowTest extends TestCase
 
         $this->postJson('/api/v1/customer/transactions/'.$transaction['id'].'/actions', [
             'action' => 'seller_handover',
-        ], $this->customerHeaders($seller))->assertOk()->assertJsonPath('data.status','handover_pending');
+        ], $this->customerHeaders($seller))->assertOk()->assertJsonPath('data.status', 'handover_pending');
 
         $this->postJson('/api/v1/customer/transactions/'.$transaction['id'].'/actions', [
             'action' => 'buyer_receive',
-        ], $this->customerHeaders($buyer))->assertOk()->assertJsonPath('data.status','handed_over');
+        ], $this->customerHeaders($buyer))->assertOk()->assertJsonPath('data.status', 'handed_over');
     }
 
     public function test_customer_can_open_dispute(): void
@@ -91,20 +91,20 @@ class MarketplaceWorkflowTest extends TestCase
             'code' => 'NSO-1002',
             'name' => 'Ninja School 1002',
             'status' => 'active',
-            'price' => 500000,
+            'sale_price' => 500000,
             'owner_customer_id' => $seller->id,
         ]);
-        $listing = ProductListing::create([
+        $listing = Product::create([
             'code' => 'LST-NSO-1002',
             'product_id' => $product->id,
             'owner_customer_id' => $seller->id,
-            'listing_type' => 'sale',
-            'status' => 'published',
-            'title' => 'Bán Ninja School 1002',
+            'approval_status' => 'approved', 'is_published' => true,
+            'status' => 'active', 'approval_status' => 'approved', 'is_published' => true, 'availability_status' => 'available',
+            'name' => 'Bán Ninja School 1002',
             'sale_price' => 500000,
             'published_at' => now(),
         ]);
-        $transactionId = $this->postJson('/api/v1/customer/listings/'.$listing->id.'/transact', [], $this->customerHeaders($buyer))
+        $transactionId = $this->postJson('/api/v1/customer/products/'.$listing->id.'/transact', ['transaction_type' => 'sale'], $this->customerHeaders($buyer))
             ->assertCreated()->json('data.id');
 
         $this->postJson('/api/v1/customer/transactions/'.$transactionId.'/disputes', [

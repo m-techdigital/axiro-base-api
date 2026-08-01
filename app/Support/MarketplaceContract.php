@@ -54,7 +54,7 @@ final class MarketplaceContract
             'api_version' => self::apiVersion(),
             'contract_version' => self::version(),
             'contract_hash' => self::hash(),
-            'marketplace' => (bool) ($contract['capabilities']['marketplace_listings'] ?? false),
+            'marketplace' => (bool) ($contract['capabilities']['marketplace_products'] ?? false),
             'customer_auth' => (bool) ($contract['capabilities']['customer_auth'] ?? false),
             'capabilities' => $contract['capabilities'],
         ];

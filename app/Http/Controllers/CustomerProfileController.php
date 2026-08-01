@@ -16,6 +16,7 @@ class CustomerProfileController extends Controller
             'avatar_url' => ['nullable', 'string', 'max:2048'],
         ]);
         $customer->update($data);
+
         return success_response($customer->fresh(), 'Đã cập nhật thông tin cá nhân.');
     }
 
@@ -32,6 +33,7 @@ class CustomerProfileController extends Controller
         $customer = auth('customer_api')->user();
         $uploaded = $service->storeMany([$data['avatar']], 'marketplace/customer-avatars')[0];
         $customer->update(['avatar_url' => $uploaded['url']]);
+
         return success_response($customer->fresh(), 'Đã cập nhật ảnh đại diện.');
     }
 }
