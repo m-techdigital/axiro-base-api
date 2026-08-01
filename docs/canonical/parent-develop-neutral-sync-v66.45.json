@@ -1,0 +1,53 @@
+{
+  "version": "v66.45",
+  "parent_snapshot": "mylands-api-develop-20260801-98fe973.zip",
+  "mini_baseline": "axiro-base-api-main-20260801.zip",
+  "exact_source": [
+    {
+      "target": "app/Support/AuditPayloadSanitizer.php",
+      "source": "app/Support/AuditPayloadSanitizer.php",
+      "sha256": "05725bb56f2dc418474247a19c5caf08b65617dd65c24af87f2047f287488f29"
+    },
+    {
+      "target": "app/Support/DatabaseExpressions.php",
+      "source": "app/Support/DatabaseExpressions.php",
+      "sha256": "9e4ce8dc68a55ec6f83f9a54d999b2eccb4687a53f6eb9b54094b35abeb3dc93"
+    }
+  ],
+  "bounded_adapters": [
+    {
+      "target": "app/Http/Requests/Common/DateRangeRequest.php",
+      "source": "app/Http/Requests/Common/DateRangeRequest.php",
+      "difference": "Extends Mini ApiFormRequest instead of parent BaseRequest to preserve Mini validation envelope."
+    },
+    {
+      "target": "app/Http/Requests/Common/OptionalNotesRequest.php",
+      "source": "app/Http/Requests/Common/OptionalNotesRequest.php",
+      "difference": "Extends Mini ApiFormRequest instead of parent BaseRequest to preserve Mini validation envelope."
+    },
+    {
+      "target": "app/Http/Requests/Common/RequiredNotesRequest.php",
+      "source": "app/Http/Requests/Common/RequiredNotesRequest.php",
+      "difference": "Extends Mini ApiFormRequest instead of parent BaseRequest to preserve Mini validation envelope."
+    },
+    {
+      "target": "app/Http/Requests/Common/ExportFiltersRequest.php",
+      "source": "app/Http/Requests/Common/ExportFiltersRequest.php",
+      "difference": "Extends Mini ApiFormRequest instead of parent BaseRequest to preserve Mini validation envelope."
+    }
+  ],
+  "excluded": [
+    {
+      "path": "parent BaseRepository",
+      "reason": "Requires company scope and parent Filterable/Sortable traits."
+    },
+    {
+      "path": "NotificationMetadata",
+      "reason": "Mostly parent-only domains; add marketplace metadata only when a Mini consumer exists."
+    },
+    {
+      "path": "ApplicationPath",
+      "reason": "Parent paths target accounting/system configuration/system operations."
+    }
+  ]
+}
