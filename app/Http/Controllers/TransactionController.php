@@ -107,6 +107,8 @@ class TransactionController extends Controller
                 $data['action'],
                 user_id(),
                 $data['note'] ?? null,
+                isset($data['rental_deposit_deduction_amount']) ? (string) $data['rental_deposit_deduction_amount'] : null,
+                $data['rental_deposit_deduction_note'] ?? null,
             ),
         );
     }

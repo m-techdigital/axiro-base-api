@@ -373,7 +373,7 @@ class TransactionLifecycleService
                 TransactionCheckpoint::updateOrCreate(['transaction_id' => $t->id, 'checkpoint' => $checkpoint], ['customer_id' => $actorType === 'customer' ? $actorId : null, 'actor_type' => $actorType, 'actor_id' => $actorId, 'confirmed_at' => now()]);
             }if ($next === 'completed') {
                 $this->settleCompleted($t);
-                $t->product && $this->availability->transition($t->product, $t->transaction_type === 'rental' ? ProductAvailabilityStatus::RENTED : ProductAvailabilityStatus::SOLD, $t, 'Giao dịch hoàn tất');
+                $t->product && $this->availability->transition($t->product, $t->transaction_type === 'rental' ? ProductAvailabilityStatus::AVAILABLE : ProductAvailabilityStatus::SOLD, $t, 'Giao dịch hoàn tất');
             }if ($next === 'cancelled') {
                 $this->releaseProductAfterCancellation($t);
             }$this->event($t, $action, $actorType, $actorId, $title, null, ['checkpoint' => $checkpoint]);
@@ -382,17 +382,38 @@ class TransactionLifecycleService
         });
     }
 
-    private function settleCompleted(Transaction $t): void
+    private function settleCompleted(Transaction $t, string $rentalDepositDeduction = '0.00', ?string $deductionNote = null): void
     {
         $payments = $t->payments()->where('status', 'confirmed')->where('settlement_status', 'held')->get();
         $gross = '0.00';
         $refunded = '0.00';
+        $deducted = '0.00';
+        $remainingDeduction = $rentalDepositDeduction;
         foreach ($payments as $p) {
             if ($t->transaction_type === 'rental' && $p->refundable) {
-                $ctx = ['idempotency_key' => 'payment:'.$p->id.':deposit-refund', 'transaction_id' => $t->id, 'transaction_payment_id' => $p->id, 'reference_type' => 'transaction_payment', 'reference_id' => $p->id];
-                $this->wallets->transferHeldToAvailable($t->seller_customer_id, $t->buyer_customer_id, (string) $p->amount, 'rental_deposit_refund', $ctx);
-                $refunded = bcadd($refunded, (string) $p->amount, 2);
-                $p->update(['settlement_status' => 'refunded', 'released_at' => now()]);
+                $deduction = bccomp($remainingDeduction, (string) $p->amount, 2) > 0
+                    ? (string) $p->amount
+                    : $remainingDeduction;
+                $refundAmount = bcsub((string) $p->amount, $deduction, 2);
+
+                if (bccomp($refundAmount, '0.00', 2) > 0) {
+                    $ctx = ['idempotency_key' => 'payment:'.$p->id.':deposit-refund', 'transaction_id' => $t->id, 'transaction_payment_id' => $p->id, 'reference_type' => 'transaction_payment', 'reference_id' => $p->id];
+                    $this->wallets->transferHeldToAvailable($t->seller_customer_id, $t->buyer_customer_id, $refundAmount, 'rental_deposit_refund', $ctx);
+                    $refunded = bcadd($refunded, $refundAmount, 2);
+                }
+
+                if (bccomp($deduction, '0.00', 2) > 0) {
+                    $ctx = ['idempotency_key' => 'payment:'.$p->id.':deposit-deduction', 'transaction_id' => $t->id, 'transaction_payment_id' => $p->id, 'reference_type' => 'transaction_payment', 'reference_id' => $p->id, 'note' => $deductionNote];
+                    $this->wallets->releaseHeld($t->seller_customer_id, $deduction, $ctx);
+                    $deducted = bcadd($deducted, $deduction, 2);
+                    $remainingDeduction = bcsub($remainingDeduction, $deduction, 2);
+                }
+
+                $p->update([
+                    'settlement_status' => bccomp($deduction, '0.00', 2) > 0 ? 'partially_refunded' : 'refunded',
+                    'released_at' => now(),
+                    'note' => $deductionNote,
+                ]);
             } else {
                 $gross = bcadd($gross, (string) $p->amount, 2);
             }
@@ -405,6 +426,7 @@ class TransactionLifecycleService
             $t->payments()->where('status', 'confirmed')->where('settlement_status', 'held')->where('refundable', false)->update(['settlement_status' => 'released', 'released_at' => now()]);
             $released = $net;
         }
+        $released = bcadd($released, $deducted, 2);
         $t->update(['released_amount' => bcadd((string) $t->released_amount, $released, 2), 'refunded_amount' => bcadd((string) $t->refunded_amount, $refunded, 2), 'escrow_amount' => '0.00']);
     }
 
@@ -432,9 +454,9 @@ class TransactionLifecycleService
         return $actions;
     }
 
-    public function adminTransition(Transaction $transaction, string $action, int $adminId, ?string $note = null): Transaction
+    public function adminTransition(Transaction $transaction, string $action, int $adminId, ?string $note = null, ?string $rentalDepositDeduction = null, ?string $deductionNote = null): Transaction
     {
-        return DB::transaction(function () use ($transaction, $action, $adminId, $note) {
+        return DB::transaction(function () use ($transaction, $action, $adminId, $note, $rentalDepositDeduction, $deductionNote) {
             $t = Transaction::lockForUpdate()->findOrFail($transaction->id);
             if (! in_array($action, $this->allowedAdminActions($t), true)) {
                 throw ValidationException::withMessages(['action' => 'Hành động không còn hợp lệ ở trạng thái hiện tại.']);
@@ -443,7 +465,25 @@ class TransactionLifecycleService
             if (! isset($map[$action])) {
                 throw ValidationException::withMessages(['action' => 'Hành động quản trị không hợp lệ.']);
             }
+            $deduction = $rentalDepositDeduction ?? '0.00';
+            if ($action !== 'complete' && bccomp($deduction, '0.00', 2) > 0) {
+                throw ValidationException::withMessages(['rental_deposit_deduction_amount' => 'Chỉ được khấu trừ cọc khi hoàn tất giao dịch thuê.']);
+            }
+            if ($action === 'complete' && bccomp($deduction, '0.00', 2) > 0 && trim((string) $deductionNote) === '') {
+                throw ValidationException::withMessages(['rental_deposit_deduction_note' => 'Vui lòng nhập lý do khấu trừ tiền cọc.']);
+            }
+            if ($action === 'complete' && $t->transaction_type === 'rental' && bccomp($deduction, (string) $t->deposit_amount, 2) > 0) {
+                throw ValidationException::withMessages(['rental_deposit_deduction_amount' => 'Số tiền khấu trừ không được vượt quá tiền cọc.']);
+            }
+            if ($action === 'complete' && $t->transaction_type !== 'rental' && bccomp($deduction, '0.00', 2) > 0) {
+                throw ValidationException::withMessages(['rental_deposit_deduction_amount' => 'Chỉ giao dịch thuê mới được khấu trừ cọc.']);
+            }
+
             $updates = ['status' => $map[$action]];
+            if ($action === 'complete' && $t->transaction_type === 'rental') {
+                $updates['rental_deposit_deduction_amount'] = $deduction;
+                $updates['rental_deposit_deduction_note'] = bccomp($deduction, '0.00', 2) > 0 ? $deductionNote : null;
+            }
             if ($map[$action] === 'completed') {
                 $updates['completed_at'] = now();
             } elseif ($action === 'reopen') {
@@ -451,14 +491,25 @@ class TransactionLifecycleService
             }
             $t->update($updates);
             if ($map[$action] === 'completed') {
-                $this->settleCompleted($t);
+                $this->settleCompleted($t, $deduction, $deductionNote);
                 if ($t->product) {
-                    $this->availability->transition($t->product, $t->transaction_type === 'rental' ? ProductAvailabilityStatus::RENTED : ProductAvailabilityStatus::SOLD, $t, 'Quản trị viên hoàn tất giao dịch');
+                    $this->availability->transition($t->product, $t->transaction_type === 'rental' ? ProductAvailabilityStatus::AVAILABLE : ProductAvailabilityStatus::SOLD, $t, 'Quản trị viên hoàn tất giao dịch');
                 }
             }if ($map[$action] === 'cancelled') {
                 $this->refundHeldPayments($t, 'admin_cancel');
                 $this->releaseProductAfterCancellation($t);
-            }$this->event($t, 'admin_'.$action, 'user', $adminId, 'Quản trị viên cập nhật giao dịch', $note);
+            }$this->event(
+                $t,
+                'admin_'.$action,
+                'user',
+                $adminId,
+                'Quản trị viên cập nhật giao dịch',
+                $note,
+                [
+                    'rental_deposit_deduction_amount' => $deduction,
+                    'rental_deposit_deduction_note' => $deductionNote,
+                ],
+            );
 
             return $this->load($t);
         });
@@ -537,7 +588,7 @@ class TransactionLifecycleService
                     $this->availability->transition(
                         $transaction->product,
                         $transaction->transaction_type === 'rental'
-                            ? ProductAvailabilityStatus::RENTED
+                            ? ProductAvailabilityStatus::AVAILABLE
                             : ProductAvailabilityStatus::SOLD,
                         $transaction,
                         'Tranh chấp được giải quyết và giao dịch hoàn tất',
@@ -564,7 +615,6 @@ class TransactionLifecycleService
             return $lockedDispute->fresh(['transaction', 'openedBy:id,code,name']);
         });
     }
-
 
     private function notifyDisputeOutcome(Transaction $transaction, MarketplaceDispute $dispute, DisputeOutcome $outcome, string $resolution): void
     {
@@ -621,5 +671,4 @@ class TransactionLifecycleService
             ],
         ]);
     }
-
 }

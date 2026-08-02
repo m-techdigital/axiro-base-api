@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Responses\ApiResponse;
 use App\Support\Marketplace\MarketplaceOptionsCatalog;
+use App\Support\MarketplaceContract;
 use Illuminate\Http\Request;
 
 class MarketplaceOptionsController extends Controller
@@ -31,6 +32,8 @@ class MarketplaceOptionsController extends Controller
             'ETag' => $etag,
             'X-Marketplace-Options-Version' => MarketplaceOptionsCatalog::VERSION,
             'X-Marketplace-Options-Hash' => MarketplaceOptionsCatalog::hash(),
+            'X-Marketplace-Contract-Version' => MarketplaceContract::version(),
+            'X-Marketplace-Contract-Hash' => MarketplaceContract::hash(),
         ];
     }
 }

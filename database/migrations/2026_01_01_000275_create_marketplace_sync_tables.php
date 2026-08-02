@@ -25,6 +25,8 @@ return new class extends Migration
         Schema::create('marketplace_notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('transaction_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('transaction_code', 50)->nullable();
             $table->string('type', 50)->index();
             $table->string('title');
             $table->text('message');
@@ -33,6 +35,7 @@ return new class extends Migration
             $table->timestamp('read_at')->nullable()->index();
             $table->timestamps();
             $table->index(['customer_id', 'created_at']);
+            $table->index(['transaction_id', 'type']);
         });
     }
 

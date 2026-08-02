@@ -138,6 +138,77 @@ class MarketplaceLifecycleEndToEndTest extends TestCase
         $this->assertSame(2, MarketplaceNotification::query()->where('type', 'dispute_outcome')->count());
     }
 
+
+    public function test_rental_overdue_is_marked_and_notifies_both_parties(): void
+    {
+        [$transaction] = $this->rentalFixture();
+        $transaction->update([
+            'status' => 'active',
+            'rental_end_at' => now()->subMinute(),
+        ]);
+
+        $this->artisan('marketplace:scan-due')->assertSuccessful();
+
+        $this->assertDatabaseHas('transactions', [
+            'id' => $transaction->id,
+            'status' => 'overdue',
+        ]);
+        $this->assertSame(
+            2,
+            MarketplaceNotification::query()
+                ->where('type', 'rental_overdue')
+                ->where('transaction_id', $transaction->id)
+                ->count(),
+        );
+    }
+
+    public function test_rental_return_can_complete_with_partial_deposit_deduction(): void
+    {
+        [$transaction, $payments] = $this->rentalFixture();
+        $headers = $this->adminHeaders();
+
+        foreach ($payments as $payment) {
+            $this->postJson('/api/v1/payments/'.$payment->id.'/confirm', [], $headers)->assertOk();
+        }
+
+        $this->postJson('/api/v1/transactions/'.$transaction->id.'/actions', [
+            'action' => 'force_handover',
+            'note' => 'Đã xác minh bàn giao tài khoản thuê.',
+        ], $headers)->assertOk();
+
+        $this->postJson('/api/v1/transactions/'.$transaction->id.'/actions', [
+            'action' => 'force_return',
+            'note' => 'Đã xác minh hoàn trả tài khoản thuê.',
+        ], $headers)->assertOk();
+
+        $this->postJson('/api/v1/transactions/'.$transaction->id.'/actions', [
+            'action' => 'complete',
+            'note' => 'Hoàn tất giao dịch thuê và khấu trừ chi phí khôi phục.',
+            'rental_deposit_deduction_amount' => 100000,
+            'rental_deposit_deduction_note' => 'Khấu trừ chi phí khôi phục bảo mật có bằng chứng.',
+        ], $headers)
+            ->assertOk()
+            ->assertJsonPath('data.status', 'completed')
+            ->assertJsonPath('data.rental_deposit_deduction_amount', '100000.00');
+
+        $this->assertDatabaseHas('transactions', [
+            'id' => $transaction->id,
+            'status' => 'completed',
+            'rental_deposit_deduction_amount' => 100000,
+            'refunded_amount' => 300000,
+            'released_amount' => 850000,
+        ]);
+        $this->assertDatabaseHas('transaction_payments', [
+            'transaction_id' => $transaction->id,
+            'component_type' => 'security_deposit',
+            'settlement_status' => 'partially_refunded',
+        ]);
+        $this->assertDatabaseHas('transaction_events', [
+            'transaction_id' => $transaction->id,
+            'event_type' => 'admin_complete',
+        ]);
+    }
+
     private function adminHeaders(): array
     {
         return ['Authorization' => 'Bearer '.auth('api')->login(User::factory()->create())];

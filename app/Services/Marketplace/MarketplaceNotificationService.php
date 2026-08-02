@@ -17,6 +17,8 @@ class MarketplaceNotificationService
 
         return MarketplaceNotification::create([
             'customer_id' => $customerId,
+            'transaction_id' => $data['transaction_id'] ?? null,
+            'transaction_code' => $data['transaction_code'] ?? null,
             'type' => $type,
             'title' => $title,
             'message' => $message,
@@ -50,7 +52,7 @@ class MarketplaceNotificationService
         if (str_contains($type, 'product')) {
             return 'product';
         }
-        if (str_contains($type, 'security') || str_contains($type, 'login') || str_contains($type,'password')) {
+        if (str_contains($type, 'security') || str_contains($type, 'login') || str_contains($type, 'password')) {
             return 'security';
         }
 

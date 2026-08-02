@@ -34,6 +34,8 @@ return new class extends Migration
             $table->decimal('total_payable', 18, 2);
             $table->decimal('paid_amount', 18, 2)->default(0);
             $table->decimal('refunded_amount', 18, 2)->default(0);
+            $table->decimal('rental_deposit_deduction_amount', 18, 2)->default(0);
+            $table->text('rental_deposit_deduction_note')->nullable();
             $table->decimal('escrow_amount', 18, 2)->default(0);
             $table->decimal('released_amount', 18, 2)->default(0);
             $table->decimal('wallet_paid_amount', 18, 2)->default(0);
