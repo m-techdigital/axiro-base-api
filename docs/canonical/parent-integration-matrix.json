@@ -1,8 +1,8 @@
 {
   "version": "2026-08-02",
   "parent_sources": {
-    "admin": "mylands-admin-develop-20260801-d0af27d9.zip",
-    "api": "mylands-api-develop-20260801-98fe973.zip"
+    "admin": "mylands-admin-develop-data-quality-20260802-190905.zip",
+    "api": "mylands-api-develop-data-quality-20260802-190905.zip"
   },
   "product": {
     "shared": [
@@ -42,8 +42,53 @@
     "excluded"
   ],
   "required_checks": {
-    "admin": ["format", "source-closure", "check-all", "lint", "build"],
-    "api": ["pint", "php-l", "migrate-fresh-seed", "targeted-tests", "integrity", "full-tests"],
-    "mbn": ["format", "base-first", "api-contract", "check-all", "lint", "build"]
+    "admin": [
+      "format",
+      "source-closure",
+      "check-all",
+      "lint",
+      "build"
+    ],
+    "api": [
+      "pint",
+      "php-l",
+      "migrate-fresh-seed",
+      "targeted-tests",
+      "integrity",
+      "full-tests"
+    ],
+    "mbn": [
+      "format",
+      "base-first",
+      "api-contract",
+      "check-all",
+      "lint",
+      "build"
+    ]
+  },
+  "transaction_document_dispute": {
+    "classification": "bounded_adapter",
+    "parent_patterns": [
+      "enum_options",
+      "form_request_mutation_boundary",
+      "row_lock_lifecycle",
+      "notification_service",
+      "history_event"
+    ],
+    "mini_owners": [
+      "DocumentType",
+      "DisputeOutcome",
+      "MarketplaceOptionsController",
+      "TransactionLifecycleService"
+    ],
+    "excluded": [
+      "approval_center",
+      "document_compliance",
+      "accounting_sync",
+      "generic_sla_engine",
+      "fraud_engine",
+      "company_scope",
+      "rbac"
+    ]
   }
 }

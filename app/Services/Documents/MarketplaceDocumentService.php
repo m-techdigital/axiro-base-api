@@ -98,7 +98,7 @@ class MarketplaceDocumentService
             'code' => 'DOC-'.strtoupper(Str::random(10)), 'document_template_id' => $template->id,
             'transaction_id' => $transaction->id,
             'document_type' => $type, 'status' => 'issued', 'version' => $version,
-            'title' => self::TYPES[$type].' - '.$transaction->code, 'merge_payload' => $payload,
+            'title' => DocumentType::label($type).' - '.$transaction->code, 'merge_payload' => $payload,
             'rendered_html' => $html, 'issued_at' => now(), 'issued_by' => $adminId,
         ])->load(['template', 'acceptances.customer:id,code,name']);
     }

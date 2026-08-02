@@ -90,12 +90,25 @@ class AdminTransactionDetailActionsTest extends TestCase
         ], $headers)
             ->assertOk()
             ->assertJsonPath('data.status', 'resolved')
-            ->assertJsonPath('data.transaction.status', 'cancelled');
+            ->assertJsonPath('data.transaction.status', 'cancelled')
+            ->assertJsonPath('data.outcome', 'cancel_refund');
 
         $this->assertDatabaseHas('transactions', [
             'id' => $transaction->id,
             'status' => 'cancelled',
             'refunded_amount' => '500000.00',
+        ]);
+        $this->assertDatabaseHas('marketplace_disputes', [
+            'id' => $dispute->id,
+            'outcome' => 'cancel_refund',
+        ]);
+        $this->assertDatabaseHas('marketplace_notifications', [
+            'customer_id' => $transaction->buyer_customer_id,
+            'type' => 'dispute_outcome',
+        ]);
+        $this->assertDatabaseHas('marketplace_notifications', [
+            'customer_id' => $transaction->seller_customer_id,
+            'type' => 'dispute_outcome',
         ]);
     }
 

@@ -3,11 +3,13 @@
 use App\Http\Controllers\MarketplaceContentController;
 use App\Http\Controllers\MarketplaceContractController;
 use App\Http\Controllers\MarketplaceController;
+use App\Http\Controllers\MarketplaceOptionsController;
 use App\Http\Controllers\RuntimeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('runtime', RuntimeController::class);
 Route::get('marketplace-contract', MarketplaceContractController::class);
+Route::get('marketplace/options', MarketplaceOptionsController::class);
 Route::get('marketplace/products', [MarketplaceController::class, 'index']);
 Route::get('marketplace/products/{productCode}', [MarketplaceController::class, 'show']);
 Route::get('marketplace/products/{product}/reviews', [MarketplaceContentController::class, 'productReviews']);

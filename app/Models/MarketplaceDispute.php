@@ -13,7 +13,7 @@ class MarketplaceDispute extends Model
 
     protected $attributes = ['status' => 'open', 'case_type' => 'dispute', 'priority' => 'normal'];
 
-    protected $fillable = ['code', 'transaction_id', 'opened_by_customer_id', 'case_type', 'reason', 'status', 'priority', 'description', 'evidence', 'resolution', 'resolved_at', 'resolved_by', 'assigned_to', 'due_at', 'last_message_at'];
+    protected $fillable = ['code', 'transaction_id', 'opened_by_customer_id', 'case_type', 'reason', 'status', 'priority', 'description', 'evidence', 'resolution', 'outcome', 'resolved_at', 'resolved_by', 'assigned_to', 'due_at', 'last_message_at'];
 
     protected $casts = ['evidence' => 'array', 'resolved_at' => 'datetime', 'due_at' => 'datetime', 'last_message_at' => 'datetime'];
 

@@ -2,6 +2,7 @@
 
 namespace App\Services\Marketplace;
 
+use App\Enums\DisputeOutcome;
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductSelectionContext;
 use App\Models\AuditLog;
@@ -498,20 +499,20 @@ class TransactionLifecycleService
                 return $lockedDispute->fresh(['transaction', 'openedBy:id,code,name']);
             }
 
-            $outcome = $data['outcome'];
+            $outcome = DisputeOutcome::from($data['outcome']);
             $next = match ($outcome) {
-                'complete' => 'completed',
-                'cancel_refund', 'cancel_no_refund' => 'cancelled',
-                'reopen' => $transaction->payments()->where('status', 'confirmed')->exists() ? 'paid' : 'pending_payment',
+                DisputeOutcome::COMPLETE => 'completed',
+                DisputeOutcome::CANCEL_REFUND, DisputeOutcome::CANCEL_NO_REFUND => 'cancelled',
+                DisputeOutcome::REOPEN => $transaction->payments()->where('status', 'confirmed')->exists() ? 'paid' : 'pending_payment',
             };
 
-            if ($data['status'] === 'rejected' && $outcome !== 'reopen') {
+            if ($data['status'] === 'rejected' && $outcome !== DisputeOutcome::REOPEN) {
                 throw ValidationException::withMessages([
                     'outcome' => 'Tranh chấp bị từ chối chỉ được đưa giao dịch trở lại luồng xử lý.',
                 ]);
             }
 
-            if ($data['status'] === 'resolved' && $outcome === 'reopen') {
+            if ($data['status'] === 'resolved' && $outcome === DisputeOutcome::REOPEN) {
                 throw ValidationException::withMessages([
                     'outcome' => 'Tranh chấp đã chấp nhận phải kết thúc bằng hoàn tất hoặc hủy giao dịch.',
                 ]);
@@ -520,6 +521,7 @@ class TransactionLifecycleService
             $lockedDispute->update([
                 'status' => $data['status'],
                 'resolution' => $data['resolution'],
+                'outcome' => $outcome->value,
                 'resolved_at' => now(),
                 'resolved_by' => $adminId,
             ]);
@@ -529,7 +531,7 @@ class TransactionLifecycleService
                 'completed_at' => $next === 'completed' ? now() : null,
             ]);
 
-            if ($outcome === 'complete') {
+            if ($outcome === DisputeOutcome::COMPLETE) {
                 $this->settleCompleted($transaction);
                 if ($transaction->product) {
                     $this->availability->transition(
@@ -541,10 +543,10 @@ class TransactionLifecycleService
                         'Tranh chấp được giải quyết và giao dịch hoàn tất',
                     );
                 }
-            } elseif ($outcome === 'cancel_refund') {
+            } elseif ($outcome === DisputeOutcome::CANCEL_REFUND) {
                 $this->refundHeldPayments($transaction, 'dispute_cancel');
                 $this->releaseProductAfterCancellation($transaction);
-            } elseif ($outcome === 'cancel_no_refund') {
+            } elseif ($outcome === DisputeOutcome::CANCEL_NO_REFUND) {
                 $this->releaseProductAfterCancellation($transaction);
             }
 
@@ -555,11 +557,35 @@ class TransactionLifecycleService
                 $adminId,
                 'Đã xử lý tranh chấp',
                 $data['resolution'],
-                ['outcome' => $outcome, 'transaction_status' => $next],
+                ['outcome' => $outcome->value, 'transaction_status' => $next],
             );
+            $this->notifyDisputeOutcome($transaction, $lockedDispute, $outcome, $data['resolution']);
 
             return $lockedDispute->fresh(['transaction', 'openedBy:id,code,name']);
         });
+    }
+
+
+    private function notifyDisputeOutcome(Transaction $transaction, MarketplaceDispute $dispute, DisputeOutcome $outcome, string $resolution): void
+    {
+        $message = $outcome->label().'. Kết luận: '.$resolution;
+        $payload = [
+            'dispute_id' => $dispute->id,
+            'dispute_code' => $dispute->code,
+            'outcome' => $outcome->value,
+            'transaction_status' => $transaction->status,
+        ];
+
+        foreach (array_unique([$transaction->buyer_customer_id, $transaction->seller_customer_id]) as $customerId) {
+            $this->notifications->send(
+                $customerId,
+                'dispute_outcome',
+                'Tranh chấp đã có kết quả',
+                $message,
+                '/account/purchases/'.$transaction->id,
+                $payload + ['transaction_id' => $transaction->id, 'transaction_code' => $transaction->code],
+            );
+        }
     }
 
     public function event(Transaction $t, string $type, ?string $actorType, ?int $actorId, string $title, ?string $description = null, array $metadata = []): TransactionEvent

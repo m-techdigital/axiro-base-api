@@ -102,6 +102,7 @@ return new class extends Migration
             $table->text('description');
             $table->json('evidence')->nullable();
             $table->text('resolution')->nullable();
+            $table->string('outcome', 30)->nullable()->index();
             $table->timestamp('resolved_at')->nullable();
             $table->foreignId('resolved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
