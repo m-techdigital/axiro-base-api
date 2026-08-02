@@ -5,6 +5,7 @@ namespace App\Support\Marketplace;
 final class DocumentType
 {
     public const SALE_RECORD = 'sale_record';
+
     public const RENTAL_RECORD = 'rental_record';
 
     private const LEGACY_ALIASES = [

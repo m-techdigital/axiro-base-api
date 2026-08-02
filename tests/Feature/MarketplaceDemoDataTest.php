@@ -52,7 +52,6 @@ class MarketplaceDemoDataTest extends TestCase
         );
         $this->artisan('marketplace:integrity')->assertExitCode(0);
 
-
         $this->assertDatabaseHas('marketplace_disputes', ['code' => 'DSP-DEMO-OPEN', 'status' => 'open']);
         $this->assertDatabaseHas('marketplace_disputes', ['code' => 'DSP-DEMO-RESOLVED', 'status' => 'resolved']);
 

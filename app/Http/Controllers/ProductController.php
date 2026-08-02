@@ -120,6 +120,6 @@ class ProductController extends Controller
             $data['created_by'] = user_id();
         }
 
-return $data;
+        return $data;
     }
 }

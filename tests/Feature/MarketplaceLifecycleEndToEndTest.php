@@ -58,7 +58,6 @@ class MarketplaceLifecycleEndToEndTest extends TestCase
         $this->assertDatabaseHas('transaction_events', ['transaction_id' => $transaction->id, 'event_type' => 'dispute_resolved']);
     }
 
-
     public function test_rental_reaches_active_returned_and_completed_terminal_state(): void
     {
         [$transaction, $payments] = $this->rentalFixture();
@@ -137,7 +136,6 @@ class MarketplaceLifecycleEndToEndTest extends TestCase
         }
         $this->assertSame(2, MarketplaceNotification::query()->where('type', 'dispute_outcome')->count());
     }
-
 
     public function test_rental_overdue_is_marked_and_notifies_both_parties(): void
     {
@@ -261,6 +259,7 @@ class MarketplaceLifecycleEndToEndTest extends TestCase
 
         return [$transaction, $payment];
     }
+
     private function rentalFixture(): array
     {
         $renter = Customer::factory()->create();
@@ -326,5 +325,4 @@ class MarketplaceLifecycleEndToEndTest extends TestCase
 
         return [$transaction, $payments];
     }
-
 }

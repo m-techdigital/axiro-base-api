@@ -376,7 +376,10 @@
     "POST /notifications/read-all",
     "POST /notifications/{notification}/read",
     "GET /operations-dashboard/rental-settlements",
-    "GET /operations-dashboard/rental-settlements/export"
+    "GET /operations-dashboard/rental-settlements/export",
+    "POST /operations-dashboard/rental-settlements/exports",
+    "GET /operations-dashboard/rental-settlements/exports/{exportRequest}",
+    "GET /operations-dashboard/rental-settlements/exports/{exportRequest}/download"
   ],
   "option_catalog": {
     "version": "2026-08-02.1",

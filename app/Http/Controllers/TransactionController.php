@@ -57,8 +57,7 @@ class TransactionController extends Controller
         AuditTrailService $audit,
         TransactionLifecycleService $lifecycle,
         MarketplaceOperationsReadService $operations,
-    )
-    {
+    ) {
         $loaded = $transaction->load([
             'product',
             'product.rentalRates',

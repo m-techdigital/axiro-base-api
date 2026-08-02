@@ -5,12 +5,17 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Admin\ManualReleaseProductHoldRequest;
 use App\Http\Requests\Common\ListQueryRequest;
 use App\Http\Responses\ApiResponse;
+use App\Jobs\BuildRentalSettlementExport;
 use App\Models\AuditLog;
+use App\Models\MarketplaceExportRequest;
 use App\Models\Product;
 use App\Models\ProductHold;
 use App\Models\Transaction;
 use App\Services\Marketplace\Operations\MarketplaceOperationsReadService;
 use App\Services\ProductAvailabilityService;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MarketplaceOperationsDashboardController extends Controller
@@ -130,6 +135,44 @@ class MarketplaceOperationsDashboardController extends Controller
         }, 'rental-settlements-'.now()->format('Ymd-His').'.csv', [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
+    }
+
+    public function requestRentalSettlementExport(ListQueryRequest $request)
+    {
+        $export = MarketplaceExportRequest::query()->create([
+            'type' => 'rental_settlement',
+            'status' => 'pending',
+            'filters' => $request->filters(['status', 'transaction_id', 'customer_id', 'date_from', 'date_to']),
+            'requested_by' => user_id(),
+        ]);
+
+        BuildRentalSettlementExport::dispatch($export->id)->afterCommit();
+
+        return ApiResponse::success($export, 'Đã đưa yêu cầu xuất dữ liệu vào hàng đợi.', 202);
+    }
+
+    public function rentalSettlementExportStatus(MarketplaceExportRequest $exportRequest)
+    {
+        abort_unless($exportRequest->type === 'rental_settlement', 404);
+
+        return ApiResponse::success($exportRequest);
+    }
+
+    public function downloadRentalSettlementExport(MarketplaceExportRequest $exportRequest): BinaryFileResponse|Response
+    {
+        abort_unless($exportRequest->type === 'rental_settlement', 404);
+        if ($exportRequest->status !== 'completed' || ! $exportRequest->file_path || ! Storage::disk('local')->exists($exportRequest->file_path)) {
+            return response(['message' => 'Tệp xuất chưa sẵn sàng.'], 409);
+        }
+        if ($exportRequest->expires_at?->isPast()) {
+            return response(['message' => 'Tệp xuất đã hết hạn.'], 410);
+        }
+
+        return response()->download(
+            Storage::disk('local')->path($exportRequest->file_path),
+            'rental-settlements-'.$exportRequest->id.'.csv',
+            ['Content-Type' => 'text/csv; charset=UTF-8'],
+        );
     }
 
     public function documentChecklist(Transaction $transaction, MarketplaceOperationsReadService $service)

@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Contract;
 use App\Models\Customer;
 use App\Models\CustomerWallet;
 use App\Models\MarketplaceDispute;

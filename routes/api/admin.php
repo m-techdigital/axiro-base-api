@@ -39,6 +39,9 @@ Route::middleware('auth.api')->group(function () {
     Route::get('operations-dashboard/reconciliation', [MarketplaceOperationsDashboardController::class, 'reconciliation']);
     Route::get('operations-dashboard/rental-settlements', [MarketplaceOperationsDashboardController::class, 'rentalSettlements']);
     Route::get('operations-dashboard/rental-settlements/export', [MarketplaceOperationsDashboardController::class, 'exportRentalSettlements']);
+    Route::post('operations-dashboard/rental-settlements/exports', [MarketplaceOperationsDashboardController::class, 'requestRentalSettlementExport']);
+    Route::get('operations-dashboard/rental-settlements/exports/{exportRequest}', [MarketplaceOperationsDashboardController::class, 'rentalSettlementExportStatus']);
+    Route::get('operations-dashboard/rental-settlements/exports/{exportRequest}/download', [MarketplaceOperationsDashboardController::class, 'downloadRentalSettlementExport']);
     Route::get('operations-dashboard/transactions/{transaction}/document-checklist', [MarketplaceOperationsDashboardController::class, 'documentChecklist']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('dashboard', DashboardController::class);

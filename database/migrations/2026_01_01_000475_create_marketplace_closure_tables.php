@@ -64,6 +64,21 @@ return new class extends Migration
             $table->timestamp('occurred_at');
             $table->timestamps();
         });
+        Schema::create('marketplace_export_requests', function (Blueprint $table) {
+            $table->id();
+            $table->string('type', 60)->index();
+            $table->string('status', 20)->default('pending')->index();
+            $table->json('filters')->nullable();
+            $table->string('file_path')->nullable();
+            $table->unsignedInteger('row_count')->default(0);
+            $table->text('error_message')->nullable();
+            $table->foreignId('requested_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
+            $table->timestamp('expires_at')->nullable()->index();
+            $table->timestamps();
+        });
+
         Schema::create('transaction_asset_snapshots', function (Blueprint $table) {
             $table->id();
             $table->foreignId('transaction_id')->constrained()->cascadeOnDelete();
@@ -83,6 +98,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('transaction_asset_snapshots');
+        Schema::dropIfExists('marketplace_export_requests');
         Schema::dropIfExists('marketplace_platform_ledger_entries');
         Schema::dropIfExists('marketplace_case_messages');
         Schema::table('marketplace_disputes', function (Blueprint $table) {

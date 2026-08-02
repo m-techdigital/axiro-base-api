@@ -5,6 +5,7 @@ namespace App\Services\Marketplace\Operations;
 use App\Models\AuditLog;
 use App\Models\CustomerWallet;
 use App\Models\MarketplaceDispute;
+use App\Models\MarketplaceNotification;
 use App\Models\ProductHold;
 use App\Models\Transaction;
 use App\Models\TransactionPayment;
@@ -58,6 +59,7 @@ class MarketplaceOperationsReadService
                 'open_disputes' => MarketplaceDispute::query()
                     ->whereNotIn('status', ['resolved', 'rejected', 'cancelled'])
                     ->count(),
+                'unread_notifications' => MarketplaceNotification::query()->whereNull('read_at')->count(),
             ],
             'sla' => $this->slaSummary(),
         ];
@@ -199,6 +201,20 @@ class MarketplaceOperationsReadService
         $this->applyRentalSettlementFilters($query, $filters);
 
         return $query->latest('completed_at')->latest('id')->get();
+    }
+
+    public function chunkRentalSettlementExportRows(array $filters, callable $callback, int $size = 500): void
+    {
+        $query = Transaction::query()->with([
+            'product:id,code,name',
+            'buyer:id,code,name',
+            'seller:id,code,name',
+            'disputes:id,transaction_id,status,outcome,resolution,resolved_at',
+        ])->where('transaction_type', 'rental')
+            ->whereIn('status', ['completed', 'cancelled']);
+
+        $this->applyRentalSettlementFilters($query, $filters);
+        $query->orderBy('id')->chunkById($size, $callback);
     }
 
     private function applyRentalSettlementFilters(Builder $query, array $filters): void
