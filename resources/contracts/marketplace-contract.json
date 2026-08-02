@@ -372,6 +372,7 @@
     "GET /operations-dashboard/reconciliation",
     "GET /operations-dashboard/transactions/{transaction}/document-checklist",
     "GET /notifications",
+    "GET /notifications/{notification}",
     "POST /notifications/read-all",
     "POST /notifications/{notification}/read",
     "GET /operations-dashboard/rental-settlements",

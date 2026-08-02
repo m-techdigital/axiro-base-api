@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth.api')->group(function () {
     Route::get('me', [AuthController::class, 'me']);
     Route::get('notifications', [AdminNotificationController::class, 'index']);
+    Route::get('notifications/{notification}', [AdminNotificationController::class, 'show']);
     Route::post('notifications/read-all', [AdminNotificationController::class, 'readAll']);
     Route::post('notifications/{notification}/read', [AdminNotificationController::class, 'read']);
     Route::get('audit-logs/statistics', [AuditLogController::class, 'statistics']);

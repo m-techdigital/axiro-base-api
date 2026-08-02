@@ -181,6 +181,28 @@ class MarketplaceOperationsReadService
         ])->where('transaction_type', 'rental')
             ->whereIn('status', ['completed', 'cancelled']);
 
+        $this->applyRentalSettlementFilters($query, $filters);
+
+        return $query->latest('completed_at')->latest('id')->paginate($perPage);
+    }
+
+    public function rentalSettlementExportRows(array $filters = [])
+    {
+        $query = Transaction::query()->with([
+            'product:id,code,name',
+            'buyer:id,code,name',
+            'seller:id,code,name',
+            'disputes:id,transaction_id,status,outcome,resolution,resolved_at',
+        ])->where('transaction_type', 'rental')
+            ->whereIn('status', ['completed', 'cancelled']);
+
+        $this->applyRentalSettlementFilters($query, $filters);
+
+        return $query->latest('completed_at')->latest('id')->get();
+    }
+
+    private function applyRentalSettlementFilters(Builder $query, array $filters): void
+    {
         if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
@@ -193,20 +215,12 @@ class MarketplaceOperationsReadService
                 ->where('buyer_customer_id', $customerId)
                 ->orWhere('seller_customer_id', $customerId));
         }
-
-        return $query->latest('completed_at')->latest('id')->paginate($perPage);
-    }
-
-    public function rentalSettlementExportRows()
-    {
-        return Transaction::query()->with([
-            'product:id,code,name',
-            'buyer:id,code,name',
-            'seller:id,code,name',
-            'disputes:id,transaction_id,status,outcome,resolution,resolved_at',
-        ])->where('transaction_type', 'rental')
-            ->whereIn('status', ['completed', 'cancelled'])
-            ->latest('completed_at')->latest('id')->get();
+        if (! empty($filters['date_from'])) {
+            $query->whereDate('completed_at', '>=', $filters['date_from']);
+        }
+        if (! empty($filters['date_to'])) {
+            $query->whereDate('completed_at', '<=', $filters['date_to']);
+        }
     }
 
     public function documentChecklist(Transaction $transaction): array

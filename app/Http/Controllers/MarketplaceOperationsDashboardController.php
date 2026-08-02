@@ -92,14 +92,16 @@ class MarketplaceOperationsDashboardController extends Controller
     public function rentalSettlements(ListQueryRequest $request, MarketplaceOperationsReadService $service)
     {
         return ApiResponse::paginated($service->rentalSettlements(
-            $request->filters(['status', 'transaction_id', 'customer_id']),
+            $request->filters(['status', 'transaction_id', 'customer_id', 'date_from', 'date_to']),
             $request->perPage(),
         ));
     }
 
-    public function exportRentalSettlements(MarketplaceOperationsReadService $service): StreamedResponse
+    public function exportRentalSettlements(ListQueryRequest $request, MarketplaceOperationsReadService $service): StreamedResponse
     {
-        return response()->streamDownload(function () use ($service): void {
+        $filters = $request->filters(['status', 'transaction_id', 'customer_id', 'date_from', 'date_to']);
+
+        return response()->streamDownload(function () use ($service, $filters): void {
             $stream = fopen('php://output', 'w');
             fputcsv($stream, [
                 'transaction_code', 'status', 'product_code', 'buyer', 'seller',
@@ -107,7 +109,7 @@ class MarketplaceOperationsDashboardController extends Controller
                 'released_amount', 'dispute_outcome', 'dispute_resolution', 'completed_at',
             ]);
 
-            foreach ($service->rentalSettlementExportRows() as $transaction) {
+            foreach ($service->rentalSettlementExportRows($filters) as $transaction) {
                 $dispute = $transaction->disputes->sortByDesc('id')->first();
                 fputcsv($stream, [
                     $transaction->code,

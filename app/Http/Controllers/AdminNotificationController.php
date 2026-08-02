@@ -49,6 +49,22 @@ class AdminNotificationController extends Controller
         );
     }
 
+    public function show(MarketplaceNotification $notification)
+    {
+        $notification->load([
+            'customer:id,code,name,email,phone,status',
+            'transaction' => fn ($query) => $query->with([
+                'product:id,code,name,product_type,availability_status',
+                'buyer:id,code,name,email,phone',
+                'seller:id,code,name,email,phone',
+                'events' => fn ($events) => $events->latest('id')->limit(100),
+                'disputes' => fn ($disputes) => $disputes->latest('id')->limit(20),
+            ]),
+        ]);
+
+        return ApiResponse::success($notification);
+    }
+
     public function read(MarketplaceNotification $notification)
     {
         $notification->update(['read_at' => $notification->read_at ?? now()]);
