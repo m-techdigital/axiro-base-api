@@ -4,6 +4,7 @@ namespace App\Services\Marketplace;
 
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductSelectionContext;
+use App\Models\AuditLog;
 use App\Models\Contract;
 use App\Models\MarketplaceDispute;
 use App\Models\MarketplacePlatformLedgerEntry;
@@ -35,8 +36,11 @@ class TransactionLifecycleService
             $existing = Transaction::query()->where('idempotency_key', $idempotencyKey)->lockForUpdate()->first();
             if ($existing) {
                 if ((int) $existing->buyer_customer_id !== $buyerId || ! hash_equals((string) $existing->request_hash, $requestHash)) {
+                    $this->recordCheckoutIdempotencyAudit('checkout_idempotency_conflict', $existing, $buyerId, $idempotencyKey, $requestHash);
                     throw ValidationException::withMessages(['idempotency_key' => 'Khóa chống trùng đã được dùng với một yêu cầu khác.']);
                 }
+
+                $this->recordCheckoutIdempotencyAudit('checkout_idempotent_replay', $existing, $buyerId, $idempotencyKey, $requestHash);
 
                 return $this->load($existing);
             }
@@ -489,4 +493,29 @@ class TransactionLifecycleService
     {
         return $t->fresh(['product.rentalRates', 'buyer:id,code,name,avatar_url', 'seller:id,code,name,avatar_url', 'contract', 'payments', 'events', 'disputes', 'checkpoints', 'documents', 'assetSnapshots']);
     }
+
+    private function recordCheckoutIdempotencyAudit(string $event, Transaction $transaction, int $buyerId, string $key, string $requestHash): void
+    {
+        AuditLog::query()->create([
+            'audit_type' => 'business_trail',
+            'event_type' => $event,
+            'risk_level' => $event === 'checkout_idempotency_conflict' ? 'high' : 'low',
+            'actor_type' => 'customer',
+            'actor_id' => $buyerId,
+            'entity_type' => 'transaction',
+            'entity_id' => (string) $transaction->id,
+            'context_type' => 'product',
+            'context_id' => (string) $transaction->product_id,
+            'title' => $event === 'checkout_idempotency_conflict' ? 'Xung đột khóa checkout' : 'Checkout được phát lại an toàn',
+            'description' => $event === 'checkout_idempotency_conflict'
+                ? 'Cùng khóa chống trùng được gửi với payload khác.'
+                : 'Yêu cầu checkout lặp lại đã trả về giao dịch hiện có.',
+            'metadata' => [
+                'idempotency_key' => $key,
+                'request_hash' => $requestHash,
+                'stored_request_hash' => $transaction->request_hash,
+            ],
+        ]);
+    }
+
 }

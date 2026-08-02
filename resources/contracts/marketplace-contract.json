@@ -280,11 +280,6 @@
         "PUT /transactions/{transaction}",
         "DELETE /transactions/{transaction}",
         "POST /transactions/{transaction}/actions",
-        "GET /contracts",
-        "POST /contracts",
-        "GET /contracts/{contract}",
-        "PUT /contracts/{contract}",
-        "DELETE /contracts/{contract}",
         "GET /products",
         "GET /products/{product}",
         "POST /products/{product}/approve",
@@ -339,6 +334,14 @@
         "POST /content-entries",
         "PUT /content-entries/{contentEntry}",
         "GET /risk-flags",
-        "POST /risk-flags/{riskFlag}/resolve"
+        "POST /risk-flags/{riskFlag}/resolve",
+        "GET /operations-dashboard/overview",
+        "GET /operations-dashboard/holds",
+        "POST /operations-dashboard/holds/{hold}/release",
+        "GET /operations-dashboard/products/{product}/availability-timeline",
+        "GET /operations-dashboard/queues",
+        "GET /operations-dashboard/idempotency",
+        "GET /operations-dashboard/reconciliation",
+        "GET /operations-dashboard/transactions/{transaction}/document-checklist"
     ]
 }

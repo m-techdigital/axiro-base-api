@@ -21,7 +21,7 @@ class BaseWorkflowTest extends TestCase
         return auth('api')->login($user);
     }
 
-    public function test_product_transaction_contract_flow(): void
+    public function test_product_transaction_flow_does_not_publish_contract_crud(): void
     {
         $headers = ['Authorization' => 'Bearer '.$this->token()];
         $buyer = Customer::factory()->create();
@@ -57,17 +57,13 @@ class BaseWorkflowTest extends TestCase
             ->assertJsonPath('data.seller.id', $seller->id)
             ->json('data');
 
+        $this->getJson('/api/v1/transactions/'.$transaction['id'], $headers)
+            ->assertOk()
+            ->assertJsonPath('data.product.id', $product['id']);
+
         $this->postJson('/api/v1/contracts', [
-            'code' => 'C-001',
             'transaction_id' => $transaction['id'],
-            'contract_type' => 'sale',
-            'title' => 'Contract',
-            'contract_value' => 105,
-            'deposit_amount' => 0,
-            'status' => 'draft',
-        ], $headers)
-            ->assertCreated()
-            ->assertJsonPath('data.transaction.product.id', $product['id']);
+        ], $headers)->assertNotFound();
     }
 
     public function test_unauthenticated_requests_are_rejected(): void

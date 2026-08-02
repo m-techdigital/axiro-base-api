@@ -19,8 +19,8 @@ class ProductController extends Controller
     public function index(ListQueryRequest $request)
     {
         $query = $this->applyListFilters(Product::with(['owner:id,code,name', 'rentalRates', 'offerModes']), $request,
-            ['code', 'name', 'server_name'], ['status', 'approval_status', 'game_code', 'product_type', 'availability_status'],
-            ['id', 'code', 'name', 'game_code', 'product_type', 'status', 'approval_status', 'created_at']);
+            ['code', 'name', 'server_name'], ['status', 'approval_status', 'game_code', 'product_type', 'availability_status', 'availability_version'],
+            ['id', 'code', 'name', 'game_code', 'product_type', 'status', 'approval_status', 'availability_status', 'availability_version', 'created_at']);
         $mode = $request->input('offer_mode') ?? $request->input('transaction_type');
         if ($mode) {
             $mode = match ($mode) {

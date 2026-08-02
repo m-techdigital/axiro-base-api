@@ -15,24 +15,26 @@
 - Them command `marketplace:expire-product-holds` va schedule moi 5 phut.
 - Bo cache build sinh ra trong `bootstrap/cache` khoi working tree, chi giu `.gitignore`.
 
+## Ket qua phat trien Operations Dashboard
+
+- Them endpoint admin `operations-dashboard` cho overview, hold monitor, stuck transaction queues, idempotency audit, reconciliation va document checklist.
+- Manual release hold yeu cau note bat buoc, expected availability version va chi chap nhan khi product van dang duoc giu boi dung hold/source.
+- Cac endpoint list dung `ListQueryRequest` de giu contract filter, pagination va gioi han `per_page` chung cua base.
+- Ghi audit log `product_hold_manual_release` khi admin nha hold thu cong.
+- Khong publish CRUD `/contracts`; tai lieu/hop dong neu co chi la chung tu phat sinh theo giao dich.
+
 ## Diem da kiem tra
 
-- `php artisan test`: pass 78 tests, 733 assertions.
+- `php artisan test`: pass 80 tests, 751 assertions khi chay voi `APP_KEY` va `JWT_SECRET` test hop le.
 - Da sua transition `held -> sold/rented` vi luong thanh toan hoan tat can chot san pham truc tiep tu trang thai hold.
 - Pham vi anh huong tap trung vao marketplace transaction/product availability, khong cham sang cac module bi cam trong AGENTS.
 
-## Dau viec nen bo sung cho admin
+## Trang thai dau viec admin
 
-1. Man hinh hold monitor: loc san pham dang hold, sap het han, da expire, nguon hold va customer lien quan.
-2. Timeline availability trong chi tiet san pham: available, held, transacting, sold, rented, suspended, nguon thay doi va note.
-3. Hang doi duplicate checkout/idempotency: hien request hash trung, transaction da tra ve, thoi diem lap lai.
-4. Tac vu admin release hold co ly do bat buoc, co audit note va phan quyen sau nay neu can.
-5. Dashboard stuck transaction: pending payment qua han, da thanh toan nhung chua complete, tranh chap dang mo.
-6. Bang doi soat wallet/payout: before/after balance, release escrow, refund deposit va exception queue.
-7. Filter availability/version tren danh sach san pham de admin thay nhanh ban ghi dang bi tranh chap.
-8. Checklist tai lieu bang chung theo giao dich: snapshot, payment proof, delivery proof, acceptance/dispute.
-9. Canh bao spam hold/checkout nhieu lan trong thoi gian ngan theo buyer/product.
-10. Bao cao SLA theo tung buoc nghiep vu: hold, payment, delivery, acceptance, refund/payout.
+1. Da co: hold monitor, availability timeline, canh bao checkout lap, manual release hold, transaction queue, reconciliation va document checklist.
+2. Can phat trien tiep: counter thong bao nhe cho admin ve hold qua han, thanh toan cho xac nhan va tranh chap mo.
+3. Can phat trien tiep: action nhanh tu transaction detail de xu ly thanh toan, ban giao, hoan tien va dong tranh chap.
+4. Tam khong phat trien: fraud engine, SLA engine, role/policy nhieu cap, report/BI rieng.
 
 ## Ghi chu rui ro con lai
 

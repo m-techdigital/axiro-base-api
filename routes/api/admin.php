@@ -3,13 +3,13 @@
 use App\Http\Controllers\AdminActionCenterController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ContractController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DisputeController;
 use App\Http\Controllers\DocumentTemplateController;
 use App\Http\Controllers\GeneratedDocumentController;
 use App\Http\Controllers\MarketplaceOperationsAdminController;
+use App\Http\Controllers\MarketplaceOperationsDashboardController;
 use App\Http\Controllers\MarketplacePaymentSettingController;
 use App\Http\Controllers\MarketplaceTrustAdminController;
 use App\Http\Controllers\PaymentController;
@@ -25,6 +25,14 @@ Route::middleware('auth.api')->group(function () {
     Route::get('audit-logs', [AuditLogController::class, 'index']);
     Route::get('audit-logs/{auditLog}', [AuditLogController::class, 'show']);
     Route::get('action-center', AdminActionCenterController::class);
+    Route::get('operations-dashboard/overview', [MarketplaceOperationsDashboardController::class, 'overview']);
+    Route::get('operations-dashboard/holds', [MarketplaceOperationsDashboardController::class, 'holds']);
+    Route::post('operations-dashboard/holds/{hold}/release', [MarketplaceOperationsDashboardController::class, 'releaseHold']);
+    Route::get('operations-dashboard/products/{product}/availability-timeline', [MarketplaceOperationsDashboardController::class, 'availabilityTimeline']);
+    Route::get('operations-dashboard/queues', [MarketplaceOperationsDashboardController::class, 'queues']);
+    Route::get('operations-dashboard/idempotency', [MarketplaceOperationsDashboardController::class, 'idempotency']);
+    Route::get('operations-dashboard/reconciliation', [MarketplaceOperationsDashboardController::class, 'reconciliation']);
+    Route::get('operations-dashboard/transactions/{transaction}/document-checklist', [MarketplaceOperationsDashboardController::class, 'documentChecklist']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('dashboard', DashboardController::class);
     Route::apiResource('document-templates', DocumentTemplateController::class);
@@ -39,7 +47,6 @@ Route::middleware('auth.api')->group(function () {
     Route::post('products/{product}/reject', [ProductController::class, 'reject']);
     Route::apiResource('customers', CustomerController::class);
     Route::apiResource('transactions', TransactionController::class);
-    Route::apiResource('contracts', ContractController::class);
     Route::post('transactions/{transaction}/actions', [TransactionController::class, 'action']);
     Route::get('payments', [PaymentController::class, 'index']);
     Route::post('payments/{payment}/confirm', [PaymentController::class, 'confirm']);

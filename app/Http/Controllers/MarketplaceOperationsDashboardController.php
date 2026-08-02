@@ -1,0 +1,95 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\Admin\ManualReleaseProductHoldRequest;
+use App\Http\Requests\Common\ListQueryRequest;
+use App\Http\Responses\ApiResponse;
+use App\Models\AuditLog;
+use App\Models\Product;
+use App\Models\ProductHold;
+use App\Models\Transaction;
+use App\Services\Marketplace\Operations\MarketplaceOperationsReadService;
+use App\Services\ProductAvailabilityService;
+
+class MarketplaceOperationsDashboardController extends Controller
+{
+    public function overview(MarketplaceOperationsReadService $service)
+    {
+        return ApiResponse::success($service->overview());
+    }
+
+    public function holds(ListQueryRequest $request, MarketplaceOperationsReadService $service)
+    {
+        return ApiResponse::paginated($service->holds($request->filters(['state', 'status', 'product_id', 'customer_id']), $request->perPage()));
+    }
+
+    public function releaseHold(ManualReleaseProductHoldRequest $request, ProductHold $hold, ProductAvailabilityService $availability)
+    {
+        $data = $request->validated();
+        $hold->loadMissing('product');
+        $product = $hold->product;
+
+        if ($hold->status !== 'active') {
+            return ApiResponse::error('Lượt giữ chỗ này không còn hiệu lực.', null, 409);
+        }
+        if (! $product || $product->availability_status !== 'held' || (int) $product->held_by_transaction_id !== (int) $hold->source_id) {
+            return ApiResponse::error('Sản phẩm không còn được giữ bởi lượt giữ chỗ này.', null, 409);
+        }
+
+        $updated = $availability->transition(
+            $product,
+            'available',
+            $hold->source,
+            $data['note'],
+            $data['expected_version'] ?? null,
+            true,
+        );
+
+        AuditLog::query()->create([
+            'audit_type' => 'business_trail',
+            'event_type' => 'product_hold_manual_release',
+            'risk_level' => 'medium',
+            'actor_type' => 'user',
+            'actor_id' => user_id(),
+            'entity_type' => 'product_hold',
+            'entity_id' => (string) $hold->id,
+            'context_type' => 'product',
+            'context_id' => (string) $product->id,
+            'title' => 'Nhả giữ chỗ thủ công',
+            'description' => $data['note'],
+            'metadata' => ['availability_version' => $updated->availability_version],
+        ]);
+
+        return ApiResponse::success($updated->load('activeHold'), 'Đã nhả giữ chỗ sản phẩm.');
+    }
+
+    public function availabilityTimeline(Product $product)
+    {
+        return ApiResponse::success([
+            'product' => $product->only(['id', 'code', 'name', 'availability_status', 'availability_version', 'hold_expires_at']),
+            'active_hold' => $product->activeHold()->with('customer:id,code,name')->first(),
+            'timeline' => $product->availabilityHistory()->with('customer:id,code,name')->latest()->limit(100)->get(),
+        ]);
+    }
+
+    public function queues(ListQueryRequest $request, MarketplaceOperationsReadService $service)
+    {
+        return ApiResponse::paginated($service->stuckTransactions($request->filters(['queue', 'status', 'age_minutes']), $request->perPage()));
+    }
+
+    public function idempotency(ListQueryRequest $request, MarketplaceOperationsReadService $service)
+    {
+        return ApiResponse::paginated($service->idempotencyAudit($request->perPage()));
+    }
+
+    public function reconciliation(MarketplaceOperationsReadService $service)
+    {
+        return ApiResponse::success($service->reconciliation());
+    }
+
+    public function documentChecklist(Transaction $transaction, MarketplaceOperationsReadService $service)
+    {
+        return ApiResponse::success($service->documentChecklist($transaction));
+    }
+}
