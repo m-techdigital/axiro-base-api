@@ -61,7 +61,17 @@ class MarketplaceOperationsControlTest extends TestCase
 
         $this->getJson('/api/v1/operations-dashboard/overview', $headers)
             ->assertOk()
-            ->assertJsonPath('data.holds.active', 1);
+            ->assertJsonPath('data.holds.active', 1)
+            ->assertJsonPath('data.menu_counters.expired_holds', 0)
+            ->assertJsonPath('data.menu_counters.pending_payment_confirmation', 0)
+            ->assertJsonPath('data.menu_counters.open_disputes', 0);
+
+        $this->getJson('/api/v1/operations-dashboard/transactions/'.$transaction->id.'/document-checklist', $headers)
+            ->assertOk()
+            ->assertJsonPath('data.0.key', 'payment')
+            ->assertJsonPath('data.1.key', 'handover')
+            ->assertJsonPath('data.2.key', 'acceptance')
+            ->assertJsonPath('data.3.key', 'dispute');
 
         $this->postJson('/api/v1/operations-dashboard/holds/'.$hold->id.'/release', [
             'note' => 'Admin đã xác minh giao dịch không còn hiệu lực.',

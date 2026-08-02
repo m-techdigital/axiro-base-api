@@ -30,7 +30,6 @@ return new class extends Migration
             $table->string('code')->unique();
             $table->foreignId('document_template_id')->constrained('document_templates')->cascadeOnDelete();
             $table->foreignId('transaction_id')->constrained('transactions')->cascadeOnDelete();
-            $table->foreignId('contract_id')->nullable()->constrained('contracts')->nullOnDelete();
             $table->string('document_type')->index();
             $table->string('status')->default('issued')->index();
             $table->unsignedInteger('version')->default(1);

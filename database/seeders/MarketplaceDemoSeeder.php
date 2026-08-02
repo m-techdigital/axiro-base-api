@@ -31,7 +31,6 @@ class MarketplaceDemoSeeder extends Seeder
             $products = $this->products($customers, $admin);
             $transactions = $this->transactions($products, $customers, $admin);
             $this->payments($transactions, $customers, $admin);
-            $this->contracts($transactions, $admin);
             $this->eventsAndCheckpoints($transactions, $customers);
             $this->disputes($transactions, $customers, $admin);
             $this->notifications($transactions, $customers);
@@ -211,18 +210,6 @@ class MarketplaceDemoSeeder extends Seeder
                 'confirmed_by' => $row['status'] === 'confirmed' ? $admin->id : null,
             ]);
         }
-    }
-
-    private function contracts(array $transactions, User $admin): void
-    {
-        Contract::query()->updateOrCreate(['code' => 'CTR-DEMO-SALE'], [
-            'transaction_id' => $transactions['completed']->id, 'contract_type' => 'sale', 'title' => 'Hợp đồng mua bán mẫu',
-            'contract_value' => 650000, 'deposit_amount' => 0, 'signed_at' => now(), 'status' => 'completed', 'created_by' => $admin->id,
-        ]);
-        Contract::query()->updateOrCreate(['code' => 'CTR-DEMO-RENTAL'], [
-            'transaction_id' => $transactions['active_rental']->id, 'contract_type' => 'rental', 'title' => 'Hợp đồng thuê mẫu',
-            'contract_value' => 540000, 'deposit_amount' => 700000, 'signed_at' => now(), 'status' => 'active', 'created_by' => $admin->id,
-        ]);
     }
 
     private function eventsAndCheckpoints(array $transactions, array $customers): void

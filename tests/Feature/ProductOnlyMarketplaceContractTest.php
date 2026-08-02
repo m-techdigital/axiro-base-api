@@ -16,5 +16,9 @@ class ProductOnlyMarketplaceContractTest extends TestCase
         $this->assertStringContainsString("'offer_modes'", $request);
         $this->assertStringNotContainsString("'transaction_types' => 'array'", $product);
         $this->assertFileDoesNotExist(app_path('Models/ProductListing.php'));
+        $this->assertFileDoesNotExist(app_path('Models/Contract.php'));
+        $this->assertFileDoesNotExist(app_path('Http/Controllers/ContractController.php'));
+        $this->assertFileDoesNotExist(app_path('Http/Requests/ContractRequest.php'));
+        $this->assertFileDoesNotExist(database_path('migrations/2026_01_01_000300_create_contracts_table.php'));
     }
 }

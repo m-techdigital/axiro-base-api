@@ -11,7 +11,7 @@ class GeneratedDocument extends Model
     use SoftDeletes;
     use TracksAuditHistory;
 
-    protected $fillable = ['code', 'document_template_id', 'transaction_id', 'contract_id', 'document_type', 'status', 'version', 'title', 'merge_payload', 'rendered_html', 'issued_at', 'issued_by'];
+    protected $fillable = ['code', 'document_template_id', 'transaction_id', 'document_type', 'status', 'version', 'title', 'merge_payload', 'rendered_html', 'issued_at', 'issued_by'];
 
     protected $casts = ['merge_payload' => 'array', 'issued_at' => 'datetime', 'version' => 'integer'];
 
@@ -23,11 +23,6 @@ class GeneratedDocument extends Model
     public function transaction()
     {
         return $this->belongsTo(Transaction::class);
-    }
-
-    public function contract()
-    {
-        return $this->belongsTo(Contract::class);
     }
 
     public function acceptances()

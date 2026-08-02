@@ -6,7 +6,6 @@ use App\Models\Concerns\TracksAuditHistory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Transaction extends Model
@@ -31,11 +30,6 @@ class Transaction extends Model
     public function seller(): BelongsTo
     {
         return $this->belongsTo(Customer::class, 'seller_customer_id');
-    }
-
-    public function contract(): HasOne
-    {
-        return $this->hasOne(Contract::class);
     }
 
     public function payments(): HasMany

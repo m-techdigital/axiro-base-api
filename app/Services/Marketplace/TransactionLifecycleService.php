@@ -5,7 +5,6 @@ namespace App\Services\Marketplace;
 use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductSelectionContext;
 use App\Models\AuditLog;
-use App\Models\Contract;
 use App\Models\MarketplaceDispute;
 use App\Models\MarketplacePlatformLedgerEntry;
 use App\Models\Product;
@@ -377,7 +376,6 @@ class TransactionLifecycleService
             }if ($next === 'cancelled') {
                 $this->releaseProductAfterCancellation($t);
             }$this->event($t, $action, $actorType, $actorId, $title, null, ['checkpoint' => $checkpoint]);
-            $this->ensureContract($t);
 
             return $this->load($t);
         });
@@ -409,6 +407,30 @@ class TransactionLifecycleService
         $t->update(['released_amount' => bcadd((string) $t->released_amount, $released, 2), 'refunded_amount' => bcadd((string) $t->refunded_amount, $refunded, 2), 'escrow_amount' => '0.00']);
     }
 
+    public function allowedAdminActions(Transaction $transaction): array
+    {
+        $actions = [];
+
+        if (in_array($transaction->status, ['paid', 'partially_paid', 'handover_pending'], true)) {
+            $actions[] = 'force_handover';
+        }
+        if ($transaction->transaction_type === 'rental'
+            && in_array($transaction->status, ['active', 'return_pending', 'overdue'], true)) {
+            $actions[] = 'force_return';
+        }
+        if (in_array($transaction->status, ['handed_over', 'returned'], true)) {
+            $actions[] = 'complete';
+        }
+        if (! in_array($transaction->status, ['completed', 'cancelled'], true)) {
+            $actions[] = 'cancel';
+        }
+        if ($transaction->status === 'cancelled') {
+            $actions[] = 'reopen';
+        }
+
+        return $actions;
+    }
+
     public function adminTransition(Transaction $transaction, string $action, int $adminId, ?string $note = null): Transaction
     {
         return DB::transaction(function () use ($transaction, $action, $adminId, $note) {
@@ -426,7 +448,6 @@ class TransactionLifecycleService
                 $this->refundHeldPayments($t, 'admin_cancel');
                 $this->releaseProductAfterCancellation($t);
             }$this->event($t, 'admin_'.$action, 'user', $adminId, 'Quản trị viên cập nhật giao dịch', $note);
-            $this->ensureContract($t);
 
             return $this->load($t);
         });
@@ -445,13 +466,6 @@ class TransactionLifecycleService
         if (bccomp($refunded, '0.00', 2) > 0) {
             $t->update(['refunded_amount' => bcadd((string) $t->refunded_amount, $refunded, 2), 'escrow_amount' => '0.00']);
         }
-    }
-
-    private function ensureContract(Transaction $t): void
-    {
-        if ($t->contract()->exists() || ! in_array($t->status, ['paid', 'active', 'handed_over', 'returned', 'completed'], true)) {
-            return;
-        }Contract::create(['code' => 'CTR-'.strtoupper(Str::random(10)), 'transaction_id' => $t->id, 'contract_type' => $t->transaction_type === 'purchase' ? 'sale' : 'rental', 'title' => 'Thỏa thuận '.$t->code, 'contract_value' => $t->total_payable, 'deposit_amount' => $t->deposit_amount, 'signed_at' => now()->toDateString(), 'start_date' => $t->rental_start_at?->toDateString() ?? now()->toDateString(), 'end_date' => $t->rental_end_at?->toDateString(), 'status' => 'active']);
     }
 
     public function openDispute(Transaction $t, int $customerId, array $data): MarketplaceDispute
@@ -491,7 +505,7 @@ class TransactionLifecycleService
 
     public function load(Transaction $t): Transaction
     {
-        return $t->fresh(['product.rentalRates', 'buyer:id,code,name,avatar_url', 'seller:id,code,name,avatar_url', 'contract', 'payments', 'events', 'disputes', 'checkpoints', 'documents', 'assetSnapshots']);
+        return $t->fresh(['product.rentalRates', 'buyer:id,code,name,avatar_url', 'seller:id,code,name,avatar_url', 'payments', 'events', 'disputes', 'checkpoints', 'documents', 'assetSnapshots']);
     }
 
     private function recordCheckoutIdempotencyAudit(string $event, Transaction $transaction, int $buyerId, string $key, string $requestHash): void

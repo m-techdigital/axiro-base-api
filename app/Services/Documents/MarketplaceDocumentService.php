@@ -16,8 +16,8 @@ use Illuminate\Validation\ValidationException;
 class MarketplaceDocumentService
 {
     public const TYPES = [
-        'sale_contract' => 'Hợp đồng mua bán tài khoản trò chơi',
-        'rental_contract' => 'Hợp đồng thuê tài khoản trò chơi',
+        'sale_contract' => 'Hồ sơ mua bán tài khoản trò chơi',
+        'rental_contract' => 'Hồ sơ thuê tài khoản trò chơi',
         'installment_appendix' => 'Phụ lục lịch thanh toán trả góp',
         'deposit_confirmation' => 'Thỏa thuận đặt cọc giữ tài khoản',
         'payment_confirmation' => 'Xác nhận thanh toán giao dịch',
@@ -33,7 +33,7 @@ class MarketplaceDocumentService
 
     public function ensureForTransaction(Transaction $transaction): Collection
     {
-        $transaction->loadMissing(['product.offerModes', 'buyer', 'seller', 'contract', 'payments', 'events', 'disputes', 'checkpoints']);
+        $transaction->loadMissing(['product.offerModes', 'buyer', 'seller', 'payments', 'events', 'disputes', 'checkpoints']);
         $types = [$transaction->transaction_type === 'rental' ? 'rental_contract' : 'sale_contract'];
         if ($transaction->payments->contains(fn ($payment) => in_array($payment->status, ['submitted', 'confirmed'], true))) {
             $types[] = 'payment_confirmation';
@@ -82,7 +82,7 @@ class MarketplaceDocumentService
             return $existing->load(['template', 'acceptances.customer:id,code,name']);
         }
         $version = $existing ? $existing->version + 1 : 1;
-        $payload = $this->payload($transaction->fresh()->load(['product.offerModes', 'buyer', 'seller', 'contract', 'payments', 'events', 'disputes', 'checkpoints']));
+        $payload = $this->payload($transaction->fresh()->load(['product.offerModes', 'buyer', 'seller', 'payments', 'events', 'disputes', 'checkpoints']));
         $html = $this->render($template->content_html, $payload);
         if (preg_match('/\{\{[^}]+\}\}/', $html, $matches)) {
             throw ValidationException::withMessages(['content_html' => 'Tài liệu còn trường trộn chưa được thay thế: '.$matches[0]]);
@@ -90,7 +90,7 @@ class MarketplaceDocumentService
 
         return GeneratedDocument::create([
             'code' => 'DOC-'.strtoupper(Str::random(10)), 'document_template_id' => $template->id,
-            'transaction_id' => $transaction->id, 'contract_id' => $transaction->contract?->id,
+            'transaction_id' => $transaction->id,
             'document_type' => $type, 'status' => 'issued', 'version' => $version,
             'title' => self::TYPES[$type].' - '.$transaction->code, 'merge_payload' => $payload,
             'rendered_html' => $html, 'issued_at' => now(), 'issued_by' => $adminId,

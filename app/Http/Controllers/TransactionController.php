@@ -8,7 +8,9 @@ use App\Http\Requests\TransactionRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\Transaction;
 use App\Services\AuditTrailService;
+use App\Services\Marketplace\Operations\MarketplaceOperationsReadService;
 use App\Services\Marketplace\TransactionLifecycleService;
+use App\Support\Marketplace\MoneyMath;
 use App\Support\Query\AppliesListQuery;
 
 class TransactionController extends Controller
@@ -23,7 +25,6 @@ class TransactionController extends Controller
                 'product.rentalRates',
                 'buyer:id,code,name',
                 'seller:id,code,name',
-                'contract',
             ]),
             $request,
             ['code'],
@@ -51,14 +52,18 @@ class TransactionController extends Controller
         );
     }
 
-    public function show(Transaction $transaction, AuditTrailService $audit)
+    public function show(
+        Transaction $transaction,
+        AuditTrailService $audit,
+        TransactionLifecycleService $lifecycle,
+        MarketplaceOperationsReadService $operations,
+    )
     {
         $loaded = $transaction->load([
             'product',
             'product.rentalRates',
             'buyer:id,code,name,avatar_url',
             'seller:id,code,name,avatar_url',
-            'contract',
             'payments.customer:id,code,name',
             'events',
             'disputes.openedBy:id,code,name',
@@ -68,6 +73,8 @@ class TransactionController extends Controller
         ]);
 
         $loaded->setAttribute('audit_history', $audit->forTransaction($transaction->id));
+        $loaded->setAttribute('admin_actions', $lifecycle->allowedAdminActions($loaded));
+        $loaded->setAttribute('workflow_checklist', $operations->documentChecklist($loaded));
 
         return ApiResponse::success($loaded);
     }
@@ -106,14 +113,6 @@ class TransactionController extends Controller
 
     public function destroy(Transaction $transaction)
     {
-        if ($transaction->contract()->exists()) {
-            return ApiResponse::error(
-                'Giao dịch đã có hợp đồng nên không thể xóa.',
-                null,
-                409,
-            );
-        }
-
         $transaction->delete();
 
         return ApiResponse::success(message: 'Đã xóa giao dịch.');
@@ -121,14 +120,15 @@ class TransactionController extends Controller
 
     private function prepare(array $data, bool $creating = false): array
     {
-        $data['total_payable'] = number_format(
-            (float) $data['transaction_value']
-                + (float) ($data['service_fee'] ?? 0)
-                + (float) ($data['deposit_amount'] ?? 0)
-                - (float) ($data['discount'] ?? 0),
-            2,
-            '.',
-            '',
+        $data['total_payable'] = MoneyMath::subtract(
+            MoneyMath::add(
+                MoneyMath::add(
+                    (string) $data['transaction_value'],
+                    (string) ($data['service_fee'] ?? '0.00'),
+                ),
+                (string) ($data['deposit_amount'] ?? '0.00'),
+            ),
+            (string) ($data['discount'] ?? '0.00'),
         );
         $data['updated_by'] = user_id();
 

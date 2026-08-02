@@ -20,7 +20,7 @@
 ## Điều khoản nhà phát hành
 
 - Mỗi trò chơi phải có trạng thái: cho phép, cho phép có điều kiện, tạm dừng hoặc không hỗ trợ giao dịch.
-- Không phát hành hợp đồng theo cách khiến khách hàng hiểu rằng nhà phát hành bảo đảm hoặc công nhận giao dịch.
+- Không phát hành hồ sơ giao dịch theo cách khiến khách hàng hiểu rằng nhà phát hành bảo đảm hoặc công nhận giao dịch.
 
 ## Nguồn cần rà soát
 

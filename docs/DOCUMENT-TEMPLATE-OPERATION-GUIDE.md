@@ -11,7 +11,7 @@
 ## Bộ hồ sơ tối thiểu
 
 - Phiếu ghi nhận giao dịch trên nền tảng.
-- Hợp đồng mua bán hoặc hợp đồng thuê.
+- Hồ sơ mua bán hoặc hồ sơ thuê.
 - Xác nhận thanh toán.
 - Phụ lục trả góp hoặc thỏa thuận đặt cọc khi áp dụng.
 - Phiếu kiểm tra bảo mật và biên bản bàn giao.

@@ -39,8 +39,8 @@ class MarketplaceDocumentSeeder extends Seeder
     private function templates(): array
     {
         return [
-            'sale_contract' => $this->template('Mẫu hợp đồng mua bán tài khoản trò chơi', 'sale_contract', 'HỢP ĐỒNG MUA BÁN TÀI KHOẢN TRÒ CHƠI', $this->saleBody()),
-            'rental_contract' => $this->template('Mẫu hợp đồng thuê tài khoản trò chơi', 'rental_contract', 'HỢP ĐỒNG THUÊ TÀI KHOẢN TRÒ CHƠI', $this->rentalBody()),
+            'sale_contract' => $this->template('Mẫu hồ sơ mua bán tài khoản trò chơi', 'sale_contract', 'HỒ SƠ MUA BÁN TÀI KHOẢN TRÒ CHƠI', $this->saleBody()),
+            'rental_contract' => $this->template('Mẫu hồ sơ thuê tài khoản trò chơi', 'rental_contract', 'HỒ SƠ THUÊ TÀI KHOẢN TRÒ CHƠI', $this->rentalBody()),
             'installment_appendix' => $this->template('Phụ lục lịch thanh toán trả góp', 'installment_appendix', 'PHỤ LỤC LỊCH THANH TOÁN TRẢ GÓP', $this->installmentBody()),
             'deposit_confirmation' => $this->template('Thỏa thuận đặt cọc giữ tài khoản', 'deposit_confirmation', 'THỎA THUẬN ĐẶT CỌC GIỮ TÀI KHOẢN', $this->depositBody()),
             'payment_confirmation' => $this->template('Xác nhận thanh toán giao dịch', 'payment_confirmation', 'XÁC NHẬN THANH TOÁN GIAO DỊCH', $this->paymentBody()),
@@ -162,7 +162,7 @@ class MarketplaceDocumentSeeder extends Seeder
 
     private function platformBody(): string
     {
-        return $this->parties().$this->account().$this->money().'<h3>IV. Ghi nhận trên nền tảng</h3><table><tr><td class="label">Loại giao dịch</td><td>{{transaction_type}}</td></tr><tr><td class="label">Hình thức</td><td>{{purchase_mode}}</td></tr><tr><td class="label">Ngày giao dịch</td><td>{{transaction_date}}</td></tr><tr><td class="label">Trạng thái</td><td>{{status}}</td></tr></table><p>Phiếu này là bản ghi dữ liệu giao dịch trên hệ thống, dùng để đối chiếu với hợp đồng, thanh toán, bàn giao và tranh chấp liên quan.</p>'.$this->commonTerms();
+        return $this->parties().$this->account().$this->money().'<h3>IV. Ghi nhận trên nền tảng</h3><table><tr><td class="label">Loại giao dịch</td><td>{{transaction_type}}</td></tr><tr><td class="label">Hình thức</td><td>{{purchase_mode}}</td></tr><tr><td class="label">Ngày giao dịch</td><td>{{transaction_date}}</td></tr><tr><td class="label">Trạng thái</td><td>{{status}}</td></tr></table><p>Phiếu này là bản ghi dữ liệu giao dịch trên hệ thống, dùng để đối chiếu với hồ sơ giao dịch, thanh toán, bàn giao và tranh chấp liên quan.</p>'.$this->commonTerms();
     }
 
     private function legalNotice(): string

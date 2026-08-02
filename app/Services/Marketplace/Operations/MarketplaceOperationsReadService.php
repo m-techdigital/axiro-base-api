@@ -6,15 +6,12 @@ use App\Models\AuditLog;
 use App\Models\CustomerWallet;
 use App\Models\GeneratedDocument;
 use App\Models\MarketplaceDispute;
-use App\Models\Product;
 use App\Models\ProductHold;
 use App\Models\Transaction;
 use App\Models\TransactionPayment;
 use App\Models\WalletTransaction;
 use App\Models\WithdrawalRequest;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class MarketplaceOperationsReadService
 {
@@ -47,6 +44,18 @@ class MarketplaceOperationsReadService
                 'transactions_with_key' => Transaction::query()->whereNotNull('idempotency_key')->count(),
                 'duplicate_checkout_replays' => AuditLog::query()->where('event_type', 'checkout_idempotent_replay')->count(),
                 'idempotency_conflicts' => AuditLog::query()->where('event_type', 'checkout_idempotency_conflict')->count(),
+            ],
+            'menu_counters' => [
+                'expired_holds' => ProductHold::query()
+                    ->where('status', 'active')
+                    ->where('hold_until', '<=', $now)
+                    ->count(),
+                'pending_payment_confirmation' => TransactionPayment::query()
+                    ->where('status', 'submitted')
+                    ->count(),
+                'open_disputes' => MarketplaceDispute::query()
+                    ->whereNotIn('status', ['resolved', 'rejected', 'cancelled'])
+                    ->count(),
             ],
             'sla' => $this->slaSummary(),
         ];
@@ -159,27 +168,50 @@ class MarketplaceOperationsReadService
 
     public function documentChecklist(Transaction $transaction): array
     {
-        $required = match ($transaction->transaction_type) {
-            'rental' => ['rental_contract', 'handover_record', 'return_record'],
-            default => $transaction->purchase_mode === 'installment'
-                ? ['sale_contract', 'installment_schedule', 'handover_record']
-                : ['sale_contract', 'handover_record'],
-        };
+        $transaction->loadMissing(['payments', 'checkpoints', 'disputes']);
 
-        $documents = GeneratedDocument::query()->withCount('acceptances')->where('transaction_id', $transaction->id)->get()->keyBy('document_type');
+        $confirmedPayments = $transaction->payments->where('status', 'confirmed')->count();
+        $handoverDone = $transaction->checkpoints->contains('checkpoint', 'seller_handover')
+            || in_array($transaction->status, ['handover_pending', 'handed_over', 'active', 'return_pending', 'returned', 'completed'], true);
+        $acceptanceDone = $transaction->checkpoints->contains('checkpoint', 'buyer_received')
+            || in_array($transaction->status, ['handed_over', 'active', 'return_pending', 'returned', 'completed'], true);
+        $openDispute = $transaction->disputes->first(
+            fn ($dispute): bool => ! in_array($dispute->status, ['resolved', 'rejected', 'cancelled'], true),
+        );
+        $hasResolvedDispute = $transaction->disputes->contains(
+            fn ($dispute): bool => in_array($dispute->status, ['resolved', 'rejected', 'cancelled'], true),
+        );
 
-        return collect($required)->map(function (string $type) use ($documents): array {
-            $document = $documents->get($type);
-
-            return [
-                'document_type' => $type,
-                'required' => true,
-                'generated' => $document !== null,
-                'status' => $document?->status,
-                'accepted' => ((int) ($document?->acceptances_count ?? 0)) > 0,
-                'document_id' => $document?->id,
-            ];
-        })->values()->all();
+        return [
+            [
+                'key' => 'payment',
+                'label' => 'Thanh toán',
+                'status' => $confirmedPayments > 0 ? 'completed' : 'pending',
+                'detail' => $confirmedPayments > 0
+                    ? $confirmedPayments.' khoản đã xác nhận'
+                    : 'Chưa có khoản thanh toán được xác nhận',
+            ],
+            [
+                'key' => 'handover',
+                'label' => 'Bàn giao',
+                'status' => $handoverDone ? 'completed' : 'pending',
+                'detail' => $handoverDone ? 'Đã ghi nhận bàn giao' : 'Chưa ghi nhận bàn giao',
+            ],
+            [
+                'key' => 'acceptance',
+                'label' => 'Xác nhận nhận/hoàn trả',
+                'status' => $acceptanceDone ? 'completed' : 'pending',
+                'detail' => $acceptanceDone ? 'Đã có xác nhận của bên nhận' : 'Đang chờ xác nhận',
+            ],
+            [
+                'key' => 'dispute',
+                'label' => 'Tranh chấp',
+                'status' => $openDispute ? 'attention' : ($hasResolvedDispute ? 'completed' : 'not_required'),
+                'detail' => $openDispute
+                    ? 'Có tranh chấp đang mở'
+                    : ($hasResolvedDispute ? 'Tranh chấp đã được xử lý' : 'Không có tranh chấp'),
+            ],
+        ];
     }
 
     private function slaSummary(): array

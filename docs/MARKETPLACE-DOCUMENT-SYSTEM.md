@@ -10,8 +10,8 @@ Hệ tài liệu được rút gọn từ DocumentTemplate và GeneratedDocument
 
 ## Loại tài liệu
 
-- Hợp đồng mua bán tài khoản trò chơi.
-- Hợp đồng thuê tài khoản trò chơi.
+- Hồ sơ mua bán tài khoản trò chơi.
+- Hồ sơ thuê tài khoản trò chơi.
 - Phụ lục lịch trả góp.
 - Xác nhận đặt cọc.
 - Xác nhận thanh toán.

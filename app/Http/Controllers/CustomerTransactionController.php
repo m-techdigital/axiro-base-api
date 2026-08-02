@@ -19,7 +19,7 @@ class CustomerTransactionController extends Controller
     public function index(Request $request)
     {
         $customerId = auth('customer_api')->id();
-        $query = Transaction::with(['product.rentalRates', 'buyer:id,code,name', 'seller:id,code,name', 'contract', 'payments', 'documents.acceptances'])
+        $query = Transaction::with(['product.rentalRates', 'buyer:id,code,name', 'seller:id,code,name', 'payments', 'documents.acceptances'])
             ->where(fn ($nested) => $nested->where('buyer_customer_id', $customerId)->orWhere('seller_customer_id', $customerId));
         if ($request->filled('role')) {
             $query->where($request->string('role') === 'seller' ? 'seller_customer_id' : 'buyer_customer_id', $customerId);
@@ -34,7 +34,7 @@ class CustomerTransactionController extends Controller
     public function show(Transaction $transaction, TransactionLifecycleService $service)
     {
         $this->authorizeParty($transaction);
-        $loaded = $transaction->load(['product.rentalRates', 'buyer:id,code,name,avatar_url', 'seller:id,code,name,avatar_url', 'contract', 'payments', 'events', 'disputes:id,transaction_id,status,reason,description,resolved_at', 'checkpoints.customer:id,code,name']);
+        $loaded = $transaction->load(['product.rentalRates', 'buyer:id,code,name,avatar_url', 'seller:id,code,name,avatar_url', 'payments', 'events', 'disputes:id,transaction_id,status,reason,description,resolved_at', 'checkpoints.customer:id,code,name']);
         $loaded->setAttribute('current_role', $transaction->buyer_customer_id === auth('customer_api')->id() ? 'buyer' : 'seller');
         $loaded->setAttribute('allowed_actions', $service->allowedActions($transaction, auth('customer_api')->id()));
 
