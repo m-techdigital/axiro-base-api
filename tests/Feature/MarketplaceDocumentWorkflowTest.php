@@ -22,7 +22,7 @@ class MarketplaceDocumentWorkflowTest extends TestCase
         $this->seed(MarketplaceDocumentSeeder::class);
 
         $transaction = Transaction::where('code', 'TRX-DEMO-COMPLETED-SALE')->firstOrFail();
-        $document = GeneratedDocument::where('transaction_id', $transaction->id)->where('document_type', 'sale_contract')->firstOrFail();
+        $document = GeneratedDocument::where('transaction_id', $transaction->id)->where('document_type', 'sale_record')->firstOrFail();
         $buyer = Customer::findOrFail($transaction->buyer_customer_id);
         $seller = Customer::findOrFail($transaction->seller_customer_id);
 
@@ -30,7 +30,7 @@ class MarketplaceDocumentWorkflowTest extends TestCase
         $this->withHeader('Authorization', 'Bearer '.$buyerToken)
             ->getJson("/api/v1/customer/transactions/{$transaction->id}/documents")
             ->assertOk()
-            ->assertJsonFragment(['document_type' => 'sale_contract']);
+            ->assertJsonFragment(['document_type' => 'sale_record']);
         $this->withHeader('Authorization', 'Bearer '.$buyerToken)
             ->postJson("/api/v1/customer/documents/{$document->id}/accept", [
                 'accepted_terms' => true,

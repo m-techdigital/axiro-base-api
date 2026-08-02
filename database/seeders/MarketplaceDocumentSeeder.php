@@ -39,8 +39,8 @@ class MarketplaceDocumentSeeder extends Seeder
     private function templates(): array
     {
         return [
-            'sale_contract' => $this->template('Mẫu hồ sơ mua bán tài khoản trò chơi', 'sale_contract', 'HỒ SƠ MUA BÁN TÀI KHOẢN TRÒ CHƠI', $this->saleBody()),
-            'rental_contract' => $this->template('Mẫu hồ sơ thuê tài khoản trò chơi', 'rental_contract', 'HỒ SƠ THUÊ TÀI KHOẢN TRÒ CHƠI', $this->rentalBody()),
+            'sale_record' => $this->template('Mẫu hồ sơ mua bán tài khoản trò chơi', 'sale_record', 'HỒ SƠ MUA BÁN TÀI KHOẢN TRÒ CHƠI', $this->saleBody()),
+            'rental_record' => $this->template('Mẫu hồ sơ thuê tài khoản trò chơi', 'rental_record', 'HỒ SƠ THUÊ TÀI KHOẢN TRÒ CHƠI', $this->rentalBody()),
             'installment_appendix' => $this->template('Phụ lục lịch thanh toán trả góp', 'installment_appendix', 'PHỤ LỤC LỊCH THANH TOÁN TRẢ GÓP', $this->installmentBody()),
             'deposit_confirmation' => $this->template('Thỏa thuận đặt cọc giữ tài khoản', 'deposit_confirmation', 'THỎA THUẬN ĐẶT CỌC GIỮ TÀI KHOẢN', $this->depositBody()),
             'payment_confirmation' => $this->template('Xác nhận thanh toán giao dịch', 'payment_confirmation', 'XÁC NHẬN THANH TOÁN GIAO DỊCH', $this->paymentBody()),

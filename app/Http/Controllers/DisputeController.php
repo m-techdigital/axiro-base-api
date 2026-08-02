@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Admin\ResolveDisputeRequest;
 use App\Http\Requests\Common\ListQueryRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\MarketplaceDispute;
 use App\Services\Marketplace\TransactionLifecycleService;
 use App\Support\Query\AppliesListQuery;
-use Illuminate\Http\Request;
 
 class DisputeController extends Controller
 {
@@ -39,18 +39,12 @@ class DisputeController extends Controller
     }
 
     public function resolve(
-        Request $request,
+        ResolveDisputeRequest $request,
         MarketplaceDispute $dispute,
         TransactionLifecycleService $service,
     ) {
-        $data = $request->validate([
-            'status' => 'required|in:resolved,rejected',
-            'resolution' => 'required|string|max:5000',
-            'transaction_status' => 'nullable|in:completed,cancelled,paid,returned',
-        ]);
-
         return ApiResponse::success(
-            $service->resolveDispute($dispute, user_id(), $data),
+            $service->resolveDispute($dispute, user_id(), $request->validated()),
         );
     }
 }

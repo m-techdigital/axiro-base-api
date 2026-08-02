@@ -9,3 +9,5 @@ AXIRO cha là chuẩn kỹ thuật. Mini chỉ rút gọn miền nghiệp vụ, 
 - Controller mỏng, lifecycle nằm trong service.
 - Không kéo RBAC/company/project/accounting của AXIRO cha vào Mini.
 - Helper cũ `success_response`/`error_response` chỉ là compatibility facade và phải delegate tới `ApiResponse`.
+
+- `TRANSACTION_DOCUMENT_DISPUTE_CLOSURE_20260802.md`: chuẩn hóa key hồ sơ giao dịch và outcome tranh chấp cuối.

@@ -2,6 +2,7 @@
 
 namespace App\Services\Documents;
 
+use App\Support\Marketplace\DocumentType;
 use Illuminate\Validation\ValidationException;
 
 class MarketplaceDocumentTemplateValidator
@@ -12,8 +13,8 @@ class MarketplaceDocumentTemplateValidator
     ];
 
     private const REQUIRED_BY_TYPE = [
-        'sale_contract' => ['{{transaction_value}}', '{{payment_schedule}}'],
-        'rental_contract' => ['{{rental_start}}', '{{rental_end}}', '{{deposit_amount}}'],
+        'sale_record' => ['{{transaction_value}}', '{{payment_schedule}}'],
+        'rental_record' => ['{{rental_start}}', '{{rental_end}}', '{{deposit_amount}}'],
         'installment_appendix' => ['{{initial_payment_amount}}', '{{installment_count}}', '{{payment_schedule}}'],
         'deposit_confirmation' => ['{{deposit_amount}}', '{{remaining_amount}}'],
         'payment_confirmation' => ['{{paid_amount}}', '{{remaining_amount}}', '{{payment_schedule}}'],
@@ -29,6 +30,7 @@ class MarketplaceDocumentTemplateValidator
 
     public function validateOrFail(string $type, string $html): void
     {
+        $type = DocumentType::canonical($type);
         $errors = [];
         if (mb_strlen(strip_tags($html)) < 500) {
             $errors[] = 'Nội dung mẫu quá ngắn; cần có đầy đủ phạm vi, thông tin các bên, nghĩa vụ, xử lý vi phạm và xác nhận.';

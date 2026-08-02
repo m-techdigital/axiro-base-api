@@ -6,6 +6,7 @@ use App\Models\DocumentAcceptance;
 use App\Models\DocumentTemplate;
 use App\Models\GeneratedDocument;
 use App\Models\Transaction;
+use App\Support\Marketplace\DocumentType;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
@@ -16,8 +17,8 @@ use Illuminate\Validation\ValidationException;
 class MarketplaceDocumentService
 {
     public const TYPES = [
-        'sale_contract' => 'Hồ sơ mua bán tài khoản trò chơi',
-        'rental_contract' => 'Hồ sơ thuê tài khoản trò chơi',
+        'sale_record' => 'Hồ sơ mua bán tài khoản trò chơi',
+        'rental_record' => 'Hồ sơ thuê tài khoản trò chơi',
         'installment_appendix' => 'Phụ lục lịch thanh toán trả góp',
         'deposit_confirmation' => 'Thỏa thuận đặt cọc giữ tài khoản',
         'payment_confirmation' => 'Xác nhận thanh toán giao dịch',
@@ -34,14 +35,14 @@ class MarketplaceDocumentService
     public function ensureForTransaction(Transaction $transaction): Collection
     {
         $transaction->loadMissing(['product.offerModes', 'buyer', 'seller', 'payments', 'events', 'disputes', 'checkpoints']);
-        $types = [$transaction->transaction_type === 'rental' ? 'rental_contract' : 'sale_contract'];
+        $types = [$transaction->transaction_type === 'rental' ? DocumentType::RENTAL_RECORD : DocumentType::SALE_RECORD];
         if ($transaction->payments->contains(fn ($payment) => in_array($payment->status, ['submitted', 'confirmed'], true))) {
             $types[] = 'payment_confirmation';
         }
         if ($transaction->purchase_mode === 'installment') {
             $types[] = 'installment_appendix';
         }
-        if ($transaction->purchase_mode === 'deposit' || (float) $transaction->deposit_amount > 0) {
+        if ($transaction->purchase_mode === 'deposit' || bccomp((string) $transaction->deposit_amount, '0.00', 2) > 0) {
             $types[] = 'deposit_confirmation';
         }
         if (in_array($transaction->status, ['handover_pending', 'handed_over', 'active', 'return_pending', 'returned', 'completed', 'disputed'], true)) {
@@ -57,7 +58,7 @@ class MarketplaceDocumentService
         if ($transaction->disputes->contains(fn ($d) => $d->status === 'resolved')) {
             $types[] = 'dispute_resolution';
         }
-        if ((float) $transaction->refunded_amount > 0) {
+        if (bccomp((string) $transaction->refunded_amount, '0.00', 2) > 0) {
             $types[] = 'refund_settlement';
         }
         if ($transaction->status === 'completed') {
@@ -72,10 +73,15 @@ class MarketplaceDocumentService
 
     public function generate(Transaction $transaction, string $type, ?int $adminId = null, bool $regenerate = false): GeneratedDocument
     {
+        $type = DocumentType::canonical($type);
         if (! isset(self::TYPES[$type])) {
             throw ValidationException::withMessages(['document_type' => 'Loại tài liệu không hợp lệ.']);
         }
-        $template = DocumentTemplate::query()->where('code', $type)->where('status', 'approved')->firstOrFail();
+        $template = DocumentTemplate::query()
+            ->whereIn('code', DocumentType::aliasesFor($type))
+            ->where('status', 'approved')
+            ->orderByRaw('CASE WHEN code = ? THEN 0 ELSE 1 END', [$type])
+            ->firstOrFail();
         app(MarketplaceDocumentTemplateValidator::class)->validateOrFail($type, $template->content_html);
         $existing = GeneratedDocument::query()->where('transaction_id', $transaction->id)->where('document_type', $type)->latest('version')->first();
         if ($existing && ! $regenerate) {

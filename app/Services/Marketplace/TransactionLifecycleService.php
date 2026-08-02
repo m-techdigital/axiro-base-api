@@ -435,10 +435,20 @@ class TransactionLifecycleService
     {
         return DB::transaction(function () use ($transaction, $action, $adminId, $note) {
             $t = Transaction::lockForUpdate()->findOrFail($transaction->id);
+            if (! in_array($action, $this->allowedAdminActions($t), true)) {
+                throw ValidationException::withMessages(['action' => 'Hành động không còn hợp lệ ở trạng thái hiện tại.']);
+            }
             $map = ['force_handover' => $t->transaction_type === 'rental' ? 'active' : 'handed_over', 'force_return' => 'returned', 'complete' => 'completed', 'cancel' => 'cancelled', 'reopen' => 'pending_payment'];
             if (! isset($map[$action])) {
                 throw ValidationException::withMessages(['action' => 'Hành động quản trị không hợp lệ.']);
-            }$t->update(['status' => $map[$action]]);
+            }
+            $updates = ['status' => $map[$action]];
+            if ($map[$action] === 'completed') {
+                $updates['completed_at'] = now();
+            } elseif ($action === 'reopen') {
+                $updates['completed_at'] = null;
+            }
+            $t->update($updates);
             if ($map[$action] === 'completed') {
                 $this->settleCompleted($t);
                 if ($t->product) {
@@ -481,20 +491,74 @@ class TransactionLifecycleService
     public function resolveDispute(MarketplaceDispute $d, int $adminId, array $data): MarketplaceDispute
     {
         return DB::transaction(function () use ($d, $adminId, $data) {
-            $d->update(['status' => $data['status'], 'resolution' => $data['resolution'], 'resolved_at' => now(), 'resolved_by' => $adminId]);
-            $next = $data['transaction_status'] ?? ($data['status'] === 'resolved' ? 'completed' : 'cancelled');
-            $d->transaction->update(['status' => $next]);
-            if ($next === 'completed') {
-                $this->settleCompleted($d->transaction);
-                if ($d->transaction->product) {
-                    $this->availability->transition($d->transaction->product, $d->transaction->transaction_type === 'rental' ? ProductAvailabilityStatus::RENTED : ProductAvailabilityStatus::SOLD, $d->transaction, 'Tranh chấp được giải quyết và giao dịch hoàn tất');
-                }
-            } elseif ($next === 'cancelled') {
-                $this->refundHeldPayments($d->transaction, 'dispute_cancel');
-                $this->releaseProductAfterCancellation($d->transaction);
-            }$this->event($d->transaction, 'dispute_resolved', 'user', $adminId, 'Đã xử lý tranh chấp', $data['resolution']);
+            $lockedDispute = MarketplaceDispute::query()->lockForUpdate()->findOrFail($d->id);
+            $transaction = Transaction::query()->lockForUpdate()->findOrFail($lockedDispute->transaction_id);
 
-            return $d->fresh(['transaction', 'openedBy:id,code,name']);
+            if (in_array($lockedDispute->status, ['resolved', 'rejected', 'cancelled'], true)) {
+                return $lockedDispute->fresh(['transaction', 'openedBy:id,code,name']);
+            }
+
+            $outcome = $data['outcome'];
+            $next = match ($outcome) {
+                'complete' => 'completed',
+                'cancel_refund', 'cancel_no_refund' => 'cancelled',
+                'reopen' => $transaction->payments()->where('status', 'confirmed')->exists() ? 'paid' : 'pending_payment',
+            };
+
+            if ($data['status'] === 'rejected' && $outcome !== 'reopen') {
+                throw ValidationException::withMessages([
+                    'outcome' => 'Tranh chấp bị từ chối chỉ được đưa giao dịch trở lại luồng xử lý.',
+                ]);
+            }
+
+            if ($data['status'] === 'resolved' && $outcome === 'reopen') {
+                throw ValidationException::withMessages([
+                    'outcome' => 'Tranh chấp đã chấp nhận phải kết thúc bằng hoàn tất hoặc hủy giao dịch.',
+                ]);
+            }
+
+            $lockedDispute->update([
+                'status' => $data['status'],
+                'resolution' => $data['resolution'],
+                'resolved_at' => now(),
+                'resolved_by' => $adminId,
+            ]);
+
+            $transaction->update([
+                'status' => $next,
+                'completed_at' => $next === 'completed' ? now() : null,
+            ]);
+
+            if ($outcome === 'complete') {
+                $this->settleCompleted($transaction);
+                if ($transaction->product) {
+                    $this->availability->transition(
+                        $transaction->product,
+                        $transaction->transaction_type === 'rental'
+                            ? ProductAvailabilityStatus::RENTED
+                            : ProductAvailabilityStatus::SOLD,
+                        $transaction,
+                        'Tranh chấp được giải quyết và giao dịch hoàn tất',
+                    );
+                }
+            } elseif ($outcome === 'cancel_refund') {
+                $this->refundHeldPayments($transaction, 'dispute_cancel');
+                $this->releaseProductAfterCancellation($transaction);
+            } elseif ($outcome === 'cancel_no_refund') {
+                $this->releaseProductAfterCancellation($transaction);
+            }
+
+            $this->event(
+                $transaction,
+                'dispute_'.$data['status'],
+                'user',
+                $adminId,
+                'Đã xử lý tranh chấp',
+                $data['resolution'],
+                ['outcome' => $outcome, 'transaction_status' => $next],
+            );
+
+            return $lockedDispute->fresh(['transaction', 'openedBy:id,code,name']);
         });
     }
 
