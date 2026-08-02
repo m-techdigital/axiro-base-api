@@ -11,6 +11,8 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->string('code', 50)->unique();
+            $table->string('idempotency_key', 150)->nullable()->unique();
+            $table->char('request_hash', 64)->nullable();
             $table->string('transaction_type', 20)->index();
             $table->string('purchase_mode', 20)->default('full')->index();
             $table->foreignId('product_id')->constrained()->restrictOnDelete();

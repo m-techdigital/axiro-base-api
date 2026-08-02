@@ -15,6 +15,8 @@ use App\Models\TransactionPayment;
 use App\Services\ProductAvailabilityService;
 use App\Services\ProductSelectionService;
 use App\Services\Wallet\WalletLedgerService;
+use App\Support\Marketplace\MoneyMath;
+use App\Support\Marketplace\TransactionIdempotency;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -28,6 +30,19 @@ class TransactionLifecycleService
     {
         return DB::transaction(function () use ($product, $buyerId, $data) {
             $locked = Product::with('rentalRates')->lockForUpdate()->findOrFail($product->id);
+            $idempotencyKey = trim((string) ($data['idempotency_key'] ?? ''));
+            $requestHash = TransactionIdempotency::hash($buyerId, $locked->id, $data);
+            $existing = Transaction::query()->where('idempotency_key', $idempotencyKey)->lockForUpdate()->first();
+            if ($existing) {
+                if ((int) $existing->buyer_customer_id !== $buyerId || ! hash_equals((string) $existing->request_hash, $requestHash)) {
+                    throw ValidationException::withMessages(['idempotency_key' => 'Khóa chống trùng đã được dùng với một yêu cầu khác.']);
+                }
+
+                return $this->load($existing);
+            }
+            if ((int) ($data['availability_version'] ?? 0) !== (int) $locked->availability_version) {
+                throw ValidationException::withMessages(['availability_version' => 'Trạng thái sản phẩm đã thay đổi. Hãy tải lại trước khi tạo giao dịch.']);
+            }
             $this->selection->assertSelectable($locked, ProductSelectionContext::TRANSACTION, ($data['transaction_type'] ?? 'sale') === 'rental' ? 'rent' : 'sell');
             if ($locked->owner_customer_id === $buyerId) {
                 throw ValidationException::withMessages(['product' => 'Bạn không thể giao dịch với sản phẩm của chính mình.']);
@@ -43,15 +58,17 @@ class TransactionLifecycleService
             }
             [$value,$deposit,$rentalMeta] = $isRental ? $this->resolveRentalPricing($locked, $data) : [(string) $locked->sale_price, (string) ($locked->sale_deposit_amount ?? 0), []];
             $fee = $this->fees->calculate($isRental ? 'rental' : 'purchase', $value);
-            $total = bcsub(bcadd(bcadd(bcadd($value, $deposit, 2), $fee['buyer_fee_amount'], 2), $fee['tax_amount'], 2), '0.00', 2);
+            $total = MoneyMath::add($value, $deposit, $fee['buyer_fee_amount'], $fee['tax_amount']);
             $initial = match ($mode) {
-                'deposit' => (string) max((float) $deposit, (float) ($data['initial_payment_amount'] ?? 0)),'installment' => (string) max((float) ($locked->minimum_initial_payment ?? 0), (float) ($data['initial_payment_amount'] ?? 0)),default => $isRental ? (string) bcadd((string) ($rentalMeta['first_due_amount'] ?? $total), bcadd($fee['buyer_fee_amount'], $fee['tax_amount'], 2), 2) : $total
+                'deposit' => MoneyMath::max($deposit, $data['initial_payment_amount'] ?? 0),
+                'installment' => MoneyMath::max($locked->minimum_initial_payment ?? 0, $data['initial_payment_amount'] ?? 0),
+                default => $isRental ? MoneyMath::add($rentalMeta['first_due_amount'] ?? $total, $fee['buyer_fee_amount'], $fee['tax_amount']) : $total
             };
             if (bccomp($initial, $total, 2) > 0) {
                 throw ValidationException::withMessages(['initial_payment_amount' => 'Khoản thanh toán ban đầu không được vượt tổng tiền.']);
             }
             $transaction = Transaction::create([
-                'code' => 'TRX-'.strtoupper(Str::random(10)), 'transaction_type' => $isRental ? 'rental' : 'purchase', 'purchase_mode' => $mode,
+                'code' => 'TRX-'.strtoupper(Str::random(10)), 'idempotency_key' => $idempotencyKey, 'request_hash' => $requestHash, 'transaction_type' => $isRental ? 'rental' : 'purchase', 'purchase_mode' => $mode,
                 'product_id' => $locked->id, 'buyer_customer_id' => $buyerId, 'seller_customer_id' => $locked->owner_customer_id,
                 'transaction_value' => $value, 'service_fee' => $fee['service_fee'], 'buyer_fee_amount' => $fee['buyer_fee_amount'], 'seller_fee_amount' => $fee['seller_fee_amount'], 'tax_amount' => $fee['tax_amount'], 'seller_net_amount' => $fee['seller_net_amount'], 'fee_policy_version' => $fee['fee_policy_version'], 'fee_snapshot' => $fee['fee_snapshot'], 'discount' => 0, 'deposit_amount' => $deposit, 'initial_payment_amount' => $initial,
                 'installment_count' => $mode === 'installment' ? ($data['installment_count'] ?? $locked->max_installment_count ?? 2) : null,
@@ -218,7 +235,7 @@ class TransactionLifecycleService
                 $this->notifications->transaction($id, 'payment_confirmed', 'Thanh toán đã được xác nhận', 'Khoản '.$locked->code.' đã được đối soát.', $transaction->id, $transaction->code);
             }
 
-return $locked->fresh(['transaction']);
+            return $locked->fresh(['transaction']);
         });
     }
 
@@ -304,7 +321,7 @@ return $locked->fresh(['transaction']);
             $a[] = 'open_dispute';
         }
 
-return $a;
+        return $a;
     }
 
     public function transition(Transaction $transaction, string $action, string $actorType, int $actorId): Transaction
@@ -452,18 +469,18 @@ return $a;
             if ($next === 'completed') {
                 $this->settleCompleted($d->transaction);
                 if ($d->transaction->product) {
-                    $this->availability->transition($d->transaction->product,$d->transaction->transaction_type === 'rental' ? ProductAvailabilityStatus::RENTED : ProductAvailabilityStatus::SOLD,$d->transaction,'Tranh chấp được giải quyết và giao dịch hoàn tất');
+                    $this->availability->transition($d->transaction->product, $d->transaction->transaction_type === 'rental' ? ProductAvailabilityStatus::RENTED : ProductAvailabilityStatus::SOLD, $d->transaction, 'Tranh chấp được giải quyết và giao dịch hoàn tất');
                 }
             } elseif ($next === 'cancelled') {
-                $this->refundHeldPayments($d->transaction,'dispute_cancel');
+                $this->refundHeldPayments($d->transaction, 'dispute_cancel');
                 $this->releaseProductAfterCancellation($d->transaction);
-            }$this->event($d->transaction,'dispute_resolved','user',$adminId,'Đã xử lý tranh chấp',$data['resolution']);
+            }$this->event($d->transaction, 'dispute_resolved', 'user', $adminId, 'Đã xử lý tranh chấp', $data['resolution']);
 
             return $d->fresh(['transaction', 'openedBy:id,code,name']);
         });
     }
 
-    public function event(Transaction $t,string $type,?string $actorType,?int $actorId,string $title,?string $description = null,array $metadata = []): TransactionEvent
+    public function event(Transaction $t, string $type, ?string $actorType, ?int $actorId, string $title, ?string $description = null, array $metadata = []): TransactionEvent
     {
         return TransactionEvent::create(['transaction_id' => $t->id, 'event_type' => $type, 'actor_type' => $actorType, 'actor_id' => $actorId, 'title' => $title, 'description' => $description, 'metadata' => $metadata]);
     }

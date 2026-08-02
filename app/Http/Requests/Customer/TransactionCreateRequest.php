@@ -4,17 +4,25 @@ namespace App\Http\Requests\Customer;
 
 use App\Http\Requests\ApiFormRequest;
 use App\Models\Product;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class TransactionCreateRequest extends ApiFormRequest
 {
     protected function prepareForValidation(): void
     {
+        if (! $this->filled('idempotency_key')) {
+            $this->merge(['idempotency_key' => $this->header('Idempotency-Key') ?: $this->header('X-Request-ID') ?: (string) Str::uuid()]);
+        }
+        $product = $this->route('product');
+        if ($product instanceof Product && ! $this->filled('availability_version')) {
+            $this->merge(['availability_version' => (int) $product->availability_version]);
+        }
+
         if ($this->filled('transaction_type')) {
             return;
         }
 
-        $product = $this->route('product');
         if (! $product instanceof Product) {
             return;
         }
@@ -32,6 +40,8 @@ class TransactionCreateRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
+            'idempotency_key' => ['required', 'string', 'max:150'],
+            'availability_version' => ['required', 'integer', 'min:1'],
             'purchase_mode' => ['nullable', Rule::in(['full', 'deposit', 'installment'])], 'initial_payment_amount' => ['nullable', 'numeric', 'min:0'], 'installment_count' => ['nullable', 'integer', 'min:2', 'max:12'],
             'transaction_type' => ['required', Rule::in(['sale', 'rental'])], 'rental_rate_id' => ['nullable', 'exists:product_rental_rates,id'], 'rental_period' => ['nullable', 'integer', 'min:1'], 'rental_period_unit' => ['nullable', Rule::in(['hour', 'day', 'week', 'month'])],
             'rental_period_count' => ['nullable', 'integer', 'min:1', 'max:365'], 'rental_billing_mode' => ['nullable', Rule::in(['upfront', 'periodic'])], 'rental_billing_cycle_unit' => ['nullable', Rule::in(['hour', 'day', 'week', 'month'])],

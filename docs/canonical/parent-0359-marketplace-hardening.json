@@ -1,0 +1,18 @@
+{
+  "parent_api": "mylands-api-develop-20260802-0359.zip",
+  "parent_admin": "mylands-admin-develop-20260802-0359.zip",
+  "classification": {
+    "MoneyMath": "bounded_adapter from parent HrOperations Payroll MoneyMath semantics",
+    "availability": "bounded_adapter from ProductInventoryService row-lock/version/source/expiry core",
+    "transaction_idempotency": "mini_bounded using parent AccountingIdempotency principles",
+    "payout_locking": "bounded_adapter using parent row-lock lifecycle convention",
+    "admin": "no UI changes in this increment",
+    "mbn": "consumer contract update for idempotency and availability version"
+  },
+  "excluded": [
+    "company/project/team scope",
+    "Reservation/CRM ownership chain",
+    "Accounting posting",
+    "RBAC graph"
+  ]
+}
