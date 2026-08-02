@@ -34,7 +34,7 @@ class CustomerTransactionController extends Controller
     public function show(Transaction $transaction, TransactionLifecycleService $service)
     {
         $this->authorizeParty($transaction);
-        $loaded = $transaction->load(['product.rentalRates', 'buyer:id,code,name,avatar_url', 'seller:id,code,name,avatar_url', 'payments', 'events', 'disputes:id,transaction_id,status,reason,description,resolved_at', 'checkpoints.customer:id,code,name']);
+        $loaded = $transaction->load(['product.rentalRates', 'buyer:id,code,name,avatar_url', 'seller:id,code,name,avatar_url', 'payments', 'events', 'disputes:id,transaction_id,status,reason,description,resolution,outcome,resolved_at', 'checkpoints.customer:id,code,name']);
         $loaded->setAttribute('current_role', $transaction->buyer_customer_id === auth('customer_api')->id() ? 'buyer' : 'seller');
         $loaded->setAttribute('allowed_actions', $service->allowedActions($transaction, auth('customer_api')->id()));
 

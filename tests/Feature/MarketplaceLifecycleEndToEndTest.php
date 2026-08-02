@@ -58,6 +58,86 @@ class MarketplaceLifecycleEndToEndTest extends TestCase
         $this->assertDatabaseHas('transaction_events', ['transaction_id' => $transaction->id, 'event_type' => 'dispute_resolved']);
     }
 
+
+    public function test_rental_reaches_active_returned_and_completed_terminal_state(): void
+    {
+        [$transaction, $payments] = $this->rentalFixture();
+        $headers = $this->adminHeaders();
+
+        foreach ($payments as $payment) {
+            $this->postJson('/api/v1/payments/'.$payment->id.'/confirm', [], $headers)->assertOk();
+        }
+
+        $this->postJson('/api/v1/transactions/'.$transaction->id.'/actions', [
+            'action' => 'force_handover',
+            'note' => 'Đã xác minh bàn giao tài khoản thuê.',
+        ], $headers)->assertOk()->assertJsonPath('data.status', 'active');
+
+        $this->postJson('/api/v1/transactions/'.$transaction->id.'/actions', [
+            'action' => 'force_return',
+            'note' => 'Đã xác minh hoàn trả tài khoản thuê.',
+        ], $headers)->assertOk()->assertJsonPath('data.status', 'returned');
+
+        $this->postJson('/api/v1/transactions/'.$transaction->id.'/actions', [
+            'action' => 'complete',
+            'note' => 'Đã quyết toán giao dịch thuê.',
+        ], $headers)->assertOk()->assertJsonPath('data.status', 'completed');
+
+        $this->assertDatabaseHas('transactions', ['id' => $transaction->id, 'status' => 'completed']);
+        $this->assertDatabaseHas('transaction_payments', [
+            'transaction_id' => $transaction->id,
+            'component_type' => 'security_deposit',
+            'settlement_status' => 'refunded',
+        ]);
+        $this->assertDatabaseHas('transaction_payments', [
+            'transaction_id' => $transaction->id,
+            'component_type' => 'rental_fee',
+            'settlement_status' => 'released',
+        ]);
+    }
+
+    public function test_rental_dispute_can_cancel_and_refund_all_held_payments(): void
+    {
+        [$transaction, $payments] = $this->rentalFixture();
+        $headers = $this->adminHeaders();
+
+        foreach ($payments as $payment) {
+            $this->postJson('/api/v1/payments/'.$payment->id.'/confirm', [], $headers)->assertOk();
+        }
+
+        $this->postJson('/api/v1/transactions/'.$transaction->id.'/actions', [
+            'action' => 'force_handover',
+            'note' => 'Đã xác minh bàn giao tài khoản thuê.',
+        ], $headers)->assertOk()->assertJsonPath('data.status', 'active');
+
+        $dispute = MarketplaceDispute::query()->create([
+            'code' => 'DSP-E2E-RENT-'.str()->upper(str()->random(4)),
+            'transaction_id' => $transaction->id,
+            'opened_by_customer_id' => $transaction->buyer_customer_id,
+            'reason' => 'return_issue',
+            'description' => 'Tài khoản thuê phát sinh lỗi nghiêm trọng.',
+            'status' => 'open',
+        ]);
+        $transaction->update(['status' => 'disputed']);
+
+        $this->postJson('/api/v1/disputes/'.$dispute->id.'/resolve', [
+            'status' => 'resolved',
+            'resolution' => 'Hủy giao dịch thuê và hoàn toàn bộ khoản đang tạm giữ.',
+            'outcome' => 'cancel_refund',
+        ], $headers)
+            ->assertOk()
+            ->assertJsonPath('data.outcome', 'cancel_refund')
+            ->assertJsonPath('data.transaction.status', 'cancelled');
+
+        foreach ($payments as $payment) {
+            $this->assertDatabaseHas('transaction_payments', [
+                'id' => $payment->id,
+                'settlement_status' => 'refunded',
+            ]);
+        }
+        $this->assertSame(2, MarketplaceNotification::query()->where('type', 'dispute_outcome')->count());
+    }
+
     private function adminHeaders(): array
     {
         return ['Authorization' => 'Bearer '.auth('api')->login(User::factory()->create())];
@@ -110,4 +190,70 @@ class MarketplaceLifecycleEndToEndTest extends TestCase
 
         return [$transaction, $payment];
     }
+    private function rentalFixture(): array
+    {
+        $renter = Customer::factory()->create();
+        $lessor = Customer::factory()->create();
+        CustomerWallet::query()->create(['customer_id' => $renter->id, 'available_balance' => 2000000]);
+        CustomerWallet::query()->create(['customer_id' => $lessor->id]);
+        $product = Product::query()->create([
+            'code' => 'E2E-RENT-'.str()->upper(str()->random(4)),
+            'name' => 'Tài khoản thuê kiểm thử',
+            'product_type' => 'game_account',
+            'game_code' => 'ninja_school',
+            'owner_customer_id' => $lessor->id,
+            'status' => 'active',
+            'approval_status' => 'approved',
+            'is_published' => true,
+            'availability_status' => 'available',
+            'rental_price' => 750000,
+            'rental_deposit_amount' => 400000,
+        ]);
+        $product->syncOfferModes(['rent']);
+        $transaction = Transaction::query()->create([
+            'code' => 'TRX-E2E-RENT-'.str()->upper(str()->random(4)),
+            'transaction_type' => 'rental',
+            'purchase_mode' => 'rental',
+            'product_id' => $product->id,
+            'buyer_customer_id' => $renter->id,
+            'seller_customer_id' => $lessor->id,
+            'transaction_value' => 750000,
+            'deposit_amount' => 400000,
+            'total_payable' => 1150000,
+            'seller_net_amount' => 750000,
+            'transaction_date' => now()->toDateString(),
+            'rental_start_at' => now(),
+            'rental_end_at' => now()->addDays(3),
+            'status' => 'pending_payment',
+        ]);
+        $payments = collect([
+            TransactionPayment::query()->create([
+                'code' => 'PAY-E2E-DEP-'.str()->upper(str()->random(4)),
+                'transaction_id' => $transaction->id,
+                'customer_id' => $renter->id,
+                'payment_type' => 'security_deposit',
+                'component_type' => 'security_deposit',
+                'amount' => 400000,
+                'refundable' => true,
+                'status' => 'submitted',
+                'settlement_status' => 'unsettled',
+                'payment_method' => 'bank',
+            ]),
+            TransactionPayment::query()->create([
+                'code' => 'PAY-E2E-RENT-'.str()->upper(str()->random(4)),
+                'transaction_id' => $transaction->id,
+                'customer_id' => $renter->id,
+                'payment_type' => 'rental_cycle',
+                'component_type' => 'rental_fee',
+                'amount' => 750000,
+                'refundable' => false,
+                'status' => 'submitted',
+                'settlement_status' => 'unsettled',
+                'payment_method' => 'bank',
+            ]),
+        ]);
+
+        return [$transaction, $payments];
+    }
+
 }

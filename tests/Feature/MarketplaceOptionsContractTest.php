@@ -2,18 +2,35 @@
 
 namespace Tests\Feature;
 
-use App\Enums\DisputeOutcome;
-use App\Support\Marketplace\DocumentType;
+use App\Support\Marketplace\MarketplaceOptionsCatalog;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class MarketplaceOptionsContractTest extends TestCase
 {
-    public function test_marketplace_options_expose_canonical_document_types_and_dispute_outcomes(): void
+    use RefreshDatabase;
+
+    public function test_marketplace_options_expose_canonical_catalog_and_cache_metadata(): void
     {
-        $this->getJson('/api/v1/marketplace/options')
+        $response = $this->getJson('/api/v1/marketplace/options')
             ->assertOk()
-            ->assertJsonPath('data.document_types.0.value', DocumentType::SALE_RECORD)
-            ->assertJsonFragment(['value' => DocumentType::RENTAL_RECORD])
-            ->assertJsonFragment(['value' => DisputeOutcome::CANCEL_REFUND->value]);
+            ->assertJsonPath('meta.options_version', MarketplaceOptionsCatalog::VERSION)
+            ->assertJsonPath('meta.options_hash', MarketplaceOptionsCatalog::hash())
+            ->assertJsonPath('meta.cache_ttl_seconds', MarketplaceOptionsCatalog::CACHE_TTL_SECONDS)
+            ->assertJsonFragment(['value' => 'sale_record'])
+            ->assertJsonFragment(['value' => 'rental_record'])
+            ->assertJsonFragment(['value' => 'cancel_refund']);
+
+        $response->assertHeader('X-Marketplace-Options-Version', MarketplaceOptionsCatalog::VERSION);
+        $response->assertHeader('X-Marketplace-Options-Hash', MarketplaceOptionsCatalog::hash());
+        $response->assertHeader('ETag', '"'.MarketplaceOptionsCatalog::hash().'"');
+    }
+
+    public function test_marketplace_options_support_etag_revalidation(): void
+    {
+        $this->withHeader('If-None-Match', '"'.MarketplaceOptionsCatalog::hash().'"')
+            ->get('/api/v1/marketplace/options')
+            ->assertStatus(304)
+            ->assertHeader('X-Marketplace-Options-Version', MarketplaceOptionsCatalog::VERSION);
     }
 }

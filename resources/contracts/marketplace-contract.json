@@ -28,7 +28,11 @@
     "headers": [
       "X-Marketplace-Contract-Version",
       "X-Marketplace-Contract-Hash",
-      "X-Api-Version"
+      "X-Api-Version",
+      "ETag",
+      "Cache-Control",
+      "X-Marketplace-Options-Version",
+      "X-Marketplace-Options-Hash"
     ]
   },
   "capabilities": {
@@ -365,5 +369,81 @@
     "GET /operations-dashboard/idempotency",
     "GET /operations-dashboard/reconciliation",
     "GET /operations-dashboard/transactions/{transaction}/document-checklist"
-  ]
+  ],
+  "option_catalog": {
+    "version": "2026-08-02.1",
+    "cache_ttl_seconds": 300,
+    "document_types": [
+      {
+        "value": "sale_record",
+        "label": "Hồ sơ mua bán tài khoản trò chơi"
+      },
+      {
+        "value": "rental_record",
+        "label": "Hồ sơ thuê tài khoản trò chơi"
+      },
+      {
+        "value": "installment_appendix",
+        "label": "Phụ lục lịch thanh toán trả góp"
+      },
+      {
+        "value": "deposit_confirmation",
+        "label": "Thỏa thuận đặt cọc giữ tài khoản"
+      },
+      {
+        "value": "payment_confirmation",
+        "label": "Xác nhận thanh toán giao dịch"
+      },
+      {
+        "value": "handover_minutes",
+        "label": "Biên bản bàn giao tài khoản"
+      },
+      {
+        "value": "return_minutes",
+        "label": "Biên bản hoàn trả tài khoản thuê"
+      },
+      {
+        "value": "dispute_minutes",
+        "label": "Biên bản tiếp nhận tranh chấp"
+      },
+      {
+        "value": "dispute_resolution",
+        "label": "Biên bản xử lý tranh chấp"
+      },
+      {
+        "value": "refund_settlement",
+        "label": "Biên bản hoàn tiền và đối soát"
+      },
+      {
+        "value": "completion_minutes",
+        "label": "Biên bản hoàn tất giao dịch"
+      },
+      {
+        "value": "security_checklist",
+        "label": "Phiếu kiểm tra bảo mật khi bàn giao"
+      },
+      {
+        "value": "platform_transaction_record",
+        "label": "Phiếu ghi nhận giao dịch trên nền tảng"
+      }
+    ],
+    "dispute_outcomes": [
+      {
+        "value": "complete",
+        "label": "Chấp nhận và hoàn tất giao dịch"
+      },
+      {
+        "value": "cancel_refund",
+        "label": "Chấp nhận, hủy và hoàn tiền"
+      },
+      {
+        "value": "cancel_no_refund",
+        "label": "Chấp nhận, hủy không hoàn tiền"
+      },
+      {
+        "value": "reopen",
+        "label": "Từ chối và đưa giao dịch về luồng xử lý"
+      }
+    ]
+  }
 }
