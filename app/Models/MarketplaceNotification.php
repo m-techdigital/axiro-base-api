@@ -15,4 +15,9 @@ class MarketplaceNotification extends Model
     {
         return $this->belongsTo(Customer::class);
     }
+
+    public function transaction(): BelongsTo
+    {
+        return $this->belongsTo(Transaction::class);
+    }
 }

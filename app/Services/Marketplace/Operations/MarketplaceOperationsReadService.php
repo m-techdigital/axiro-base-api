@@ -4,7 +4,6 @@ namespace App\Services\Marketplace\Operations;
 
 use App\Models\AuditLog;
 use App\Models\CustomerWallet;
-use App\Models\GeneratedDocument;
 use App\Models\MarketplaceDispute;
 use App\Models\ProductHold;
 use App\Models\Transaction;
@@ -32,6 +31,9 @@ class MarketplaceOperationsReadService
                 'delivery' => Transaction::query()->whereIn('status', ['paid', 'handover_pending'])->count(),
                 'acceptance' => Transaction::query()->whereIn('status', ['handed_over', 'acceptance_pending', 'return_pending'])->count(),
                 'dispute' => MarketplaceDispute::query()->whereNotIn('status', ['resolved', 'rejected', 'cancelled'])->count(),
+                'overdue_rental' => Transaction::query()->where('transaction_type', 'rental')->where('status', 'overdue')->count(),
+                'pending_return' => Transaction::query()->where('transaction_type', 'rental')->whereIn('status', ['active', 'return_pending'])->count(),
+                'deposit_deduction_review' => Transaction::query()->where('transaction_type', 'rental')->where('status', 'returned')->where('deposit_amount', '>', 0)->count(),
             ],
             'finance' => [
                 'wallet_available' => (string) CustomerWallet::query()->sum('available_balance'),
@@ -112,6 +114,9 @@ class MarketplaceOperationsReadService
             'delivery' => $query->whereIn('status', ['paid', 'handover_pending']),
             'acceptance' => $query->whereIn('status', ['handed_over', 'acceptance_pending', 'return_pending']),
             'dispute' => $query->whereHas('disputes', fn (Builder $q): Builder => $q->whereNotIn('status', ['resolved', 'rejected', 'cancelled'])),
+            'overdue_rental' => $query->where('transaction_type', 'rental')->where('status', 'overdue'),
+            'pending_return' => $query->where('transaction_type', 'rental')->whereIn('status', ['active', 'return_pending']),
+            'deposit_deduction_review' => $query->where('transaction_type', 'rental')->where('status', 'returned')->where('deposit_amount', '>', 0),
             default => $query->whereIn('status', ['pending_payment', 'paid', 'handover_pending', 'handed_over', 'acceptance_pending', 'return_pending', 'disputed', 'overdue']),
         };
 
@@ -164,6 +169,44 @@ class MarketplaceOperationsReadService
                 'release_exceeds_escrow' => Transaction::query()->whereColumn('released_amount', '>', 'escrow_amount')->count(),
             ],
         ];
+    }
+
+    public function rentalSettlements(array $filters, int $perPage = 20)
+    {
+        $query = Transaction::query()->with([
+            'product:id,code,name',
+            'buyer:id,code,name',
+            'seller:id,code,name',
+            'disputes:id,transaction_id,status,outcome,resolution,resolved_at',
+        ])->where('transaction_type', 'rental')
+            ->whereIn('status', ['completed', 'cancelled']);
+
+        if (! empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+        if (! empty($filters['transaction_id'])) {
+            $query->whereKey($filters['transaction_id']);
+        }
+        if (! empty($filters['customer_id'])) {
+            $customerId = $filters['customer_id'];
+            $query->where(fn (Builder $builder): Builder => $builder
+                ->where('buyer_customer_id', $customerId)
+                ->orWhere('seller_customer_id', $customerId));
+        }
+
+        return $query->latest('completed_at')->latest('id')->paginate($perPage);
+    }
+
+    public function rentalSettlementExportRows()
+    {
+        return Transaction::query()->with([
+            'product:id,code,name',
+            'buyer:id,code,name',
+            'seller:id,code,name',
+            'disputes:id,transaction_id,status,outcome,resolution,resolved_at',
+        ])->where('transaction_type', 'rental')
+            ->whereIn('status', ['completed', 'cancelled'])
+            ->latest('completed_at')->latest('id')->get();
     }
 
     public function documentChecklist(Transaction $transaction): array

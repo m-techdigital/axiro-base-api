@@ -44,6 +44,7 @@ class ListQueryRequest extends ApiFormRequest
             'entity_id' => ['nullable', 'string', 'max:150'],
             'request_id' => ['nullable', 'string', 'max:150'],
             'unread' => ['nullable', 'boolean'],
+            'read_status' => ['nullable', 'in:read,unread'],
             'transaction_id' => ['nullable', 'integer', 'min:1'],
             'customer_id' => ['nullable', 'integer', 'min:1'],
             'owner_customer_id' => ['nullable', 'integer', 'min:1'],

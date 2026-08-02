@@ -93,6 +93,7 @@
       "returned",
       "completed",
       "cancelled",
+      "overdue",
       "disputed"
     ],
     "payment": [
@@ -106,6 +107,7 @@
       "unsettled",
       "held",
       "released",
+      "partially_refunded",
       "refunded"
     ],
     "deposit": [
@@ -368,7 +370,12 @@
     "GET /operations-dashboard/queues",
     "GET /operations-dashboard/idempotency",
     "GET /operations-dashboard/reconciliation",
-    "GET /operations-dashboard/transactions/{transaction}/document-checklist"
+    "GET /operations-dashboard/transactions/{transaction}/document-checklist",
+    "GET /notifications",
+    "POST /notifications/read-all",
+    "POST /notifications/{notification}/read",
+    "GET /operations-dashboard/rental-settlements",
+    "GET /operations-dashboard/rental-settlements/export"
   ],
   "option_catalog": {
     "version": "2026-08-02.1",

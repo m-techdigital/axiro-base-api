@@ -11,6 +11,7 @@ use App\Models\ProductHold;
 use App\Models\Transaction;
 use App\Services\Marketplace\Operations\MarketplaceOperationsReadService;
 use App\Services\ProductAvailabilityService;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MarketplaceOperationsDashboardController extends Controller
 {
@@ -86,6 +87,47 @@ class MarketplaceOperationsDashboardController extends Controller
     public function reconciliation(MarketplaceOperationsReadService $service)
     {
         return ApiResponse::success($service->reconciliation());
+    }
+
+    public function rentalSettlements(ListQueryRequest $request, MarketplaceOperationsReadService $service)
+    {
+        return ApiResponse::paginated($service->rentalSettlements(
+            $request->filters(['status', 'transaction_id', 'customer_id']),
+            $request->perPage(),
+        ));
+    }
+
+    public function exportRentalSettlements(MarketplaceOperationsReadService $service): StreamedResponse
+    {
+        return response()->streamDownload(function () use ($service): void {
+            $stream = fopen('php://output', 'w');
+            fputcsv($stream, [
+                'transaction_code', 'status', 'product_code', 'buyer', 'seller',
+                'deposit_amount', 'deposit_deduction_amount', 'refunded_amount',
+                'released_amount', 'dispute_outcome', 'dispute_resolution', 'completed_at',
+            ]);
+
+            foreach ($service->rentalSettlementExportRows() as $transaction) {
+                $dispute = $transaction->disputes->sortByDesc('id')->first();
+                fputcsv($stream, [
+                    $transaction->code,
+                    $transaction->status,
+                    $transaction->product?->code,
+                    $transaction->buyer?->name,
+                    $transaction->seller?->name,
+                    $transaction->deposit_amount,
+                    $transaction->rental_deposit_deduction_amount,
+                    $transaction->refunded_amount,
+                    $transaction->released_amount,
+                    $dispute?->outcome,
+                    $dispute?->resolution,
+                    optional($transaction->completed_at)->toISOString(),
+                ]);
+            }
+            fclose($stream);
+        }, 'rental-settlements-'.now()->format('Ymd-His').'.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     public function documentChecklist(Transaction $transaction, MarketplaceOperationsReadService $service)

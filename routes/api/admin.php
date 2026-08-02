@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminActionCenterController;
+use App\Http\Controllers\AdminNotificationController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
@@ -21,6 +22,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth.api')->group(function () {
     Route::get('me', [AuthController::class, 'me']);
+    Route::get('notifications', [AdminNotificationController::class, 'index']);
+    Route::post('notifications/read-all', [AdminNotificationController::class, 'readAll']);
+    Route::post('notifications/{notification}/read', [AdminNotificationController::class, 'read']);
     Route::get('audit-logs/statistics', [AuditLogController::class, 'statistics']);
     Route::get('audit-logs', [AuditLogController::class, 'index']);
     Route::get('audit-logs/{auditLog}', [AuditLogController::class, 'show']);
@@ -32,6 +36,8 @@ Route::middleware('auth.api')->group(function () {
     Route::get('operations-dashboard/queues', [MarketplaceOperationsDashboardController::class, 'queues']);
     Route::get('operations-dashboard/idempotency', [MarketplaceOperationsDashboardController::class, 'idempotency']);
     Route::get('operations-dashboard/reconciliation', [MarketplaceOperationsDashboardController::class, 'reconciliation']);
+    Route::get('operations-dashboard/rental-settlements', [MarketplaceOperationsDashboardController::class, 'rentalSettlements']);
+    Route::get('operations-dashboard/rental-settlements/export', [MarketplaceOperationsDashboardController::class, 'exportRentalSettlements']);
     Route::get('operations-dashboard/transactions/{transaction}/document-checklist', [MarketplaceOperationsDashboardController::class, 'documentChecklist']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('dashboard', DashboardController::class);
@@ -85,7 +91,7 @@ Route::middleware('auth.api')->group(function () {
     Route::get('payout-accounts', [PayoutAdminController::class, 'accounts']);
     Route::post('payout-accounts/{account}/review', [PayoutAdminController::class, 'reviewAccount']);
     Route::get('withdrawals', [PayoutAdminController::class, 'withdrawals']);
-    Route::post('withdrawals/{withdrawal}/approve',[PayoutAdminController::class, 'approve']);
-    Route::post('withdrawals/{withdrawal}/reject',[PayoutAdminController::class, 'reject']);
-    Route::post('withdrawals/{withdrawal}/paid',[PayoutAdminController::class, 'paid']);
+    Route::post('withdrawals/{withdrawal}/approve', [PayoutAdminController::class, 'approve']);
+    Route::post('withdrawals/{withdrawal}/reject', [PayoutAdminController::class, 'reject']);
+    Route::post('withdrawals/{withdrawal}/paid', [PayoutAdminController::class, 'paid']);
 });

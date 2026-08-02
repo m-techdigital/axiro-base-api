@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\Common\ListQueryRequest;
+use App\Http\Responses\ApiResponse;
+use App\Models\MarketplaceNotification;
+use Illuminate\Database\Eloquent\Builder;
+
+class AdminNotificationController extends Controller
+{
+    public function index(ListQueryRequest $request)
+    {
+        $query = MarketplaceNotification::query()->with([
+            'customer:id,code,name',
+            'transaction:id,code,status',
+        ]);
+
+        if ($keyword = $request->keyword()) {
+            $query->where(function (Builder $builder) use ($keyword): void {
+                $builder->where('title', 'like', "%{$keyword}%")
+                    ->orWhere('message', 'like', "%{$keyword}%")
+                    ->orWhere('transaction_code', 'like', "%{$keyword}%")
+                    ->orWhereHas('customer', fn (Builder $customer): Builder => $customer
+                        ->where('name', 'like', "%{$keyword}%")
+                        ->orWhere('code', 'like', "%{$keyword}%"));
+            });
+        }
+
+        foreach (['type', 'transaction_id', 'customer_id'] as $field) {
+            if ($request->filled($field)) {
+                $query->where($field, $request->validated($field));
+            }
+        }
+
+        if ($request->validated('read_status') === 'unread' || $request->boolean('unread')) {
+            $query->whereNull('read_at');
+        } elseif ($request->validated('read_status') === 'read') {
+            $query->whereNotNull('read_at');
+        }
+
+        $page = $query->latest('id')->paginate($request->perPage());
+
+        return ApiResponse::paginated(
+            $page,
+            null,
+            'Thành công',
+            ['unread_count' => MarketplaceNotification::query()->whereNull('read_at')->count()],
+        );
+    }
+
+    public function read(MarketplaceNotification $notification)
+    {
+        $notification->update(['read_at' => $notification->read_at ?? now()]);
+
+        return ApiResponse::success($notification->fresh(), 'Đã đánh dấu thông báo đã đọc.');
+    }
+
+    public function readAll()
+    {
+        MarketplaceNotification::query()->whereNull('read_at')->update(['read_at' => now()]);
+
+        return ApiResponse::success(message: 'Đã đánh dấu toàn bộ thông báo đã đọc.');
+    }
+}
