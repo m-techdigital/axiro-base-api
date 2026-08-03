@@ -44,3 +44,8 @@ Không port RBAC, company/project/team, Accounting, Reports, generic workflow/SL
 - The controller keeps HTTP envelope/status ownership and preserves the existing 409 error contract.
 - `TransactionLifecycleService` was intentionally not split further because settlement/dispute paths still share locks, wallet, availability, notification and audit boundaries.
 - Follow-up verification kept Mini bounded to one-admin/many-customer operations; no RBAC, company, accounting, report or generic workflow dependency was introduced.
+
+## Regression guards
+
+- `composer check:maintainability` blocks V55/V66-style temporary file names, parent-only domain imports and operations controller logic drifting back out of service owners.
+- The guard intentionally allows Laravel migration timestamps and dated canonical documents; it only targets explicit `vNN` version markers.
