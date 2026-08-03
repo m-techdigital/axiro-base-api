@@ -24,3 +24,4 @@ AXIRO cha là chuẩn kỹ thuật. Mini chỉ rút gọn miền nghiệp vụ, 
 - `NEXT-BACKLOG.md`: backlog tiếp theo để khép vòng vận hành mà không phình module.
 - `NOTIFICATION-PAYOUT-JOURNEY-CLOSURE-20260803.md`
 - `OPERATIONAL-AUDIT-TODAY-QUEUE-CLOSURE-20260803.md`
+- [Large file ownership closure](./LARGE_FILE_OWNERSHIP_CLOSURE_20260803.md)
