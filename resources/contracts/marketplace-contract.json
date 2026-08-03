@@ -381,7 +381,10 @@
     "POST /operations-dashboard/rental-settlements/exports",
     "GET /operations-dashboard/rental-settlements/exports/{exportRequest}",
     "GET /operations-dashboard/rental-settlements/exports/{exportRequest}/download",
-    "GET /transactions/{transaction}/next-actions"
+    "GET /transactions/{transaction}/next-actions",
+    "POST /notifications/{notification}/handle",
+    "GET /operations-dashboard/today",
+    "GET /operations-dashboard/timeline/{subjectType}/{subjectId}"
   ],
   "option_catalog": {
     "version": "2026-08-02.1",

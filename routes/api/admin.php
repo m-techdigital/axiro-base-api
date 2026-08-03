@@ -26,11 +26,14 @@ Route::middleware('auth.api')->group(function () {
     Route::get('notifications/{notification}', [AdminNotificationController::class, 'show']);
     Route::post('notifications/read-all', [AdminNotificationController::class, 'readAll']);
     Route::post('notifications/{notification}/read', [AdminNotificationController::class, 'read']);
+    Route::post('notifications/{notification}/handle', [AdminNotificationController::class, 'handle']);
     Route::get('audit-logs/statistics', [AuditLogController::class, 'statistics']);
     Route::get('audit-logs', [AuditLogController::class, 'index']);
     Route::get('audit-logs/{auditLog}', [AuditLogController::class, 'show']);
     Route::get('action-center', AdminActionCenterController::class);
     Route::get('operations-dashboard/overview', [MarketplaceOperationsDashboardController::class, 'overview']);
+    Route::get('operations-dashboard/today', [MarketplaceOperationsDashboardController::class, 'today']);
+    Route::get('operations-dashboard/timeline/{subjectType}/{subjectId}', [MarketplaceOperationsDashboardController::class, 'timeline']);
     Route::get('operations-dashboard/holds', [MarketplaceOperationsDashboardController::class, 'holds']);
     Route::post('operations-dashboard/holds/{hold}/release', [MarketplaceOperationsDashboardController::class, 'releaseHold']);
     Route::get('operations-dashboard/products/{product}/availability-timeline', [MarketplaceOperationsDashboardController::class, 'availabilityTimeline']);

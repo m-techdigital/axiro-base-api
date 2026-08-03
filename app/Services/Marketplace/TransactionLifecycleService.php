@@ -7,6 +7,7 @@ use App\Enums\ProductAvailabilityStatus;
 use App\Enums\ProductSelectionContext;
 use App\Models\AuditLog;
 use App\Models\MarketplaceDispute;
+use App\Models\MarketplaceNotification;
 use App\Models\MarketplacePlatformLedgerEntry;
 use App\Models\Product;
 use App\Models\Transaction;
@@ -511,8 +512,24 @@ class TransactionLifecycleService
                 ],
             );
 
+            $this->resolveNotificationsForTransaction($t, $adminId, 'Đã xử lý bằng action '.$action);
+
             return $this->load($t);
         });
+    }
+
+    private function resolveNotificationsForTransaction(Transaction $transaction, int $adminId, string $note): void
+    {
+        MarketplaceNotification::query()
+            ->where('transaction_id', $transaction->id)
+            ->whereNull('handled_at')
+            ->update([
+                'handled_at' => now(),
+                'handled_by' => $adminId,
+                'handling_note' => $note,
+                'read_at' => now(),
+                'updated_at' => now(),
+            ]);
     }
 
     private function refundHeldPayments(Transaction $t, string $reason): void
@@ -611,6 +628,7 @@ class TransactionLifecycleService
                 ['outcome' => $outcome->value, 'transaction_status' => $next],
             );
             $this->notifyDisputeOutcome($transaction, $lockedDispute, $outcome, $data['resolution']);
+            $this->resolveNotificationsForTransaction($transaction, $adminId, 'Đã xử lý tranh chấp: '.$outcome->value);
 
             return $lockedDispute->fresh(['transaction', 'openedBy:id,code,name']);
         });

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CustomerPayoutAccount;
 use App\Models\CustomerVerification;
 use App\Models\WithdrawalRequest;
+use App\Services\AuditTrailService;
 use App\Services\Payouts\PayoutJourneyPresenter;
 use App\Services\Payouts\WithdrawalService;
 use Illuminate\Http\Request;
@@ -22,6 +23,13 @@ class PayoutAdminController extends Controller
     {
         $d = $r->validate(['decision' => 'required|in:verify,reject', 'note' => 'nullable|required_if:decision,reject|string|max:2000']);
         $verification->update(['status' => $d['decision'] === 'verify' ? 'verified' : 'rejected', 'verified_at' => $d['decision'] === 'verify' ? now() : null, 'verified_by' => user_id(), 'review_note' => $d['note'] ?? null]);
+        app(AuditTrailService::class)->log([
+            'event_type' => 'seller_verification_'.$d['decision'], 'actor_type' => 'admin', 'actor_id' => user_id(),
+            'entity_type' => 'customer_verification', 'entity_id' => $verification->id,
+            'context_type' => 'customer', 'context_id' => $verification->customer_id,
+            'title' => 'Xử lý xác minh người bán', 'description' => $d['note'] ?? 'Không có ghi chú.',
+            'metadata' => ['decision' => $d['decision'], 'status' => $verification->status],
+        ]);
 
         return success_response($verification->fresh('customer'));
     }
@@ -37,6 +45,13 @@ class PayoutAdminController extends Controller
     {
         $d = $r->validate(['decision' => 'required|in:verify,reject', 'note' => 'nullable|required_if:decision,reject|string|max:2000']);
         $account->update(['status' => $d['decision'] === 'verify' ? 'verified' : 'rejected', 'verified_at' => $d['decision'] === 'verify' ? now() : null, 'verified_by' => user_id(), 'review_note' => $d['note'] ?? null]);
+        app(AuditTrailService::class)->log([
+            'event_type' => 'payout_account_'.$d['decision'], 'actor_type' => 'admin', 'actor_id' => user_id(),
+            'entity_type' => 'customer_payout_account', 'entity_id' => $account->id,
+            'context_type' => 'customer', 'context_id' => $account->customer_id,
+            'title' => 'Xử lý tài khoản nhận tiền', 'description' => $d['note'] ?? 'Không có ghi chú.',
+            'metadata' => ['decision' => $d['decision'], 'status' => $account->status],
+        ]);
 
         return success_response($account->fresh('customer'));
     }

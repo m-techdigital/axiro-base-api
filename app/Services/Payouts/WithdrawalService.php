@@ -5,6 +5,7 @@ namespace App\Services\Payouts;
 use App\Models\CustomerPayoutAccount;
 use App\Models\CustomerVerification;
 use App\Models\WithdrawalRequest;
+use App\Services\AuditTrailService;
 use App\Services\Marketplace\MarketplaceRiskService;
 use App\Services\Wallet\WalletLedgerService;
 use Illuminate\Support\Facades\DB;
@@ -45,15 +46,19 @@ class WithdrawalService
 
     public function approve(WithdrawalRequest $withdrawal, int $adminId): WithdrawalRequest
     {
-        if ($withdrawal->status === 'approved') {
-            return $withdrawal;
-        }
-        if ($withdrawal->status !== 'submitted') {
-            throw ValidationException::withMessages(['status' => 'Yêu cầu không còn ở trạng thái chờ duyệt.']);
-        }
-        $withdrawal->update(['status' => 'approved', 'approved_at' => now(), 'reviewed_by' => $adminId, 'review_note' => null]);
+        return DB::transaction(function () use ($withdrawal, $adminId) {
+            $item = WithdrawalRequest::query()->lockForUpdate()->findOrFail($withdrawal->id);
+            if ($item->status === 'approved') {
+                return $item;
+            }
+            if ($item->status !== 'submitted') {
+                throw ValidationException::withMessages(['status' => 'Yêu cầu không còn ở trạng thái chờ duyệt.']);
+            }
+            $item->update(['status' => 'approved', 'approved_at' => now(), 'reviewed_by' => $adminId, 'review_note' => null]);
+            $this->audit($item, 'withdrawal_approved', $adminId, 'Đã duyệt yêu cầu rút tiền');
 
-        return $withdrawal->fresh(['customer', 'payoutAccount']);
+            return $item->fresh(['customer', 'payoutAccount']);
+        });
     }
 
     public function reject(WithdrawalRequest $withdrawal, int $adminId, string $note): WithdrawalRequest
@@ -69,6 +74,7 @@ class WithdrawalService
             $base = 'withdrawal-reject:'.$item->id;
             $this->ledger->restoreHeldToAvailable($item->customer_id, (string) $item->amount, 'withdrawal_released', ['idempotency_key' => $base, 'reference_type' => 'withdrawal_request', 'reference_id' => $item->id]);
             $item->update(['status' => 'rejected', 'review_note' => $note, 'reviewed_by' => $adminId]);
+            $this->audit($item, 'withdrawal_rejected', $adminId, $note);
 
             return $item->fresh(['customer', 'payoutAccount']);
         });
@@ -86,8 +92,25 @@ class WithdrawalService
             }
             $this->ledger->debitHeld($item->customer_id, (string) $item->amount, 'withdrawal_paid', ['idempotency_key' => 'withdrawal-paid:'.$item->id, 'reference_type' => 'withdrawal_request', 'reference_id' => $item->id, 'external_reference' => $reference, 'confirmed_by' => $adminId]);
             $item->update(['status' => 'paid', 'payment_reference' => $reference, 'proof_url' => $proofUrl, 'paid_at' => now(), 'reviewed_by' => $adminId]);
+            $this->audit($item, 'withdrawal_paid', $adminId, 'Đã xác nhận chi trả: '.$reference);
 
             return $item->fresh(['customer', 'payoutAccount']);
         });
+    }
+
+    private function audit(WithdrawalRequest $withdrawal, string $event, int $adminId, string $description): void
+    {
+        app(AuditTrailService::class)->log([
+            'event_type' => $event,
+            'actor_type' => 'admin',
+            'actor_id' => $adminId,
+            'entity_type' => 'withdrawal_request',
+            'entity_id' => $withdrawal->id,
+            'context_type' => 'withdrawal',
+            'context_id' => $withdrawal->id,
+            'title' => 'Cập nhật yêu cầu rút tiền '.$withdrawal->code,
+            'description' => $description,
+            'metadata' => ['status' => $withdrawal->status, 'customer_id' => $withdrawal->customer_id],
+        ]);
     }
 }

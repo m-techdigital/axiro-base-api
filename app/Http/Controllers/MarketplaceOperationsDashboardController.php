@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\ProductHold;
 use App\Models\Transaction;
 use App\Services\Marketplace\Operations\MarketplaceOperationsReadService;
+use App\Services\Marketplace\Operations\OperationalTimelinePresenter;
 use App\Services\ProductAvailabilityService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +24,16 @@ class MarketplaceOperationsDashboardController extends Controller
     public function overview(MarketplaceOperationsReadService $service)
     {
         return ApiResponse::success($service->overview());
+    }
+
+    public function today(MarketplaceOperationsReadService $service)
+    {
+        return ApiResponse::success($service->todayWork());
+    }
+
+    public function timeline(string $subjectType, int $subjectId, OperationalTimelinePresenter $presenter)
+    {
+        return ApiResponse::success($presenter->present($subjectType, $subjectId));
     }
 
     public function holds(ListQueryRequest $request, MarketplaceOperationsReadService $service)

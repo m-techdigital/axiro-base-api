@@ -33,6 +33,9 @@ return new class extends Migration
             $table->string('action_url')->nullable();
             $table->json('data')->nullable();
             $table->timestamp('read_at')->nullable()->index();
+            $table->timestamp('handled_at')->nullable()->index();
+            $table->foreignId('handled_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->text('handling_note')->nullable();
             $table->timestamps();
             $table->index(['customer_id', 'created_at']);
             $table->index(['transaction_id', 'type']);

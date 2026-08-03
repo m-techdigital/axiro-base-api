@@ -7,6 +7,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\MarketplaceNotification;
 use App\Support\Marketplace\TransactionLifecycleCatalog;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 
 class AdminNotificationController extends Controller
 {
@@ -93,6 +94,22 @@ class AdminNotificationController extends Controller
         $notification->update(['read_at' => $notification->read_at ?? now()]);
 
         return ApiResponse::success($notification->fresh(), 'Đã đánh dấu thông báo đã đọc.');
+    }
+
+    public function handle(Request $request, MarketplaceNotification $notification)
+    {
+        $data = $request->validate([
+            'note' => ['required', 'string', 'min:5', 'max:1000'],
+        ]);
+
+        $notification->update([
+            'read_at' => $notification->read_at ?? now(),
+            'handled_at' => $notification->handled_at ?? now(),
+            'handled_by' => user_id(),
+            'handling_note' => $data['note'],
+        ]);
+
+        return ApiResponse::success($notification->fresh(), 'Đã đánh dấu thông báo đã xử lý.');
     }
 
     public function readAll()
