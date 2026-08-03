@@ -50,4 +50,5 @@ Không port RBAC, company/project/team, Accounting, Reports, generic workflow/SL
 - `composer check:maintainability` blocks V55/V66-style temporary file names, parent-only domain imports and operations controller logic drifting back out of service owners.
 - The guard also blocks company/department technical keys from runtime and language sources; docs/tests may mention those domains only as explicit exclusions.
 - Parent-only CRM, payroll and reports configs/validation labels were removed; the guard now blocks those technical domains from runtime/lang sources.
+- Parent-only HR/employee/attendance/recruitment/resignation labels were removed from runtime language sources.
 - The guard intentionally allows Laravel migration timestamps and dated canonical documents; it only targets explicit `vNN` version markers.

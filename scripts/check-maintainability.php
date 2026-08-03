@@ -56,7 +56,7 @@ foreach ($tracked as $file) {
         continue;
     }
     $source = file_get_contents($root.'/'.$file);
-    if (preg_match('/\b(company_id|company_member_id|company_member_ids|company_name|company_code|company_type|company_types|department_id|department_name|department_code|department_parent_id|department_manager_member_id|investor_company_id|customer_company_id|payroll|accounting|reports|crm|reservation|opportunity|opportunities|inventory)\b/i', $source)) {
+    if (preg_match('/\b(company_id|company_member_id|company_member_ids|company_name|company_code|company_type|company_types|department_id|department_name|department_code|department_parent_id|department_manager_member_id|investor_company_id|customer_company_id|payroll|accounting|reports|crm|reservation|opportunity|opportunities|inventory|employee|employees|attendance|payslip|salary|recruitment|resignation|onboarding|offboarding)\b/i', $source)) {
         $failures[] = "{$file}: runtime/lang source must not carry parent-only domain scope in Mini.";
     }
 }
