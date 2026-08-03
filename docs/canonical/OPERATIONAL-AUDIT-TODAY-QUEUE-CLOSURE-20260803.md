@@ -32,3 +32,15 @@ Không port RBAC, company/project/team, Accounting, Reports, generic workflow/SL
 - `TransactionPaymentPlanService` is the canonical owner for rental pricing snapshots and initial purchase/rental payment-plan generation.
 - `TransactionLifecycleService` remains the public lifecycle facade and transaction-boundary owner; controllers and callers do not depend on payment-plan internals.
 - Payment submission, confirmation, settlement, transition, and dispute ownership remain unchanged in this follow-up.
+
+## Lifecycle decomposition decision
+
+`TransactionPaymentPlanService` is self-contained, including `syncNextDue()`. Further extraction of payment confirmation, settlement and dispute commands is intentionally deferred until dedicated transaction/locking tests cover those boundaries; the current lifecycle owner retains atomic wallet, availability, notification and audit coordination.
+
+## Large-file ownership follow-up — 2026-08-03
+
+- `MarketplaceOperationsDashboardController` delegates manual hold release to `ProductHoldReleaseService`.
+- Rental-settlement stream, queued request, status validation and download ownership now belong to `RentalSettlementExportService`.
+- The controller keeps HTTP envelope/status ownership and preserves the existing 409 error contract.
+- `TransactionLifecycleService` was intentionally not split further because settlement/dispute paths still share locks, wallet, availability, notification and audit boundaries.
+- Follow-up verification kept Mini bounded to one-admin/many-customer operations; no RBAC, company, accounting, report or generic workflow dependency was introduced.
