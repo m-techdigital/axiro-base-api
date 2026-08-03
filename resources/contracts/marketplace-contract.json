@@ -1,6 +1,6 @@
 {
   "contract_name": "axiro-mini-marketplace",
-  "contract_version": "2026-08-01.3",
+  "contract_version": "2026-08-03.1",
   "api_version": "v65",
   "source_architecture": "AXIRO parent canonical marketplace patterns",
   "response_contract": {
@@ -147,7 +147,7 @@
       "approved",
       "paid",
       "rejected",
-      "cancelled"
+      "cancelled_by_customer"
     ],
     "case": [
       "open",
@@ -257,6 +257,7 @@
     "POST /customer/seller-verification",
     "POST /customer/payout-accounts",
     "POST /customer/withdrawals",
+    "POST /customer/withdrawals/{withdrawal}/cancel",
     "GET /customer/cases",
     "GET /customer/cases/{case}",
     "POST /customer/transactions/{transaction}/cases",

@@ -44,6 +44,61 @@ class WithdrawalService
         });
     }
 
+    public function cancelByCustomer(WithdrawalRequest $withdrawal, int $customerId): WithdrawalRequest
+    {
+        return DB::transaction(function () use ($withdrawal, $customerId) {
+            $item = WithdrawalRequest::query()
+                ->whereKey($withdrawal->id)
+                ->where('customer_id', $customerId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($item->status === 'cancelled_by_customer') {
+                return $item;
+            }
+
+            if ($item->status !== 'submitted') {
+                throw ValidationException::withMessages([
+                    'status' => 'Chỉ có thể hủy yêu cầu rút tiền trước khi được duyệt.',
+                ]);
+            }
+
+            $this->ledger->restoreHeldToAvailable(
+                $item->customer_id,
+                (string) $item->amount,
+                'withdrawal_cancelled',
+                [
+                    'idempotency_key' => 'withdrawal-cancel:'.$item->id,
+                    'reference_type' => 'withdrawal_request',
+                    'reference_id' => $item->id,
+                ],
+            );
+
+            $item->update([
+                'status' => 'cancelled_by_customer',
+                'review_note' => 'Khách hàng đã hủy trước khi duyệt.',
+            ]);
+
+            app(AuditTrailService::class)->log([
+                'event_type' => 'withdrawal_cancelled_by_customer',
+                'actor_type' => 'customer',
+                'actor_id' => $customerId,
+                'entity_type' => 'withdrawal_request',
+                'entity_id' => $item->id,
+                'context_type' => 'withdrawal',
+                'context_id' => $item->id,
+                'title' => 'Khách hàng hủy yêu cầu rút tiền '.$item->code,
+                'description' => 'Tiền tạm giữ đã được hoàn lại số dư khả dụng.',
+                'metadata' => [
+                    'status' => $item->status,
+                    'customer_id' => $item->customer_id,
+                ],
+            ]);
+
+            return $item->fresh(['payoutAccount']);
+        });
+    }
+
     public function approve(WithdrawalRequest $withdrawal, int $adminId): WithdrawalRequest
     {
         return DB::transaction(function () use ($withdrawal, $adminId) {

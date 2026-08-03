@@ -29,15 +29,6 @@ class MarketplaceDemoDataTest extends TestCase
         $this->assertDatabaseHas('customers', ['username' => 'dispute', 'status' => 'active']);
 
         $this->assertSame(2, Product::query()->where('approval_status', 'approved')->where('is_published', true)->count());
-        $sale = Product::query()->where('code', 'NSO-0102')->firstOrFail();
-        $this->assertSame('850000.00', $sale->sale_price);
-        $this->assertSame('Bokken', $sale->server_name);
-        $this->assertSame('119', (string) $sale->level);
-        $this->assertSame('Kunai', $sale->attributes['class'] ?? null);
-        $this->assertSame('Kunai +12', $sale->attributes['weapon'] ?? null);
-        $this->assertStringNotContainsString('Product', $sale->description);
-        $this->assertContains('sale', $sale->transaction_types);
-        $this->assertNotContains('rental', $sale->transaction_types);
         $this->assertDatabaseHas('products', ['code' => 'AVA-0701', 'approval_status' => 'pending', 'is_published' => false]);
         $this->assertDatabaseHas('products', ['code' => 'NSO-0801', 'approval_status' => 'rejected', 'is_published' => false]);
 

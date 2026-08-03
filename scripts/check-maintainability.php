@@ -90,6 +90,47 @@ foreach ([
     }
 }
 
+
+$lifecycle = 'app/Services/Marketplace/TransactionLifecycleService.php';
+if (file_exists($root.'/'.$lifecycle)) {
+    $lines = count(file($root.'/'.$lifecycle));
+    if ($lines > 340) {
+        $failures[] = "{$lifecycle}: lifecycle facade is {$lines} lines; extracted owners must remain authoritative.";
+    }
+    $source = file_get_contents($root.'/'.$lifecycle);
+    foreach (['reserveAvailable(', 'debitHeld(', 'restoreHeldToAvailable('] as $needle) {
+        if (str_contains($source, $needle)) {
+            $failures[] = "{$lifecycle}: direct wallet mutation {$needle} must stay in wallet/settlement owners.";
+        }
+    }
+}
+
+foreach ([
+    'app/Services/Marketplace/TransactionPaymentCaptureService.php',
+    'app/Services/Marketplace/TransactionPaymentPlanService.php',
+    'app/Services/Marketplace/TransactionSettlementService.php',
+    'app/Services/Marketplace/TransactionDisputeResolutionService.php',
+    'app/Services/Marketplace/TransactionActionPolicy.php',
+    'app/Http/Requests/Customer/CreateWithdrawalRequest.php',
+    'app/Http/Requests/Admin/RejectWithdrawalRequest.php',
+    'app/Http/Requests/Admin/MarkWithdrawalPaidRequest.php',
+] as $file) {
+    if (! file_exists($root.'/'.$file)) {
+        $failures[] = "{$file}: missing transaction/payout lifecycle owner.";
+    }
+}
+
+$payoutController = 'app/Http/Controllers/CustomerPayoutController.php';
+if (file_exists($root.'/'.$payoutController)) {
+    $source = file_get_contents($root.'/'.$payoutController);
+    if (str_contains($source, "->validate(['payout_account_id'")) {
+        $failures[] = "{$payoutController}: withdrawal validation must stay in CreateWithdrawalRequest.";
+    }
+    if (! str_contains($source, 'cancelWithdrawal(')) {
+        $failures[] = "{$payoutController}: customer withdrawal cancellation endpoint is missing.";
+    }
+}
+
 if ($failures) {
     fwrite(STDERR, implode(PHP_EOL, $failures).PHP_EOL);
     exit(1);

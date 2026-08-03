@@ -71,4 +71,5 @@ Route::middleware('auth.customer')->prefix('customer')->group(function () {
     Route::post('seller-verification', [CustomerPayoutController::class, 'submitVerification']);
     Route::post('payout-accounts', [CustomerPayoutController::class, 'storeAccount']);
     Route::post('withdrawals', [CustomerPayoutController::class, 'withdraw']);
+    Route::post('withdrawals/{withdrawal}/cancel', [CustomerPayoutController::class, 'cancelWithdrawal']);
 });

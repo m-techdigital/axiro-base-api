@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Customer\CreateWithdrawalRequest;
 use App\Models\CustomerPayoutAccount;
 use App\Models\CustomerVerification;
 use App\Models\CustomerWallet;
@@ -66,10 +67,28 @@ class CustomerPayoutController extends Controller
         });
     }
 
-    public function withdraw(Request $r, WithdrawalService $service)
+    public function withdraw(CreateWithdrawalRequest $request, WithdrawalService $service)
     {
-        $d = $r->validate(['payout_account_id' => 'required|integer', 'amount' => 'required|numeric|min:50000', 'note' => 'nullable|string|max:1000', 'idempotency_key' => 'nullable|string|max:150']);
+        $data = $request->validated();
 
-        return success_response($service->submit(auth('customer_api')->id(), (int) $d['payout_account_id'], (string) $d['amount'], $d['note'] ?? null, $d['idempotency_key'] ?? null), 'Đã gửi yêu cầu rút tiền.', 201);
+        return success_response(
+            $service->submit(
+                auth('customer_api')->id(),
+                (int) $data['payout_account_id'],
+                (string) $data['amount'],
+                $data['note'] ?? null,
+                $data['idempotency_key'] ?? null,
+            ),
+            'Đã gửi yêu cầu rút tiền.',
+            201,
+        );
+    }
+
+    public function cancelWithdrawal(WithdrawalRequest $withdrawal, WithdrawalService $service)
+    {
+        return success_response(
+            $service->cancelByCustomer($withdrawal, auth('customer_api')->id()),
+            'Đã hủy yêu cầu rút tiền.',
+        );
     }
 }

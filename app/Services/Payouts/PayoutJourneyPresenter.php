@@ -81,7 +81,7 @@ class PayoutJourneyPresenter
             'submitted' => ['key' => 'approve', 'label' => 'Duyệt yêu cầu rút tiền'],
             'approved' => ['key' => 'mark_paid', 'label' => 'Xác nhận đã chi trả'],
             'paid' => null,
-            'rejected' => null,
+            'rejected', 'cancelled_by_customer' => null,
             default => null,
         };
 
@@ -92,6 +92,7 @@ class PayoutJourneyPresenter
                 ? match ($withdrawal->status) {
                     'paid' => 'Yêu cầu đã được chi trả.',
                     'rejected' => 'Yêu cầu đã bị từ chối.',
+                    'cancelled_by_customer' => 'Khách hàng đã hủy yêu cầu trước khi duyệt.',
                     default => 'Yêu cầu không có thao tác tiếp theo.',
                 }
                 : null,
@@ -125,6 +126,7 @@ class PayoutJourneyPresenter
             'rejected' => $withdrawal->review_note
                 ? 'Yêu cầu bị từ chối: '.$withdrawal->review_note
                 : 'Yêu cầu đã bị từ chối.',
+            'cancelled_by_customer' => 'Bạn đã hủy yêu cầu trước khi được duyệt.',
             default => 'Đang cập nhật trạng thái yêu cầu.',
         };
     }

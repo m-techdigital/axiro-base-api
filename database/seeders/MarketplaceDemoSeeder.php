@@ -94,14 +94,14 @@ class MarketplaceDemoSeeder extends Seeder
     private function products(array $customers, User $admin): array
     {
         $rows = [
-            'sale' => ['code' => 'NSO-0102', 'name' => 'Ninja School Kunai cấp 119', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 850000, 'server_name' => 'Bokken', 'level' => '119', 'attributes' => ['class' => 'Kunai', 'weapon' => 'Kunai +12'], 'description' => 'Tài khoản Ninja School Kunai cấp 119, thông tin mua bán mẫu đã có đủ máy chủ, phái, cấp độ và vũ khí để khách kiểm tra trước khi thanh toán.', 'approval_status' => 'approved', 'is_published' => true],
-            'rental' => ['code' => 'NSO-0201', 'name' => 'Ninja School Tone cấp 110', 'owner' => 'lessor', 'modes' => ['rent'], 'rental_price' => 120000, 'rental_deposit_amount' => 500000, 'server_name' => 'Tone', 'level' => '110', 'attributes' => ['class' => 'Kiếm', 'weapon' => 'Kiếm lôi +10'], 'description' => 'Tài khoản Ninja School cho thuê theo ngày, có tiền cọc hoàn lại và điều kiện bàn giao rõ ràng.', 'approval_status' => 'approved', 'is_published' => true],
-            'installment' => ['code' => 'NRO-0301', 'name' => 'Ngọc Rồng máy chủ 3', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 2400000, 'installment_enabled' => true, 'server_name' => 'Vũ trụ 3', 'level' => '80 tỷ sức mạnh', 'attributes' => ['class' => 'Xayda', 'weapon' => 'Set kích hoạt'], 'description' => 'Tài khoản Ngọc Rồng trả góp mẫu với lịch thanh toán nhiều kỳ.', 'approval_status' => 'pending', 'is_published' => false],
-            'completed' => ['code' => 'AVA-0401', 'name' => 'Avatar 250 ô đất', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 650000, 'server_name' => 'Avatar 2X', 'level' => '55', 'attributes' => ['class' => 'Nông trại', 'weapon' => '250 ô đất'], 'description' => 'Tài khoản Avatar mẫu đã hoàn tất giao dịch.', 'approval_status' => 'pending', 'is_published' => false],
-            'active_rental' => ['code' => 'NSO-0501', 'name' => 'Ninja School Sanzu cấp 125', 'owner' => 'lessor', 'modes' => ['rent'], 'rental_price' => 180000, 'rental_deposit_amount' => 700000, 'server_name' => 'Sanzu', 'level' => '125', 'attributes' => ['class' => 'Tiêu', 'weapon' => 'Tiêu +11'], 'description' => 'Tài khoản Ninja School đang trong vòng đời thuê hoạt động.', 'approval_status' => 'pending', 'is_published' => false],
-            'disputed' => ['code' => 'NRO-0601', 'name' => 'Ngọc Rồng máy chủ 6', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 3200000, 'server_name' => 'Vũ trụ 6', 'level' => '120 tỷ sức mạnh', 'attributes' => ['class' => 'Trái đất', 'weapon' => 'Set săn boss'], 'description' => 'Tài khoản Ngọc Rồng mẫu đang dùng cho kịch bản tranh chấp.', 'approval_status' => 'pending', 'is_published' => false],
-            'pending' => ['code' => 'AVA-0701', 'name' => 'Avatar VIP 400 ô đất', 'owner' => 'seller', 'modes' => ['sell', 'rent'], 'sale_price' => 1500000, 'rental_price' => 180000, 'rental_deposit_amount' => 600000, 'server_name' => 'Avatar VIP', 'level' => '61', 'attributes' => ['class' => 'Thời trang', 'weapon' => '400 ô đất'], 'description' => 'Tài khoản Avatar mẫu chờ duyệt có cả bán và thuê.', 'approval_status' => 'pending', 'is_published' => false],
-            'rejected' => ['code' => 'NSO-0801', 'name' => 'Ninja School chưa đủ bằng chứng', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 420000, 'server_name' => 'Bokken', 'level' => '98', 'attributes' => ['class' => 'Đao', 'weapon' => 'Đao +8'], 'description' => 'Tài khoản bị từ chối do thiếu bằng chứng bàn giao và xác minh.', 'approval_status' => 'rejected', 'is_published' => false],
+            'sale' => ['code' => 'NSO-0102', 'name' => 'Ninja School Kunai cấp 119', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 850000, 'approval_status' => 'approved', 'is_published' => true],
+            'rental' => ['code' => 'NSO-0201', 'name' => 'Ninja School Tone cấp 110', 'owner' => 'lessor', 'modes' => ['rent'], 'rental_price' => 120000, 'approval_status' => 'approved', 'is_published' => true],
+            'installment' => ['code' => 'NRO-0301', 'name' => 'Ngọc Rồng máy chủ 3', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 2400000, 'installment_enabled' => true, 'approval_status' => 'pending', 'is_published' => false],
+            'completed' => ['code' => 'AVA-0401', 'name' => 'Avatar 250 ô đất', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 650000, 'approval_status' => 'pending', 'is_published' => false],
+            'active_rental' => ['code' => 'NSO-0501', 'name' => 'Ninja School Sanzu cấp 125', 'owner' => 'lessor', 'modes' => ['rent'], 'rental_price' => 180000, 'approval_status' => 'pending', 'is_published' => false],
+            'disputed' => ['code' => 'NRO-0601', 'name' => 'Ngọc Rồng máy chủ 6', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 3200000, 'approval_status' => 'pending', 'is_published' => false],
+            'pending' => ['code' => 'AVA-0701', 'name' => 'Avatar VIP 400 ô đất', 'owner' => 'seller', 'modes' => ['sell', 'rent'], 'sale_price' => 1500000, 'rental_price' => 180000, 'approval_status' => 'pending', 'is_published' => false],
+            'rejected' => ['code' => 'NSO-0801', 'name' => 'Ninja School chưa đủ bằng chứng', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 420000, 'approval_status' => 'rejected', 'is_published' => false],
         ];
 
         foreach ($rows as $key => $row) {
@@ -113,8 +113,10 @@ class MarketplaceDemoSeeder extends Seeder
                 'slug' => Str::slug($row['name'].'-'.$row['code']),
                 'product_type' => 'game_account',
                 'game_code' => str_starts_with($row['code'], 'AVA') ? 'avatar' : (str_starts_with($row['code'], 'NRO') ? 'dragon_ball' : 'ninja_school'),
+                'server_name' => 'Server demo',
                 'status' => 'active',
                 'availability_status' => 'available',
+                'description' => 'Dữ liệu mẫu Product → Transaction.',
                 'owner_customer_id' => $owner->id,
                 'created_by' => $admin->id,
                 'updated_by' => $admin->id,

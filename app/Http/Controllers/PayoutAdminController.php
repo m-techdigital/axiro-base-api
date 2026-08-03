@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Admin\MarkWithdrawalPaidRequest;
+use App\Http\Requests\Admin\RejectWithdrawalRequest;
 use App\Models\CustomerPayoutAccount;
 use App\Models\CustomerVerification;
 use App\Models\WithdrawalRequest;
@@ -82,17 +84,15 @@ class PayoutAdminController extends Controller
         return success_response($service->approve($withdrawal, user_id()));
     }
 
-    public function reject(Request $r, WithdrawalRequest $withdrawal, WithdrawalService $service)
+    public function reject(RejectWithdrawalRequest $request, WithdrawalRequest $withdrawal, WithdrawalService $service)
     {
-        $d = $r->validate(['note' => 'required|string|max:2000']);
-
-        return success_response($service->reject($withdrawal, user_id(), $d['note']));
+        return success_response($service->reject($withdrawal, user_id(), $request->validated('note')));
     }
 
-    public function paid(Request $r, WithdrawalRequest $withdrawal, WithdrawalService $service)
+    public function paid(MarkWithdrawalPaidRequest $request, WithdrawalRequest $withdrawal, WithdrawalService $service)
     {
-        $d = $r->validate(['payment_reference' => 'required|string|max:150', 'proof_url' => 'nullable|string|max:500']);
+        $data = $request->validated();
 
-        return success_response($service->markPaid($withdrawal, user_id(), $d['payment_reference'], $d['proof_url'] ?? null));
+        return success_response($service->markPaid($withdrawal, user_id(), $data['payment_reference'], $data['proof_url'] ?? null));
     }
 }

@@ -26,3 +26,5 @@ AXIRO cha là chuẩn kỹ thuật. Mini chỉ rút gọn miền nghiệp vụ, 
 - `OPERATIONAL-AUDIT-TODAY-QUEUE-CLOSURE-20260803.md`
 - [Large file ownership closure](./LARGE_FILE_OWNERSHIP_CLOSURE_20260803.md)
 - [Large file domain ownership closure](./LARGE_FILE_DOMAIN_OWNERSHIP_20260803.md)
+
+- [Lifecycle, relation, UI and lightweight E2E closure](./LIFECYCLE_RELATION_UI_E2E_CLOSURE_20260803.md)
