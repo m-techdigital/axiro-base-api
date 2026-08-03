@@ -1,0 +1,22 @@
+{
+  "contract_version": "2026-08-03.1",
+  "accepted_commits": {
+    "admin": "e3e1c2d",
+    "api": "0f118e4",
+    "mbn": "e64ce96"
+  },
+  "parent_alignment": "mini_bounded",
+  "last_verified_at": "2026-08-04",
+  "verification": {
+    "api_full_phpunit": "passed",
+    "api_pint": "passed",
+    "marketplace_integrity": "passed",
+    "transactional_api_e2e": "passed",
+    "mbn_browser_core_smoke": "passed",
+    "admin_checks_build_bundle": "passed_with_antd_vendor_budget_warning",
+    "mbn_checks_build_bundle": "passed"
+  },
+  "browser_smoke_required": true,
+  "transactional_e2e_requires_fresh_seed": true,
+  "merge_policy": "merge only after browser smoke passes or a written waiver is recorded"
+}

@@ -28,7 +28,10 @@ class MarketplaceDemoDataTest extends TestCase
         $this->assertDatabaseHas('customers', ['username' => 'lessor', 'status' => 'active']);
         $this->assertDatabaseHas('customers', ['username' => 'dispute', 'status' => 'active']);
 
-        $this->assertSame(2, Product::query()->where('approval_status', 'approved')->where('is_published', true)->count());
+        $this->assertSame(3, Product::query()->where('approval_status', 'approved')->where('is_published', true)->count());
+        $this->assertDatabaseHas('products', ['code' => 'NSO-0102', 'approval_status' => 'approved', 'is_published' => true]);
+        $this->assertDatabaseHas('products', ['code' => 'NSO-0201', 'approval_status' => 'approved', 'is_published' => true]);
+        $this->assertDatabaseHas('products', ['code' => 'NRO-0301', 'approval_status' => 'approved', 'is_published' => true, 'installment_enabled' => true]);
         $this->assertDatabaseHas('products', ['code' => 'AVA-0701', 'approval_status' => 'pending', 'is_published' => false]);
         $this->assertDatabaseHas('products', ['code' => 'NSO-0801', 'approval_status' => 'rejected', 'is_published' => false]);
 

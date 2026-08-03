@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Customer;
+use App\Models\CustomerPayoutAccount;
+use App\Models\CustomerVerification;
 use App\Models\CustomerWallet;
 use App\Models\MarketplaceDispute;
 use App\Models\MarketplaceNotification;
@@ -13,6 +15,7 @@ use App\Models\TransactionEvent;
 use App\Models\TransactionPayment;
 use App\Models\User;
 use App\Models\WalletTransaction;
+use App\Services\Payouts\WithdrawalService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -27,6 +30,7 @@ class MarketplaceDemoSeeder extends Seeder
             $admin = User::query()->firstOrFail();
             $customers = $this->customers();
             $this->wallets($customers, $admin);
+            $this->payouts($customers, $admin);
             $products = $this->products($customers, $admin);
             $transactions = $this->transactions($products, $customers, $admin);
             $this->payments($transactions, $customers, $admin);
@@ -91,14 +95,86 @@ class MarketplaceDemoSeeder extends Seeder
         }
     }
 
+    private function payouts(array $customers, User $admin): void
+    {
+        foreach ([
+            'buyer' => '0987654321',
+            'seller' => '0987654322',
+            'renter' => '0987654323',
+            'lessor' => '0987654324',
+            'dispute' => '0987654325',
+        ] as $key => $accountNumber) {
+            $customer = $customers[$key];
+            CustomerVerification::query()->updateOrCreate(
+                ['customer_id' => $customer->id],
+                [
+                    'status' => 'verified',
+                    'document_type' => 'citizen_id',
+                    'document_number' => 'DEMO-'.strtoupper($key),
+                    'submitted_at' => now()->subDay(),
+                    'verified_at' => now(),
+                    'verified_by' => $admin->id,
+                    'review_note' => 'Hồ sơ demo dùng cho browser smoke và transactional E2E.',
+                ],
+            );
+
+            CustomerPayoutAccount::query()->updateOrCreate(
+                [
+                    'customer_id' => $customer->id,
+                    'bank_code' => 'MB',
+                    'account_number' => $accountNumber,
+                ],
+                [
+                    'bank_name' => 'MB BANK',
+                    'account_name' => mb_strtoupper($customer->name),
+                    'status' => 'verified',
+                    'is_default' => true,
+                    'verified_at' => now(),
+                    'verified_by' => $admin->id,
+                    'review_note' => 'Tài khoản demo cố định.',
+                ],
+            );
+        }
+
+        $seller = $customers['seller'];
+        $account = CustomerPayoutAccount::query()
+            ->where('customer_id', $seller->id)
+            ->where('is_default', true)
+            ->firstOrFail();
+        $service = app(WithdrawalService::class);
+
+        $service->submit(
+            $seller->id,
+            $account->id,
+            '300000.00',
+            'Yêu cầu demo chờ duyệt.',
+            'demo-withdrawal-submitted',
+        );
+        $paid = $service->submit(
+            $seller->id,
+            $account->id,
+            '250000.00',
+            'Yêu cầu demo đã chi.',
+            'demo-withdrawal-paid',
+        );
+        if ($paid->status === 'submitted') {
+            $paid = $service->approve($paid, $admin->id);
+        }
+        if ($paid->status === 'approved') {
+            $service->markPaid($paid, $admin->id, 'DEMO-PAYOUT-PAID');
+        }
+    }
+
     private function products(array $customers, User $admin): array
     {
         $rows = [
             'sale' => ['code' => 'NSO-0102', 'name' => 'Ninja School Kunai cấp 119', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 850000, 'approval_status' => 'approved', 'is_published' => true],
             'rental' => ['code' => 'NSO-0201', 'name' => 'Ninja School Tone cấp 110', 'owner' => 'lessor', 'modes' => ['rent'], 'rental_price' => 120000, 'approval_status' => 'approved', 'is_published' => true],
-            'installment' => ['code' => 'NRO-0301', 'name' => 'Ngọc Rồng máy chủ 3', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 2400000, 'installment_enabled' => true, 'approval_status' => 'pending', 'is_published' => false],
+            'installment' => ['code' => 'NRO-0301', 'name' => 'Ngọc Rồng máy chủ 3', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 2400000, 'installment_enabled' => true, 'approval_status' => 'approved', 'is_published' => true],
+            'installment_history' => ['code' => 'NRO-0302', 'name' => 'Ngọc Rồng lịch sử trả góp', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 2400000, 'installment_enabled' => true, 'approval_status' => 'pending', 'is_published' => false],
             'completed' => ['code' => 'AVA-0401', 'name' => 'Avatar 250 ô đất', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 650000, 'approval_status' => 'pending', 'is_published' => false],
             'active_rental' => ['code' => 'NSO-0501', 'name' => 'Ninja School Sanzu cấp 125', 'owner' => 'lessor', 'modes' => ['rent'], 'rental_price' => 180000, 'approval_status' => 'pending', 'is_published' => false],
+            'returned_rental_history' => ['code' => 'NSO-0202', 'name' => 'Ninja School lịch sử hoàn trả', 'owner' => 'lessor', 'modes' => ['rent'], 'rental_price' => 120000, 'approval_status' => 'pending', 'is_published' => false],
             'disputed' => ['code' => 'NRO-0601', 'name' => 'Ngọc Rồng máy chủ 6', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 3200000, 'approval_status' => 'pending', 'is_published' => false],
             'pending' => ['code' => 'AVA-0701', 'name' => 'Avatar VIP 400 ô đất', 'owner' => 'seller', 'modes' => ['sell', 'rent'], 'sale_price' => 1500000, 'rental_price' => 180000, 'approval_status' => 'pending', 'is_published' => false],
             'rejected' => ['code' => 'NSO-0801', 'name' => 'Ninja School chưa đủ bằng chứng', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 420000, 'approval_status' => 'rejected', 'is_published' => false],
@@ -140,10 +216,10 @@ class MarketplaceDemoSeeder extends Seeder
     private function transactions(array $products, array $customers, User $admin): array
     {
         $rows = [
-            'installment' => ['code' => 'TRX-DEMO-INSTALLMENT', 'product' => 'installment', 'buyer' => 'buyer', 'seller' => 'seller', 'transaction_type' => 'purchase', 'purchase_mode' => 'installment', 'value' => 2400000, 'deposit' => 0, 'paid' => 800000, 'status' => 'partially_paid'],
+            'installment' => ['code' => 'TRX-DEMO-INSTALLMENT', 'product' => 'installment_history', 'buyer' => 'buyer', 'seller' => 'seller', 'transaction_type' => 'purchase', 'purchase_mode' => 'installment', 'value' => 2400000, 'deposit' => 0, 'paid' => 800000, 'status' => 'partially_paid'],
             'completed' => ['code' => 'TRX-DEMO-COMPLETED-SALE', 'product' => 'completed', 'buyer' => 'buyer', 'seller' => 'seller', 'transaction_type' => 'purchase', 'purchase_mode' => 'full', 'value' => 650000, 'deposit' => 0, 'paid' => 650000, 'status' => 'completed'],
             'active_rental' => ['code' => 'TRX-DEMO-ACTIVE-RENTAL', 'product' => 'active_rental', 'buyer' => 'renter', 'seller' => 'lessor', 'transaction_type' => 'rental', 'purchase_mode' => 'full', 'value' => 540000, 'deposit' => 700000, 'paid' => 1240000, 'status' => 'active'],
-            'returned' => ['code' => 'TRX-DEMO-RETURNED-RENTAL', 'product' => 'rental', 'buyer' => 'buyer', 'seller' => 'lessor', 'transaction_type' => 'rental', 'purchase_mode' => 'full', 'value' => 240000, 'deposit' => 500000, 'paid' => 740000, 'status' => 'returned'],
+            'returned' => ['code' => 'TRX-DEMO-RETURNED-RENTAL', 'product' => 'returned_rental_history', 'buyer' => 'buyer', 'seller' => 'lessor', 'transaction_type' => 'rental', 'purchase_mode' => 'full', 'value' => 240000, 'deposit' => 500000, 'paid' => 740000, 'status' => 'returned'],
             'disputed' => ['code' => 'TRX-DEMO-DISPUTE-OPEN', 'product' => 'disputed', 'buyer' => 'dispute', 'seller' => 'seller', 'transaction_type' => 'purchase', 'purchase_mode' => 'deposit', 'value' => 3200000, 'deposit' => 800000, 'paid' => 800000, 'status' => 'disputed'],
             'cancelled' => ['code' => 'TRX-DEMO-CANCELLED', 'product' => 'sale', 'buyer' => 'renter', 'seller' => 'seller', 'transaction_type' => 'purchase', 'purchase_mode' => 'full', 'value' => 850000, 'deposit' => 0, 'paid' => 0, 'status' => 'cancelled'],
         ];
