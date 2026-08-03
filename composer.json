@@ -76,6 +76,9 @@
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ],
+        "check:release-package": [
+            "@php scripts/check-release-package.php"
         ]
     },
     "extra": {

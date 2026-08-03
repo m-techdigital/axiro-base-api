@@ -58,6 +58,23 @@
       "mini_path": "app/Services/Marketplace/TransactionDetailPresenter.php",
       "mode": "mini_bounded",
       "note": "Presents admin command center and customer journey shape without importing parent contract module, approval center, RBAC or accounting dependencies."
+    },
+    {
+      "mini_path": "app/Services/Documents/MarketplaceDocumentPayloadBuilder.php",
+      "parent_path": "app/Services/DocumentTemplateService.php",
+      "mode": "mini_bounded",
+      "note": "Mini follows parent document service action/payload separation but owns marketplace transaction document payloads without parent compliance, company, contract approval or accounting dependencies."
+    },
+    {
+      "mini_path": "app/Services/Documents/MarketplaceDocumentRenderer.php",
+      "parent_path": "app/Services/Documents/Rendering/DocumentRenderer.php",
+      "mode": "mini_bounded",
+      "note": "Marketplace document rendering owner for Mini transaction artifacts; not an exact parent copy because parent rendering is tied to broader document template/compliance workflows."
+    },
+    {
+      "mini_path": "app/Services/Payouts/WithdrawalStateTransitionService.php",
+      "mode": "mini_bounded",
+      "note": "Withdrawal state validation and transition owner extracted from Mini payout lifecycle; parent has no dependency-closed equivalent for the reduced marketplace payout scope."
     }
   ],
   "excluded": [

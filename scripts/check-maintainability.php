@@ -105,6 +105,9 @@ if (file_exists($root.'/'.$lifecycle)) {
 }
 
 foreach ([
+    'app/Services/Documents/MarketplaceDocumentPayloadBuilder.php',
+    'app/Services/Documents/MarketplaceDocumentRenderer.php',
+    'app/Services/Payouts/WithdrawalStateTransitionService.php',
     'app/Services/Marketplace/TransactionPaymentCaptureService.php',
     'app/Services/Marketplace/TransactionPaymentPlanService.php',
     'app/Services/Marketplace/TransactionSettlementService.php',
@@ -127,6 +130,32 @@ if (file_exists($root.'/'.$payoutController)) {
     }
     if (! str_contains($source, 'cancelWithdrawal(')) {
         $failures[] = "{$payoutController}: customer withdrawal cancellation endpoint is missing.";
+    }
+}
+
+$documentService = 'app/Services/Documents/MarketplaceDocumentService.php';
+if (file_exists($root.'/'.$documentService)) {
+    $source = file_get_contents($root.'/'.$documentService);
+    if (count(file($root.'/'.$documentService)) > 170) {
+        $failures[] = "{$documentService}: document coordinator must remain below 170 lines.";
+    }
+    foreach (['new Dompdf', 'function money(', 'function label('] as $needle) {
+        if (str_contains($source, $needle)) {
+            $failures[] = "{$documentService}: rendering/payload concern {$needle} belongs in extracted owners.";
+        }
+    }
+}
+
+$withdrawalService = 'app/Services/Payouts/WithdrawalService.php';
+if (file_exists($root.'/'.$withdrawalService)) {
+    $source = file_get_contents($root.'/'.$withdrawalService);
+    if (count(file($root.'/'.$withdrawalService)) > 100) {
+        $failures[] = "{$withdrawalService}: payout facade must remain below 100 lines.";
+    }
+    foreach (['restoreHeldToAvailable(', 'debitHeld(', "status' => 'approved'"] as $needle) {
+        if (str_contains($source, $needle)) {
+            $failures[] = "{$withdrawalService}: payout transition {$needle} belongs in WithdrawalStateTransitionService.";
+        }
     }
 }
 

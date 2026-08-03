@@ -24,7 +24,7 @@ Two independent mini repositories were extracted while preserving the original R
 - 401 refresh flow and 422 form error mapping.
 
 ## Removed
-RBAC, roles, permissions, users CRUD, companies, departments, projects, customers, opportunities, reservations, inventory, accounting, commission, HR, reports, audit center, workflow automation, system operations and their routes/schema/runtime bindings.
+RBAC, roles, permissions, users CRUD, companies, departments, projects, opportunities, reservations, inventory quantity modules, accounting, commission, HR, reports, audit center, workflow automation, system operations and their routes/schema/runtime bindings.
 
 ## Final schema
 - users
@@ -57,4 +57,6 @@ Money uses `decimal(18,2)`. Transaction total is calculated by Backend as `trans
 The execution container did not provide a Composer executable. `npm ci` also failed at the container client layer before dependency installation completed, so Laravel runtime tests and Vite lint/build could not be executed here. The repositories include the exact commands and tests required to run them in a normal local environment.
 
 ## Intentional limitations
-Single administrator only; no customer entity, file storage, approval workflow, accounting posting, report runtime, inventory reservation or organization scope.
+Legacy extraction baseline was single administrator only. The current Mini baseline is one admin with many marketplace customers and includes bounded customer auth/profile, media upload, transaction documents, wallets, payouts and audit/history surfaces.
+
+Still excluded: RBAC graph, company/department/project scope, HR/payroll, accounting posting, BI report runtime, CRM reservation/opportunity modules, parent inventory quantity modules and organization hierarchy.

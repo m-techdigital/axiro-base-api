@@ -143,5 +143,26 @@
       "accounting",
       "reports"
     ]
+  },
+  "document_and_withdrawal_service_split": {
+    "classification": "mini_bounded",
+    "parent_patterns": [
+      "service coordinator delegates to action/owner classes",
+      "document renderer separated from payload assembly",
+      "state transition validation outside controller"
+    ],
+    "mini_owners": [
+      "app/Services/Documents/MarketplaceDocumentPayloadBuilder.php",
+      "app/Services/Documents/MarketplaceDocumentRenderer.php",
+      "app/Services/Payouts/WithdrawalStateTransitionService.php"
+    ],
+    "excluded": [
+      "document_compliance",
+      "contract_approval_center",
+      "company_scope",
+      "rbac",
+      "accounting",
+      "reports"
+    ]
   }
 }
