@@ -2,8 +2,36 @@
 
 $root = dirname(__DIR__);
 $failures = [];
+
 $tracked = [];
-exec('git ls-files', $tracked);
+exec('git -C '.escapeshellarg($root).' rev-parse --is-inside-work-tree 2>/dev/null', $gitProbe, $gitStatus);
+
+if ($gitStatus === 0) {
+    exec('git -C '.escapeshellarg($root).' ls-files 2>/dev/null', $tracked);
+} else {
+    $ignoredDirectories = [
+        '.git' => true,
+        'build' => true,
+        'dist' => true,
+        'node_modules' => true,
+        'vendor' => true,
+    ];
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveCallbackFilterIterator(
+            new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS),
+            static function (SplFileInfo $current) use ($ignoredDirectories): bool {
+                return ! ($current->isDir() && isset($ignoredDirectories[$current->getFilename()]));
+            }
+        )
+    );
+
+    foreach ($iterator as $file) {
+        if (! $file instanceof SplFileInfo || ! $file->isFile()) {
+            continue;
+        }
+        $tracked[] = ltrim(str_replace($root, '', $file->getPathname()), DIRECTORY_SEPARATOR);
+    }
+}
 
 foreach ([
     'config/crm.php',
@@ -157,6 +185,45 @@ if (file_exists($root.'/'.$withdrawalService)) {
             $failures[] = "{$withdrawalService}: payout transition {$needle} belongs in WithdrawalStateTransitionService.";
         }
     }
+}
+
+$documentVersioning = 'app/Services/Documents/DocumentTemplateVersioningService.php';
+if (! file_exists($root.'/'.$documentVersioning)) {
+    $failures[] = $documentVersioning.': missing immutable template version owner.';
+} else {
+    $source = file_get_contents($root.'/'.$documentVersioning);
+    foreach (["status' => 'deprecated'", 'supersedes_template_id', 'generatedDocuments()->exists()'] as $needle) {
+        if (! str_contains($source, $needle)) {
+            $failures[] = "{$documentVersioning}: missing immutable versioning contract {$needle}.";
+        }
+    }
+    if (str_contains($source, 'republishIssuedDocuments')) {
+        $failures[] = "{$documentVersioning}: historical documents must not be republished when a template changes.";
+    }
+}
+
+$documentController = 'app/Http/Controllers/DocumentTemplateController.php';
+if (file_exists($root.'/'.$documentController)) {
+    $source = file_get_contents($root.'/'.$documentController);
+    foreach (["withCount('generatedDocuments')", 'draft,published,deprecated'] as $needle) {
+        if (! str_contains($source, $needle)) {
+            $failures[] = "{$documentController}: missing document lifecycle surface {$needle}.";
+        }
+    }
+}
+
+$actionCenter = 'app/Http/Controllers/AdminActionCenterController.php';
+if (file_exists($root.'/'.$actionCenter)) {
+    $source = file_get_contents($root.'/'.$actionCenter);
+    foreach (['rental_deposit_review', 'pending_payouts', 'expired_holds', "approval_status', 'pending"] as $needle) {
+        if (! str_contains($source, $needle)) {
+            $failures[] = "{$actionCenter}: missing operational queue {$needle}.";
+        }
+    }
+}
+
+if (! file_exists($root.'/scripts/release-all.sh')) {
+    $failures[] = 'scripts/release-all.sh: missing one-command release runner.';
 }
 
 if ($failures) {

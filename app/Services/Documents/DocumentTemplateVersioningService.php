@@ -3,13 +3,10 @@
 namespace App\Services\Documents;
 
 use App\Models\DocumentTemplate;
-use App\Models\GeneratedDocument;
 use Illuminate\Support\Facades\DB;
 
 class DocumentTemplateVersioningService
 {
-    public function __construct(private readonly MarketplaceDocumentService $documents) {}
-
     public function update(DocumentTemplate $template, array $data, ?int $adminId = null): DocumentTemplate
     {
         app(MarketplaceDocumentTemplateValidator::class)->validateOrFail($data['type'], $data['content_html']);
@@ -20,6 +17,8 @@ class DocumentTemplateVersioningService
             $data['updated_by'] = $adminId;
 
             if (! $isIssued) {
+                $data['published_at'] = ($data['status'] ?? null) === 'published' ? ($template->published_at ?? now()) : null;
+                $data['deprecated_at'] = ($data['status'] ?? null) === 'deprecated' ? ($template->deprecated_at ?? now()) : null;
                 $template->update($data);
 
                 return $template->fresh(['supersedes'])->loadCount('generatedDocuments');
@@ -30,7 +29,7 @@ class DocumentTemplateVersioningService
                 ->withTrashed()
                 ->max('version');
 
-            $template->update(['status' => 'archived', 'updated_by' => $adminId]);
+            $template->update(['status' => 'deprecated', 'deprecated_at' => now(), 'updated_by' => $adminId]);
 
             $next = DocumentTemplate::query()->create([
                 ...$data,
@@ -38,29 +37,12 @@ class DocumentTemplateVersioningService
                 'version' => max($latestVersion, $template->version) + 1,
                 'supersedes_template_id' => $template->id,
                 'created_by' => $template->created_by,
+                'published_at' => ($data['status'] ?? null) === 'published' ? now() : null,
+                'deprecated_at' => null,
                 'updated_by' => $adminId,
             ]);
 
-            if ($next->status === 'approved') {
-                $this->republishIssuedDocuments($template, $adminId);
-            }
-
             return $next->fresh(['supersedes'])->loadCount('generatedDocuments');
         });
-    }
-
-    private function republishIssuedDocuments(DocumentTemplate $oldTemplate, ?int $adminId): void
-    {
-        GeneratedDocument::query()
-            ->where('document_template_id', $oldTemplate->id)
-            ->select(['transaction_id', 'document_type'])
-            ->distinct()
-            ->with('transaction')
-            ->get()
-            ->each(function (GeneratedDocument $document) use ($adminId) {
-                if ($document->transaction) {
-                    $this->documents->generate($document->transaction, $document->document_type, $adminId, true);
-                }
-            });
     }
 }

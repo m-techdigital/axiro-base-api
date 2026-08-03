@@ -79,7 +79,8 @@
         ],
         "check:release-package": [
             "@php scripts/check-release-package.php"
-        ]
+        ],
+        "release:all": "bash scripts/release-all.sh"
     },
     "extra": {
         "laravel": {

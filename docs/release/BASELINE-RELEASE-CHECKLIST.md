@@ -2,7 +2,7 @@
 
 ## Baseline được chấp nhận
 
-- Marketplace contract: `2026-08-03.1`
+- Marketplace contract: `2026-08-04.1`
 - Admin baseline: `e3e1c2d`
 - API baseline: `0f118e4`
 - MBN baseline: `e64ce96`
@@ -13,13 +13,14 @@
 1. Generated marketplace contract phải đồng bộ với contract nguồn.
 2. Source ownership, semantic owner và maintainability guards phải pass.
 3. Admin/MBN phải pass lint và production build; API phải pass Pint và full PHPUnit.
-4. Chạy browser smoke MBN với tài khoản test thật.
-5. Chạy transactional E2E trên database test đã `migrate:fresh --seed`; không chạy trên production.
-6. Chạy bundle analysis và ghi nhận asset vượt budget trước khi tối ưu tiếp.
-7. ZIP không được chứa `.env*` ngoài template cho phép, `.git`, `node_modules`, `vendor`, `dist`, `build` hoặc folder bọc ngoài.
-8. ZIP phải pass `unzip -tq` hoặc `zip -T`.
-9. DOCX phải pass structural integrity và render visual QA bằng LibreOffice.
-10. Nếu browser hoặc DOCX visual QA bị bỏ qua, phải ghi waiver rõ trong changelog/release note.
+4. Chạy browser smoke MBN với avatar fixture; phải pass upload, reload và logout/login lại.
+5. Chạy Admin CRUD browser smoke cho product, transaction, customer, payout và document template.
+6. Chạy transactional E2E trên database test đã `migrate:fresh --seed`; không chạy trên production.
+7. Chạy bundle analysis và ghi nhận asset vượt budget trước khi tối ưu tiếp.
+8. ZIP không được chứa `.env*` ngoài template cho phép, `.git`, `node_modules`, `vendor`, `dist`, `build` hoặc folder bọc ngoài.
+9. ZIP phải pass `unzip -tq` hoặc `zip -T`.
+10. DOCX phải pass structural integrity và render visual QA bằng LibreOffice.
+11. Nếu browser hoặc DOCX visual QA bị bỏ qua, phải ghi waiver rõ trong changelog/release note.
 
 ## Dữ liệu demo ổn định
 
@@ -41,10 +42,16 @@ Browser smoke kiểm tra login/logout, profile, avatar persistence, product form
 
 Transactional E2E xác nhận mutation thật qua API cho mua bằng ví, thuê và đối soát cọc, kỳ trả góp, dispute, payout và document generation. Bắt buộc database test riêng và `MBN_E2E_ALLOW_MUTATION=1`.
 
-## Kiểm chứng 2026-08-04
+## Bằng chứng baseline 2026-08-04
+
+Các kết quả dưới đây thuộc baseline đầu vào; mọi thay đổi sau đó phải chạy lại bằng release gate một lệnh trước merge/tag.
 
 - API full PHPUnit, Pint, marketplace integrity và demo fixture contract đã pass.
 - Transactional API E2E đã pass trên database test sau `migrate:fresh --seed`.
 - Browser core smoke của MBN đã pass login, account pages, offer-mode actions, payment modal và logout.
 - Admin/MBN build, lint, base-first/source ownership và release package guards đã pass.
-- Admin bundle còn cảnh báo `antd-vendor` vượt 650 KB; không chặn merge baseline nhưng là đầu việc tối ưu tiếp theo.
+- Baseline trước từng có `antd-vendor` khoảng 1.295 KB; cấu hình hiện đã tách `antd-core`, `antd-icons` và `antd-rc`. Phải dùng `build:analyze` để xác nhận kích thước thực trước merge.
+
+## Một lệnh release
+
+Chạy từ API repo với `APP_ENV=testing AXIRO_RELEASE_ALLOW_RESET=1 MBN_E2E_LOGIN=... MBN_E2E_PASSWORD=... composer release:all`.

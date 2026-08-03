@@ -16,7 +16,7 @@ class MarketplaceDocumentSeeder extends Seeder
         foreach ($this->templates() as $code => $template) {
             DocumentTemplate::query()->updateOrCreate(
                 ['code' => $code, 'version' => 3],
-                [...$template, 'target_module' => 'transactions', 'status' => 'approved', 'version' => 3,
+                [...$template, 'target_module' => 'transactions', 'status' => 'published', 'published_at' => now(), 'version' => 3,
                     'merge_fields' => $this->mergeFields(), 'created_by' => $admin?->id, 'updated_by' => $admin?->id]
             );
         }

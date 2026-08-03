@@ -14,7 +14,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('type')->index();
             $table->string('target_module')->default('transactions')->index();
-            $table->string('status')->default('approved')->index();
+            $table->string('status')->default('draft')->index();
+            $table->timestamp('published_at')->nullable();
+            $table->timestamp('deprecated_at')->nullable();
             $table->unsignedInteger('version')->default(1);
             $table->foreignId('supersedes_template_id')->nullable()->constrained('document_templates')->nullOnDelete();
             $table->json('merge_fields')->nullable();

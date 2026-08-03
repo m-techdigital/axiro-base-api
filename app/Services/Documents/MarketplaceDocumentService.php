@@ -82,7 +82,7 @@ class MarketplaceDocumentService
         }
         $template = DocumentTemplate::query()
             ->whereIn('code', DocumentType::aliasesFor($type))
-            ->where('status', 'approved')
+            ->where('status', 'published')
             ->orderByRaw('CASE WHEN code = ? THEN 0 ELSE 1 END', [$type])
             ->orderByDesc('version')
             ->firstOrFail();

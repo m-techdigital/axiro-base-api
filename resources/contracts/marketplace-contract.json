@@ -1,6 +1,6 @@
 {
   "contract_name": "axiro-mini-marketplace",
-  "contract_version": "2026-08-03.1",
+  "contract_version": "2026-08-04.1",
   "api_version": "v65",
   "source_architecture": "AXIRO parent canonical marketplace patterns",
   "response_contract": {
@@ -200,6 +200,11 @@
       "cancel_refund",
       "cancel_no_refund",
       "reopen"
+    ],
+    "document_template": [
+      "draft",
+      "published",
+      "deprecated"
     ]
   },
   "public_endpoints": [
@@ -388,7 +393,7 @@
     "GET /operations-dashboard/timeline/{subjectType}/{subjectId}"
   ],
   "option_catalog": {
-    "version": "2026-08-02.1",
+    "version": "2026-08-04.1",
     "cache_ttl_seconds": 300,
     "document_types": [
       {
@@ -510,6 +515,20 @@
       {
         "value": "cancelled",
         "label": "Đã hủy"
+      }
+    ],
+    "document_template_statuses": [
+      {
+        "value": "draft",
+        "label": "Bản nháp"
+      },
+      {
+        "value": "published",
+        "label": "Đã phát hành"
+      },
+      {
+        "value": "deprecated",
+        "label": "Ngừng sử dụng"
       }
     ]
   },

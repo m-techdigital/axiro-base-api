@@ -11,9 +11,9 @@ class DocumentTemplate extends Model
     use SoftDeletes;
     use TracksAuditHistory;
 
-    protected $fillable = ['code', 'name', 'type', 'target_module', 'status', 'version', 'supersedes_template_id', 'merge_fields', 'content_html', 'description', 'created_by', 'updated_by'];
+    protected $fillable = ['code', 'name', 'type', 'target_module', 'status', 'version', 'supersedes_template_id', 'merge_fields', 'content_html', 'description', 'published_at', 'deprecated_at', 'created_by', 'updated_by'];
 
-    protected $casts = ['merge_fields' => 'array', 'version' => 'integer'];
+    protected $casts = ['merge_fields' => 'array', 'version' => 'integer', 'published_at' => 'datetime', 'deprecated_at' => 'datetime'];
 
     public function generatedDocuments()
     {

@@ -6,7 +6,7 @@ use App\Enums\DisputeOutcome;
 
 final class MarketplaceOptionsCatalog
 {
-    public const VERSION = '2026-08-02.1';
+    public const VERSION = '2026-08-04.1';
 
     public const CACHE_TTL_SECONDS = 300;
 
@@ -14,6 +14,11 @@ final class MarketplaceOptionsCatalog
     {
         return [
             'document_types' => DocumentType::options(),
+            'document_template_statuses' => [
+                ['value' => 'draft', 'label' => 'Bản nháp'],
+                ['value' => 'published', 'label' => 'Đã phát hành'],
+                ['value' => 'deprecated', 'label' => 'Ngừng sử dụng'],
+            ],
             'dispute_outcomes' => DisputeOutcome::options(),
             'transaction_statuses' => TransactionLifecycleCatalog::statusOptions(),
         ];

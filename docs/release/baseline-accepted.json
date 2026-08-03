@@ -1,5 +1,5 @@
 {
-  "contract_version": "2026-08-03.1",
+  "contract_version": "2026-08-04.1",
   "accepted_commits": {
     "admin": "e3e1c2d",
     "api": "0f118e4",
@@ -8,15 +8,28 @@
   "parent_alignment": "mini_bounded",
   "last_verified_at": "2026-08-04",
   "verification": {
-    "api_full_phpunit": "passed",
+    "api_full_phpunit": "passed_112_tests_1001_assertions",
     "api_pint": "passed",
     "marketplace_integrity": "passed",
     "transactional_api_e2e": "passed",
     "mbn_browser_core_smoke": "passed",
-    "admin_checks_build_bundle": "passed_with_antd_vendor_budget_warning",
-    "mbn_checks_build_bundle": "passed"
+    "admin_checks_build_bundle": "passed_with_antd_core_budget_warning",
+    "mbn_checks_build_bundle": "passed",
+    "avatar_persistence_after_relogin": "passed",
+    "admin_browser_crud_smoke": "passed",
+    "document_template_versioning": "passed",
+    "release_all_runner": "source_verified",
+    "admin_bundle_split": "measured_over_budget",
+    "mbn_css_domain_split": "source_verified",
+    "admin_payout_lifecycle_modal_smoke": "passed",
+    "admin_antd_core_kb": 1269.9
   },
   "browser_smoke_required": true,
   "transactional_e2e_requires_fresh_seed": true,
-  "merge_policy": "merge only after browser smoke passes or a written waiver is recorded"
+  "merge_policy": "merge only after browser smoke passes or a written waiver is recorded",
+  "verified_source_state": {
+    "api": "workspace_changes_after_8ae08ca",
+    "admin": "workspace_changes_after_4e833d2",
+    "mbn": "workspace_changes_after_a931fdb"
+  }
 }

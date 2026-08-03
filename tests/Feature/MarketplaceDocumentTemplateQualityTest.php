@@ -52,7 +52,7 @@ class MarketplaceDocumentTemplateQualityTest extends TestCase
             'name' => $template->name,
             'type' => $template->type,
             'target_module' => $template->target_module,
-            'status' => 'approved',
+            'status' => 'published',
             'version' => $template->version,
             'merge_fields' => $template->merge_fields,
             'content_html' => $newContent,
@@ -61,18 +61,23 @@ class MarketplaceDocumentTemplateQualityTest extends TestCase
 
         $this->assertSame(4, $next->version);
         $this->assertSame($template->id, $next->supersedes_template_id);
-        $this->assertSame('archived', $template->fresh()->status);
+        $this->assertSame('deprecated', $template->fresh()->status);
+        $this->assertNotNull($template->fresh()->deprecated_at);
         $this->assertSame($oldContent, $template->fresh()->content_html);
 
-        $latestDocument = GeneratedDocument::query()
+        $historicalDocument = GeneratedDocument::query()
             ->where('transaction_id', $transaction->id)
             ->where('document_type', 'sale_record')
             ->latest('version')
             ->firstOrFail();
 
-        $this->assertSame(2, $latestDocument->version);
-        $this->assertSame($next->id, $latestDocument->document_template_id);
-        $this->assertStringContainsString('Cảnh báo rủi ro bản phát hành mới', $latestDocument->rendered_html);
+        $this->assertSame(1, $historicalDocument->version);
+        $this->assertSame($template->id, $historicalDocument->document_template_id);
+        $this->assertStringNotContainsString('Cảnh báo rủi ro bản phát hành mới', $historicalDocument->rendered_html);
+
+        $regenerated = app(MarketplaceDocumentService::class)->generate($transaction, 'sale_record', null, true);
+        $this->assertSame($next->id, $regenerated->document_template_id);
+        $this->assertStringContainsString('Cảnh báo rủi ro bản phát hành mới', $regenerated->rendered_html);
     }
 
     public function test_template_validator_requires_core_legal_sections(): void
