@@ -37,7 +37,7 @@ class WithdrawalService
             $request = WithdrawalRequest::create(['code' => 'RUT-'.now()->format('ymd').'-'.strtoupper(Str::random(6)), 'idempotency_key' => $key, 'customer_id' => $customerId, 'payout_account_id' => $account->id, 'amount' => $amount, 'fee_amount' => '0.00', 'net_amount' => $amount, 'status' => 'submitted', 'customer_note' => $note, 'submitted_at' => now()]);
             $entries = $this->ledger->reserveAvailable($customerId, $amount, 'withdrawal_reserved', ['idempotency_key' => $key, 'reference_type' => 'withdrawal_request', 'reference_id' => $request->id, 'status' => 'confirmed']);
             $out = $entries[0];
-            $request->update(['reservation_wallet_transaction_id' => (string) $out->id]);
+            $request->update(['reserved_wallet_transaction_id' => (string) $out->id]);
             $this->risk->evaluateWithdrawal($request->id, $amount, $customerId);
 
             return $request->fresh(['payoutAccount']);

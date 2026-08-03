@@ -48,7 +48,7 @@ return new class extends Migration
             $table->decimal('fee_amount', 18, 2)->default(0);
             $table->decimal('net_amount', 18, 2);
             $table->string('status', 30)->default('submitted')->index();
-            $table->foreignId('reservation_wallet_transaction_id')->nullable()->constrained('wallet_transactions')->nullOnDelete();
+            $table->foreignId('reserved_wallet_transaction_id')->nullable()->constrained('wallet_transactions')->nullOnDelete();
             $table->string('payment_reference', 150)->nullable();
             $table->string('proof_url')->nullable();
             $table->text('customer_note')->nullable();
