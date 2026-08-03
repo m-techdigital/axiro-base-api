@@ -18,3 +18,4 @@ AXIRO cha là chuẩn kỹ thuật. Mini chỉ rút gọn miền nghiệp vụ, 
 - `ADMIN_NOTIFICATION_RENTAL_SETTLEMENT_CLOSURE_20260803.md`: admin notification center, rental operation queues và settlement audit/export.
 - `ADMIN_NOTIFICATION_SETTLEMENT_FILTER_BUNDLE_CLOSURE_20260803.md`: notification detail drawer, settlement filters/export và route bundle splitting.
 - `OPERATIONS_PRESETS_EXPORT_QUEUE_20260803.md`: saved filter presets, unread notification counter và queued rental settlement export.
+- `ADMIN_BASE_CRUD_ACTION_ALIGNMENT_20260803.md`: chuẩn hóa Admin CRUD form/detail action theo base owner và parent pattern.

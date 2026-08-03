@@ -90,5 +90,31 @@
       "company_scope",
       "rbac"
     ]
+  },
+  "admin_base_crud_action_alignment": {
+    "classification": "mini_bounded",
+    "parent_patterns": [
+      "BaseFormPage",
+      "BaseForm",
+      "BaseListView",
+      "BaseTable",
+      "centralized_confirm_action"
+    ],
+    "mini_owners": [
+      "src/components/base/BaseFormPage.jsx",
+      "src/components/base/BaseFormFooter.jsx",
+      "src/modules/products/pages/Form.jsx",
+      "src/modules/customers/pages/Form.jsx",
+      "src/modules/transactions/pages/Form.jsx",
+      "src/modules/transactions/pages/Detail.jsx"
+    ],
+    "excluded": [
+      "parent_module_registry",
+      "permission_graph",
+      "company_scope",
+      "project_scope",
+      "accounting",
+      "reports"
+    ]
   }
 }

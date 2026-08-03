@@ -14,6 +14,6 @@ class ApiAuthenticate
             return error_response('Unauthenticated', null, 401);
         }
 
-return $next($request);
+        return $next($request);
     }
 }

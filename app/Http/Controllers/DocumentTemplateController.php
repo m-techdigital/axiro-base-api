@@ -51,7 +51,7 @@ class DocumentTemplateController extends Controller
     {
         $types = implode(',', array_keys(MarketplaceDocumentService::TYPES));
         $data = $request->validate(['code' => ['required', 'string', 'max:100', 'unique:document_templates,code,'.($id ?: 'NULL')], 'name' => 'required|string|max:255', 'type' => 'required|in:'.$types, 'target_module' => 'nullable|string|max:100', 'status' => 'required|in:draft,approved,archived', 'version' => 'nullable|integer|min:1', 'merge_fields' => 'nullable|array', 'content_html' => 'required|string', 'description' => 'nullable|string|max:2000']);
-        app(MarketplaceDocumentTemplateValidator::class)->validateOrFail($data['type'],$data['content_html']);
+        app(MarketplaceDocumentTemplateValidator::class)->validateOrFail($data['type'], $data['content_html']);
 
         return $data;
     }

@@ -35,6 +35,6 @@ class MarketplaceContentController extends Controller
         $q = MarketplaceReview::with('reviewer:id,code,name,avatar_url')->where('product_id', $product->id)->where('status', 'published')->latest();
         $summary = ['average' => (float) ($q->clone()->avg('rating') ?? 0), 'count' => $q->clone()->count()];
 
-        return success_response(['summary' => $summary, 'reviews' => $q->paginate(min(50, max(1, $r->integer('per_page',10))))]);
+        return success_response(['summary' => $summary, 'reviews' => $q->paginate(min(50, max(1, $r->integer('per_page', 10))))]);
     }
 }

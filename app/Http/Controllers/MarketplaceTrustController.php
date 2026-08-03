@@ -87,7 +87,7 @@ class MarketplaceTrustController extends Controller
             NotificationPreference::firstOrCreate(['customer_id' => $id, 'category' => $category], ['in_app' => true, 'email' => in_array($category, ['security', 'transaction', 'payment'], true), 'push' => false]);
         }
 
-return success_response(NotificationPreference::where('customer_id', $id)->orderBy('category')->get());
+        return success_response(NotificationPreference::where('customer_id', $id)->orderBy('category')->get());
     }
 
     public function updatePreferences(Request $r)
@@ -116,6 +116,6 @@ return success_response(NotificationPreference::where('customer_id', $id)->order
         abort_unless($session->customer_id === auth('customer_api')->id(), 403);
         $session->update(['revoked_at' => now()]);
 
-        return success_response(null,'Đã thu hồi phiên đăng nhập.');
+        return success_response(null, 'Đã thu hồi phiên đăng nhập.');
     }
 }

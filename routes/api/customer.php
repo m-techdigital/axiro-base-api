@@ -67,7 +67,7 @@ Route::middleware('auth.customer')->prefix('customer')->group(function () {
     Route::get('transactions/{transaction}/asset-snapshots', [MarketplaceOperationsController::class, 'snapshots']);
     Route::post('transactions/{transaction}/asset-snapshots', [MarketplaceOperationsController::class, 'storeSnapshot']);
     Route::get('payouts', [CustomerPayoutController::class, 'overview']);
-    Route::post('seller-verification',[CustomerPayoutController::class, 'submitVerification']);
-    Route::post('payout-accounts',[CustomerPayoutController::class, 'storeAccount']);
-    Route::post('withdrawals',[CustomerPayoutController::class, 'withdraw']);
+    Route::post('seller-verification', [CustomerPayoutController::class, 'submitVerification']);
+    Route::post('payout-accounts', [CustomerPayoutController::class, 'storeAccount']);
+    Route::post('withdrawals', [CustomerPayoutController::class, 'withdraw']);
 });

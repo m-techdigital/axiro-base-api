@@ -56,7 +56,7 @@ class MarketplaceOperationsAdminController extends Controller
             $service->adminTransition($case->transaction, $d['transaction_status'] === 'completed' ? 'complete' : ($d['transaction_status'] === 'cancelled' ? 'cancel' : 'reopen'), user_id(), $d['resolution'] ?? null);
         }
 
-return success_response($case->fresh(['transaction', 'messages']));
+        return success_response($case->fresh(['transaction', 'messages']));
     }
 
     public function message(Request $r, MarketplaceDispute $case)
@@ -72,6 +72,6 @@ return success_response($case->fresh(['transaction', 'messages']));
     {
         $q = TransactionAssetSnapshot::with(['transaction:id,code,status', 'customer:id,code,name'])->when($r->transaction_id, fn ($q, $v) => $q->where('transaction_id', $v))->latest('captured_at');
 
-        return success_response($q->paginate(min(100,max(1,$r->integer('per_page',20)))));
+        return success_response($q->paginate(min(100, max(1, $r->integer('per_page', 20)))));
     }
 }

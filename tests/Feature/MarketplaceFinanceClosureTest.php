@@ -89,7 +89,7 @@ class MarketplaceFinanceClosureTest extends TestCase
 
         $this->postJson('/api/v1/wallet-deposits/'.$deposit['id'].'/confirm', [], $this->adminHeaders())->assertOk()->assertJsonPath('data.status', 'confirmed');
         $this->assertDatabaseHas('customer_wallets', ['customer_id' => $customer->id, 'available_balance' => 400000]);
-        $this->assertDatabaseHas('wallet_transactions',[
+        $this->assertDatabaseHas('wallet_transactions', [
             'customer_id' => $customer->id,
             'type' => 'deposit_confirmed',
             'available_before' => 100000,

@@ -38,6 +38,16 @@
       "mini_path": "app/Repositories/BaseRepository.php",
       "mode": "mini_bounded",
       "note": "Mini repository only owns model/query creation. Parent BaseRepository depends on company scopes, Filterable/Sortable/Pagy contracts and is intentionally not copied."
+    },
+    {
+      "mini_path": "axiro-base-admin/src/components/base/BaseFormPage.jsx",
+      "mode": "mini_bounded",
+      "note": "Follows parent BaseFormPage ownership pattern but keeps a bounded Mini implementation without parent module registry, permission graph or company/project scopes."
+    },
+    {
+      "mini_path": "axiro-base-admin/src/modules/transactions/pages/Detail.jsx",
+      "mode": "mini_bounded",
+      "note": "Follows parent centralized/confirmed state-changing action pattern while retaining Mini transaction-only lifecycle ownership."
     }
   ],
   "excluded": [

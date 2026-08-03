@@ -73,6 +73,6 @@ class MarketplaceOperationsController extends Controller
         $d = $r->validate(['stage' => 'required|in:before_handover,after_handover,before_return,after_return', 'images' => 'required|array|min:1|max:10', 'images.*' => 'string|max:500', 'attributes' => 'nullable|array', 'note' => 'nullable|string|max:2000']);
         $item = TransactionAssetSnapshot::updateOrCreate(['transaction_id' => $transaction->id, 'stage' => $d['stage'], 'actor_type' => 'customer', 'actor_id' => $id], [...$d, 'customer_id' => $id, 'captured_at' => now()]);
 
-        return success_response($item,'Đã lưu biên bản hiện trạng.');
+        return success_response($item, 'Đã lưu biên bản hiện trạng.');
     }
 }

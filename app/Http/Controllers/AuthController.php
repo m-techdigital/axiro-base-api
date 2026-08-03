@@ -18,7 +18,7 @@ class AuthController extends Controller
             return error_response('Tên đăng nhập hoặc mật khẩu không đúng.', null, 401);
         }
 
-return $this->cookie(success_response(['account' => $data['user']->only(['id', 'username', 'name', 'email']), 'access_token' => $data['access_token'], 'refresh_token' => $data['refresh_token']]), $data['refresh_token']);
+        return $this->cookie(success_response(['account' => $data['user']->only(['id', 'username', 'name', 'email']), 'access_token' => $data['access_token'], 'refresh_token' => $data['refresh_token']]), $data['refresh_token']);
     }
 
     public function refresh(RefreshTokenRequest $r)
@@ -28,7 +28,7 @@ return $this->cookie(success_response(['account' => $data['user']->only(['id', '
             return error_response('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', null, 401);
         }
 
-return $this->cookie(success_response(['account' => $data['user']->only(['id', 'username', 'name', 'email']), 'access_token' => $data['access_token'], 'refresh_token' => $data['refresh_token']]), $data['refresh_token']);
+        return $this->cookie(success_response(['account' => $data['user']->only(['id', 'username', 'name', 'email']), 'access_token' => $data['access_token'], 'refresh_token' => $data['refresh_token']]), $data['refresh_token']);
     }
 
     public function me()

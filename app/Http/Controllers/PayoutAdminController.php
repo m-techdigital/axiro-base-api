@@ -63,6 +63,6 @@ class PayoutAdminController extends Controller
     {
         $d = $r->validate(['payment_reference' => 'required|string|max:150', 'proof_url' => 'nullable|string|max:500']);
 
-        return success_response($service->markPaid($withdrawal,user_id(),$d['payment_reference'],$d['proof_url'] ?? null));
+        return success_response($service->markPaid($withdrawal, user_id(), $d['payment_reference'], $d['proof_url'] ?? null));
     }
 }

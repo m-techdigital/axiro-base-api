@@ -82,6 +82,6 @@ class CustomerSecurityController extends Controller
         $data = $request->validate(['password' => 'required|string', 'code' => 'required|string|max:20']);
         $this->twoFactor->disable(auth('customer_api')->user(), $data['password'], $data['code']);
 
-        return success_response(null,'Đã tắt xác thực hai lớp.');
+        return success_response(null, 'Đã tắt xác thực hai lớp.');
     }
 }

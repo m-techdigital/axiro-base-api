@@ -19,6 +19,7 @@ class AdminOperationsExportAndCountersTest extends TestCase
     public function overview_exposes_unread_notification_counter(): void
     {
         $customer = Customer::factory()->create();
+
         MarketplaceNotification::query()->create([
             'customer_id' => $customer->id,
             'type' => 'system',
