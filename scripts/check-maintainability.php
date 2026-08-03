@@ -5,9 +5,15 @@ $failures = [];
 $tracked = [];
 exec('git ls-files', $tracked);
 
-foreach (['config/crm.php', 'config/payroll.php', 'config/reports.php'] as $file) {
+foreach ([
+    'config/crm.php',
+    'config/models.php',
+    'config/payroll.php',
+    'config/reports.php',
+    'config/system_operations.php',
+] as $file) {
     if (in_array($file, $tracked, true) && file_exists($root.'/'.$file)) {
-        $failures[] = "{$file}: parent-only config is not part of Mini MBN.";
+        $failures[] = "{$file}: parent/tooling-only config is not part of Mini MBN.";
     }
 }
 
