@@ -1,0 +1,48 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Customer;
+use App\Models\Product;
+use App\Models\Transaction;
+use App\Models\TransactionPayment;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class TransactionCommandCenterContractTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_admin_detail_exposes_command_center_and_blocked_reasons(): void
+    {
+        $admin = User::factory()->create();
+        $buyer = Customer::factory()->create();
+        $seller = Customer::factory()->create();
+        $product = Product::query()->create(['code' => 'CMD-001', 'name' => 'Sản phẩm command center', 'product_type' => 'game_account', 'game_code' => 'ninja_school', 'status' => 'active', 'owner_customer_id' => $seller->id]);
+        $transaction = Transaction::query()->create(['code' => 'TRX-CMD-001', 'transaction_type' => 'purchase', 'purchase_mode' => 'full', 'product_id' => $product->id, 'buyer_customer_id' => $buyer->id, 'seller_customer_id' => $seller->id, 'transaction_value' => 100000, 'total_payable' => 100000, 'paid_amount' => 0, 'refunded_amount' => 0, 'escrow_amount' => 0, 'released_amount' => 0, 'wallet_paid_amount' => 0, 'transaction_date' => now()->toDateString(), 'status' => 'pending_payment']);
+        TransactionPayment::query()->create(['code' => 'PAY-CMD-001', 'transaction_id' => $transaction->id, 'customer_id' => $buyer->id, 'payment_type' => 'full', 'component_type' => 'principal', 'amount' => 100000, 'status' => 'pending', 'settlement_status' => 'unsettled']);
+
+        $token = auth('api')->login($admin);
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)->getJson('/api/v1/transactions/'.$transaction->id);
+        $response->assertOk()
+            ->assertJsonPath('data.command_center.lifecycle.status.value', 'pending_payment')
+            ->assertJsonPath('data.command_center.lifecycle.next_action.key', 'cancel')
+            ->assertJsonStructure(['data' => ['command_center' => ['lifecycle' => ['actions', 'blocking_reasons'], 'workflow_checklist', 'pending_payments', 'settlement']]]);
+    }
+
+    public function test_customer_next_actions_explain_current_step(): void
+    {
+        $buyer = Customer::factory()->create();
+        $seller = Customer::factory()->create();
+        $product = Product::query()->create(['code' => 'CMD-002', 'name' => 'Sản phẩm customer journey', 'product_type' => 'game_account', 'game_code' => 'ninja_school', 'status' => 'active', 'owner_customer_id' => $seller->id]);
+        $transaction = Transaction::query()->create(['code' => 'TRX-CMD-002', 'transaction_type' => 'purchase', 'purchase_mode' => 'full', 'product_id' => $product->id, 'buyer_customer_id' => $buyer->id, 'seller_customer_id' => $seller->id, 'transaction_value' => 100000, 'total_payable' => 100000, 'paid_amount' => 0, 'refunded_amount' => 0, 'escrow_amount' => 0, 'released_amount' => 0, 'wallet_paid_amount' => 0, 'transaction_date' => now()->toDateString(), 'status' => 'pending_payment']);
+        TransactionPayment::query()->create(['code' => 'PAY-CMD-002', 'transaction_id' => $transaction->id, 'customer_id' => $buyer->id, 'payment_type' => 'full', 'component_type' => 'principal', 'amount' => 100000, 'status' => 'pending', 'settlement_status' => 'unsettled']);
+
+        $this->actingAs($buyer, 'customer_api')->getJson('/api/v1/customer/transactions/'.$transaction->id.'/next-actions')
+            ->assertOk()
+            ->assertJsonPath('data.lifecycle.next_action.key', 'pay')
+            ->assertJsonPath('data.amount_due', 100000)
+            ->assertJsonStructure(['data' => ['lifecycle' => ['status', 'actions', 'next_action'], 'workflow_checklist']]);
+    }
+}

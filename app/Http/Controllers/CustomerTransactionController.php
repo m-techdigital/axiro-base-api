@@ -10,6 +10,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TransactionPayment;
+use App\Services\Marketplace\TransactionDetailPresenter;
 use App\Services\Marketplace\TransactionLifecycleService;
 use App\Services\Payments\MarketplaceQrService;
 use Illuminate\Http\Request;
@@ -31,14 +32,22 @@ class CustomerTransactionController extends Controller
         return ApiResponse::paginated($query->latest()->paginate(min(100, max(1, $request->integer('per_page', 20)))));
     }
 
-    public function show(Transaction $transaction, TransactionLifecycleService $service)
+    public function show(Transaction $transaction, TransactionLifecycleService $service, TransactionDetailPresenter $presenter)
     {
         $this->authorizeParty($transaction);
         $loaded = $transaction->load(['product.rentalRates', 'buyer:id,code,name,avatar_url', 'seller:id,code,name,avatar_url', 'payments', 'events', 'disputes:id,transaction_id,status,reason,description,resolution,outcome,resolved_at', 'checkpoints.customer:id,code,name']);
         $loaded->setAttribute('current_role', $transaction->buyer_customer_id === auth('customer_api')->id() ? 'buyer' : 'seller');
         $loaded->setAttribute('allowed_actions', $service->allowedActions($transaction, auth('customer_api')->id()));
+        $loaded->setAttribute('journey', $presenter->customer($loaded, auth('customer_api')->id()));
 
         return ApiResponse::success($loaded);
+    }
+
+    public function nextActions(Transaction $transaction, TransactionDetailPresenter $presenter)
+    {
+        $this->authorizeParty($transaction);
+
+        return ApiResponse::success($presenter->customer($transaction, auth('customer_api')->id()));
     }
 
     public function createFromProduct(TransactionCreateRequest $request, Product $product, TransactionLifecycleService $service)

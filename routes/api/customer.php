@@ -31,6 +31,7 @@ Route::middleware('auth.customer')->prefix('customer')->group(function () {
     Route::get('transactions', [CustomerTransactionController::class, 'index']);
     Route::get('transactions/{transaction}', [CustomerTransactionController::class, 'show']);
     Route::post('products/{product}/transact', [CustomerTransactionController::class, 'createFromProduct']);
+    Route::get('transactions/{transaction}/next-actions', [CustomerTransactionController::class, 'nextActions']);
     Route::post('transactions/{transaction}/actions', [CustomerTransactionController::class, 'action']);
     Route::get('transactions/{transaction}/payments/{payment}/qr', [CustomerTransactionController::class, 'paymentQr']);
     Route::post('transactions/{transaction}/payments/{payment}/submit', [CustomerTransactionController::class, 'submitPayment']);

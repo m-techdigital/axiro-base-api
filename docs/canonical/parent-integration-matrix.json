@@ -116,5 +116,32 @@
       "accounting",
       "reports"
     ]
+  },
+  "transaction_command_center": {
+    "classification": "mini_bounded",
+    "parent_patterns": [
+      "central_lifecycle_catalog",
+      "detail_presenter",
+      "blocked_action_reason",
+      "base_confirm_action",
+      "operator_checklist"
+    ],
+    "mini_owners": [
+      "app/Support/Marketplace/TransactionLifecycleCatalog.php",
+      "app/Services/Marketplace/TransactionDetailPresenter.php",
+      "app/Services/Marketplace/Operations/MarketplaceOperationsReadService.php",
+      "src/modules/transactions/components/TransactionCommandCenter.jsx",
+      "src/components/account/TransactionJourney.jsx"
+    ],
+    "excluded": [
+      "contract_module",
+      "approval_center",
+      "generic_sla_engine",
+      "fraud_engine",
+      "company_scope",
+      "rbac",
+      "accounting",
+      "reports"
+    ]
   }
 }

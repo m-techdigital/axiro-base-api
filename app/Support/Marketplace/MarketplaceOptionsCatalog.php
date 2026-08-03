@@ -15,6 +15,7 @@ final class MarketplaceOptionsCatalog
         return [
             'document_types' => DocumentType::options(),
             'dispute_outcomes' => DisputeOutcome::options(),
+            'transaction_statuses' => TransactionLifecycleCatalog::statusOptions(),
         ];
     }
 

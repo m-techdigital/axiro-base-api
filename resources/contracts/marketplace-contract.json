@@ -280,7 +280,8 @@
     "POST /customer/security/two-factor/setup",
     "POST /customer/security/two-factor/confirm",
     "POST /customer/security/two-factor/recovery-codes",
-    "DELETE /customer/security/two-factor"
+    "DELETE /customer/security/two-factor",
+    "GET /customer/transactions/{transaction}/next-actions"
   ],
   "admin_endpoints": [
     "POST /login",
@@ -379,7 +380,8 @@
     "GET /operations-dashboard/rental-settlements/export",
     "POST /operations-dashboard/rental-settlements/exports",
     "GET /operations-dashboard/rental-settlements/exports/{exportRequest}",
-    "GET /operations-dashboard/rental-settlements/exports/{exportRequest}/download"
+    "GET /operations-dashboard/rental-settlements/exports/{exportRequest}/download",
+    "GET /transactions/{transaction}/next-actions"
   ],
   "option_catalog": {
     "version": "2026-08-02.1",
@@ -455,6 +457,75 @@
         "value": "reopen",
         "label": "Từ chối và đưa giao dịch về luồng xử lý"
       }
+    ],
+    "transaction_statuses": [
+      {
+        "value": "pending_payment",
+        "label": "Chờ thanh toán"
+      },
+      {
+        "value": "partially_paid",
+        "label": "Thanh toán một phần"
+      },
+      {
+        "value": "paid",
+        "label": "Đã thanh toán"
+      },
+      {
+        "value": "handover_pending",
+        "label": "Chờ xác nhận bàn giao"
+      },
+      {
+        "value": "handed_over",
+        "label": "Đã bàn giao"
+      },
+      {
+        "value": "active",
+        "label": "Đang thuê"
+      },
+      {
+        "value": "return_pending",
+        "label": "Chờ hoàn trả"
+      },
+      {
+        "value": "returned",
+        "label": "Đã hoàn trả"
+      },
+      {
+        "value": "overdue",
+        "label": "Quá hạn"
+      },
+      {
+        "value": "disputed",
+        "label": "Đang tranh chấp"
+      },
+      {
+        "value": "completed",
+        "label": "Hoàn tất"
+      },
+      {
+        "value": "cancelled",
+        "label": "Đã hủy"
+      }
+    ]
+  },
+  "transaction_lifecycle": {
+    "owner": "backend",
+    "detail_fields": [
+      "lifecycle.status",
+      "lifecycle.actions",
+      "lifecycle.next_action",
+      "lifecycle.blocking_reasons",
+      "workflow_checklist"
+    ],
+    "admin_next_actions_endpoint": "GET /api/v1/transactions/{transaction}/next-actions",
+    "customer_next_actions_endpoint": "GET /api/v1/customer/transactions/{transaction}/next-actions",
+    "action_contract": [
+      "key",
+      "label",
+      "priority",
+      "enabled",
+      "blocked_reason"
     ]
   }
 }

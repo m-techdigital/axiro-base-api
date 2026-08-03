@@ -48,6 +48,16 @@
       "mini_path": "axiro-base-admin/src/modules/transactions/pages/Detail.jsx",
       "mode": "mini_bounded",
       "note": "Follows parent centralized/confirmed state-changing action pattern while retaining Mini transaction-only lifecycle ownership."
+    },
+    {
+      "mini_path": "app/Support/Marketplace/TransactionLifecycleCatalog.php",
+      "mode": "mini_bounded",
+      "note": "Centralizes Mini transaction statuses, next actions and blocking reasons. Parent has broader contract/reservation/accounting workflows, so Mini keeps a transaction-only catalog."
+    },
+    {
+      "mini_path": "app/Services/Marketplace/TransactionDetailPresenter.php",
+      "mode": "mini_bounded",
+      "note": "Presents admin command center and customer journey shape without importing parent contract module, approval center, RBAC or accounting dependencies."
     }
   ],
   "excluded": [

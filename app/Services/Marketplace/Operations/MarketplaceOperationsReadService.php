@@ -11,10 +11,13 @@ use App\Models\Transaction;
 use App\Models\TransactionPayment;
 use App\Models\WalletTransaction;
 use App\Models\WithdrawalRequest;
+use App\Support\Marketplace\TransactionLifecycleCatalog;
 use Illuminate\Database\Eloquent\Builder;
 
 class MarketplaceOperationsReadService
 {
+    public function __construct(private TransactionLifecycleCatalog $lifecycle) {}
+
     public function overview(): array
     {
         $now = now();
@@ -35,6 +38,7 @@ class MarketplaceOperationsReadService
                 'overdue_rental' => Transaction::query()->where('transaction_type', 'rental')->where('status', 'overdue')->count(),
                 'pending_return' => Transaction::query()->where('transaction_type', 'rental')->whereIn('status', ['active', 'return_pending'])->count(),
                 'deposit_deduction_review' => Transaction::query()->where('transaction_type', 'rental')->where('status', 'returned')->where('deposit_amount', '>', 0)->count(),
+                'pending_payout' => WithdrawalRequest::query()->whereIn('status', ['submitted', 'approved'])->count(),
             ],
             'finance' => [
                 'wallet_available' => (string) CustomerWallet::query()->sum('available_balance'),
@@ -129,7 +133,14 @@ class MarketplaceOperationsReadService
         $threshold = max(1, min(720, (int) ($filters['age_minutes'] ?? 30)));
         $query->where('updated_at', '<=', now()->subMinutes($threshold));
 
-        return $query->latest('updated_at')->paginate($perPage);
+        $page = $query->latest('updated_at')->paginate($perPage);
+        $page->getCollection()->transform(function (Transaction $transaction): Transaction {
+            $transaction->setAttribute('lifecycle', $this->lifecycle->describe($transaction, 'admin'));
+
+            return $transaction;
+        });
+
+        return $page;
     }
 
     public function idempotencyAudit(int $perPage = 20)

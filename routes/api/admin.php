@@ -57,6 +57,7 @@ Route::middleware('auth.api')->group(function () {
     Route::post('products/{product}/reject', [ProductController::class, 'reject']);
     Route::apiResource('customers', CustomerController::class);
     Route::apiResource('transactions', TransactionController::class);
+    Route::get('transactions/{transaction}/next-actions', [TransactionController::class, 'nextActions']);
     Route::post('transactions/{transaction}/actions', [TransactionController::class, 'action']);
     Route::get('payments', [PaymentController::class, 'index']);
     Route::post('payments/{payment}/confirm', [PaymentController::class, 'confirm']);

@@ -9,6 +9,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Transaction;
 use App\Services\AuditTrailService;
 use App\Services\Marketplace\Operations\MarketplaceOperationsReadService;
+use App\Services\Marketplace\TransactionDetailPresenter;
 use App\Services\Marketplace\TransactionLifecycleService;
 use App\Support\Marketplace\MoneyMath;
 use App\Support\Query\AppliesListQuery;
@@ -57,6 +58,7 @@ class TransactionController extends Controller
         AuditTrailService $audit,
         TransactionLifecycleService $lifecycle,
         MarketplaceOperationsReadService $operations,
+        TransactionDetailPresenter $presenter,
     ) {
         $loaded = $transaction->load([
             'product',
@@ -74,6 +76,7 @@ class TransactionController extends Controller
         $loaded->setAttribute('audit_history', $audit->forTransaction($transaction->id));
         $loaded->setAttribute('admin_actions', $lifecycle->allowedAdminActions($loaded));
         $loaded->setAttribute('workflow_checklist', $operations->documentChecklist($loaded));
+        $loaded->setAttribute('command_center', $presenter->admin($loaded));
 
         return ApiResponse::success($loaded);
     }
@@ -91,6 +94,11 @@ class TransactionController extends Controller
             ]),
             'Đã cập nhật giao dịch.',
         );
+    }
+
+    public function nextActions(Transaction $transaction, TransactionDetailPresenter $presenter)
+    {
+        return ApiResponse::success($presenter->admin($transaction));
     }
 
     public function action(
