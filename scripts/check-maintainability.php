@@ -90,7 +90,6 @@ foreach ([
     }
 }
 
-
 $lifecycle = 'app/Services/Marketplace/TransactionLifecycleService.php';
 if (file_exists($root.'/'.$lifecycle)) {
     $lines = count(file($root.'/'.$lifecycle));
