@@ -5,7 +5,16 @@ $failures = [];
 $tracked = [];
 exec('git ls-files', $tracked);
 
+foreach (['config/crm.php', 'config/payroll.php', 'config/reports.php'] as $file) {
+    if (in_array($file, $tracked, true) && file_exists($root.'/'.$file)) {
+        $failures[] = "{$file}: parent-only config is not part of Mini MBN.";
+    }
+}
+
 foreach ($tracked as $file) {
+    if (! file_exists($root.'/'.$file)) {
+        continue;
+    }
     if (preg_match('/(?:^|[-_])v\d{2,}(?:[-_.]|$)/i', basename($file))) {
         $failures[] = "{$file}: file name must not use V55/V66-style version markers.";
     }
@@ -22,6 +31,9 @@ $forbiddenParentDomains = [
 ];
 
 foreach ($tracked as $file) {
+    if (! file_exists($root.'/'.$file)) {
+        continue;
+    }
     if (! str_ends_with($file, '.php') || str_starts_with($file, 'vendor/')) {
         continue;
     }
@@ -34,6 +46,9 @@ foreach ($tracked as $file) {
 }
 
 foreach ($tracked as $file) {
+    if (! file_exists($root.'/'.$file)) {
+        continue;
+    }
     if (! preg_match('#^(app|database|routes|config|lang)/#', $file)) {
         continue;
     }
@@ -41,8 +56,8 @@ foreach ($tracked as $file) {
         continue;
     }
     $source = file_get_contents($root.'/'.$file);
-    if (preg_match('/\b(company_id|company_member_id|company_member_ids|company_name|company_code|company_type|company_types|department_id|department_name|department_code|department_parent_id|department_manager_member_id|investor_company_id|customer_company_id)\b/i', $source)) {
-        $failures[] = "{$file}: runtime/lang source must not carry company or department scope in Mini.";
+    if (preg_match('/\b(company_id|company_member_id|company_member_ids|company_name|company_code|company_type|company_types|department_id|department_name|department_code|department_parent_id|department_manager_member_id|investor_company_id|customer_company_id|payroll|accounting|reports|crm|reservation|opportunity|opportunities|inventory)\b/i', $source)) {
+        $failures[] = "{$file}: runtime/lang source must not carry parent-only domain scope in Mini.";
     }
 }
 
