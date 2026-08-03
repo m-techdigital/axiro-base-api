@@ -5,8 +5,11 @@ namespace Tests\Feature;
 use App\Models\DocumentTemplate;
 use App\Models\GeneratedDocument;
 use App\Models\Transaction;
+use App\Services\Documents\DocumentTemplateVersioningService;
 use App\Services\Documents\MarketplaceDocumentService;
+use App\Services\Documents\MarketplaceDocumentTemplateValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class MarketplaceDocumentTemplateQualityTest extends TestCase
@@ -32,5 +35,53 @@ class MarketplaceDocumentTemplateQualityTest extends TestCase
             $this->assertDoesNotMatchRegularExpression('/\{\{[^}]+\}\}/', $document->rendered_html);
             $this->assertStringContainsString($document->transaction->code, $document->rendered_html);
         });
+    }
+
+    public function test_used_template_update_creates_new_version_and_republishes_documents(): void
+    {
+        $this->seed();
+        $transaction = Transaction::query()->where('code', 'TRX-DEMO-COMPLETED-SALE')->firstOrFail();
+        app(MarketplaceDocumentService::class)->generate($transaction, 'sale_record');
+
+        $template = DocumentTemplate::query()->where('code', 'sale_record')->where('version', 3)->firstOrFail();
+        $oldContent = $template->content_html;
+        $newContent = str_replace('Cảnh báo rủi ro:', 'Cảnh báo rủi ro bản phát hành mới:', $oldContent);
+
+        $next = app(DocumentTemplateVersioningService::class)->update($template, [
+            'code' => $template->code,
+            'name' => $template->name,
+            'type' => $template->type,
+            'target_module' => $template->target_module,
+            'status' => 'approved',
+            'version' => $template->version,
+            'merge_fields' => $template->merge_fields,
+            'content_html' => $newContent,
+            'description' => $template->description,
+        ]);
+
+        $this->assertSame(4, $next->version);
+        $this->assertSame($template->id, $next->supersedes_template_id);
+        $this->assertSame('archived', $template->fresh()->status);
+        $this->assertSame($oldContent, $template->fresh()->content_html);
+
+        $latestDocument = GeneratedDocument::query()
+            ->where('transaction_id', $transaction->id)
+            ->where('document_type', 'sale_record')
+            ->latest('version')
+            ->firstOrFail();
+
+        $this->assertSame(2, $latestDocument->version);
+        $this->assertSame($next->id, $latestDocument->document_template_id);
+        $this->assertStringContainsString('Cảnh báo rủi ro bản phát hành mới', $latestDocument->rendered_html);
+    }
+
+    public function test_template_validator_requires_core_legal_sections(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        app(MarketplaceDocumentTemplateValidator::class)->validateOrFail(
+            'sale_record',
+            '<h1>Mẫu ngắn</h1><p>{{transaction_code}} {{document_date}} {{buyer_name}} {{seller_name}} {{product_name}} {{total_payable}} {{transaction_value}} {{payment_schedule}}</p>'
+        );
     }
 }

@@ -10,12 +10,13 @@ return new class extends Migration
     {
         Schema::create('document_templates', function (Blueprint $table) {
             $table->id();
-            $table->string('code')->unique();
+            $table->string('code');
             $table->string('name');
             $table->string('type')->index();
             $table->string('target_module')->default('transactions')->index();
             $table->string('status')->default('approved')->index();
             $table->unsignedInteger('version')->default(1);
+            $table->foreignId('supersedes_template_id')->nullable()->constrained('document_templates')->nullOnDelete();
             $table->json('merge_fields')->nullable();
             $table->longText('content_html');
             $table->text('description')->nullable();
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
+            $table->unique(['code', 'version'], 'document_templates_code_version_unique');
         });
 
         Schema::create('generated_documents', function (Blueprint $table) {

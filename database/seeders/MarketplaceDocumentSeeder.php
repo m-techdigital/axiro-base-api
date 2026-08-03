@@ -15,7 +15,7 @@ class MarketplaceDocumentSeeder extends Seeder
         $admin = User::query()->where('username', env('ADMIN_USERNAME', 'admin'))->first();
         foreach ($this->templates() as $code => $template) {
             DocumentTemplate::query()->updateOrCreate(
-                ['code' => $code],
+                ['code' => $code, 'version' => 3],
                 [...$template, 'target_module' => 'transactions', 'status' => 'approved', 'version' => 3,
                     'merge_fields' => $this->mergeFields(), 'created_by' => $admin?->id, 'updated_by' => $admin?->id]
             );

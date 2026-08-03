@@ -81,6 +81,7 @@ class MarketplaceDocumentService
             ->whereIn('code', DocumentType::aliasesFor($type))
             ->where('status', 'approved')
             ->orderByRaw('CASE WHEN code = ? THEN 0 ELSE 1 END', [$type])
+            ->orderByDesc('version')
             ->firstOrFail();
         app(MarketplaceDocumentTemplateValidator::class)->validateOrFail($type, $template->content_html);
         $existing = GeneratedDocument::query()->where('transaction_id', $transaction->id)->where('document_type', $type)->latest('version')->first();

@@ -42,6 +42,9 @@ class MarketplaceDocumentTemplateValidator
         }
         $plain = mb_strtolower(preg_replace('/\s+/u', ' ', strip_tags($html)) ?? '');
         $requiredSections = [
+            'thông tin các bên' => ['/thông tin các bên/u', '/bên mua/u', '/bên bán/u', '/bên thuê/u', '/bên cho thuê/u'],
+            'đối tượng giao dịch' => ['/đối tượng giao dịch/u', '/sản phẩm/u', '/tài khoản/u'],
+            'giá trị và thanh toán' => ['/giá trị/u', '/thanh toán/u', '/tổng phải thanh toán/u'],
             'quyền và nghĩa vụ' => ['/quyền\s*(?:,|và)?\s*nghĩa vụ/u', '/nghĩa vụ\s*(?:,|và)?\s*quyền/u'],
             'tranh chấp' => ['/tranh chấp/u', '/khiếu nại/u'],
             'bảo mật' => ['/bảo mật/u', '/thông tin xác thực/u'],
