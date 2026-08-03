@@ -8,12 +8,12 @@
   "parent_alignment": "mini_bounded",
   "last_verified_at": "2026-08-04",
   "verification": {
-    "api_full_phpunit": "passed_112_tests_1001_assertions",
+    "api_full_phpunit": "passed_116_tests_1029_assertions",
     "api_pint": "passed",
     "marketplace_integrity": "passed",
     "transactional_api_e2e": "passed",
     "mbn_browser_core_smoke": "passed",
-    "admin_checks_build_bundle": "passed_with_antd_core_budget_warning",
+    "admin_checks_build_bundle": "passed_with_initial_js_budget_warning",
     "mbn_checks_build_bundle": "passed",
     "avatar_persistence_after_relogin": "passed",
     "admin_browser_crud_smoke": "passed",
@@ -22,14 +22,29 @@
     "admin_bundle_split": "measured_over_budget",
     "mbn_css_domain_split": "source_verified",
     "admin_payout_lifecycle_modal_smoke": "passed",
-    "admin_antd_core_kb": 1269.9
+    "admin_largest_antd_asset_kb": 658.5,
+    "admin_bundle_strategy": "measured_no_forced_antd_core_still_over_initial_budget",
+    "admin_import_graph_gate": "source_verified",
+    "transaction_lifecycle_guidance": "passed_runtime_tests",
+    "document_template_no_branch_versioning": "passed_runtime_tests",
+    "admin_document_version_browser_mutation": "source_verified_pending_browser_run",
+    "mbn_payment_timeline_owner": "source_verified",
+    "mbn_large_presentation_css_split": "source_verified",
+    "release_all_structured_log": "source_verified",
+    "admin_bundle_deep_lazy_owners": "passed_build_measurement_initial_js_1463_9_kb",
+    "admin_bundle_budget_gate": "strict_by_default_waiver_must_be_explicit",
+    "customer_wallet_document_isolation": "passed_full_phpunit",
+    "rental_guidance_shared_contract": "passed_full_phpunit",
+    "mbn_purchase_policy_semantics": "source_verified_no_fixed_refund_percentages",
+    "react_antd_warning_closure": "source_verified",
+    "release_all_bundle_waiver_recording": "source_verified"
   },
   "browser_smoke_required": true,
   "transactional_e2e_requires_fresh_seed": true,
   "merge_policy": "merge only after browser smoke passes or a written waiver is recorded",
   "verified_source_state": {
-    "api": "workspace_changes_after_8ae08ca",
-    "admin": "workspace_changes_after_4e833d2",
-    "mbn": "workspace_changes_after_a931fdb"
+    "api": "workspace_changes_after_all_tasks_20260804",
+    "admin": "workspace_changes_after_all_tasks_20260804",
+    "mbn": "workspace_changes_after_all_tasks_20260804"
   }
 }

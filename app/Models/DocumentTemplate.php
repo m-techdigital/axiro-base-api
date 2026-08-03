@@ -29,4 +29,9 @@ class DocumentTemplate extends Model
     {
         return $this->hasMany(self::class, 'supersedes_template_id');
     }
+
+    public function successors()
+    {
+        return $this->revisions();
+    }
 }

@@ -539,6 +539,7 @@
       "lifecycle.actions",
       "lifecycle.next_action",
       "lifecycle.blocking_reasons",
+      "lifecycle.guidance",
       "workflow_checklist"
     ],
     "admin_next_actions_endpoint": "GET /api/v1/transactions/{transaction}/next-actions",
@@ -549,6 +550,18 @@
       "priority",
       "enabled",
       "blocked_reason"
+    ],
+    "guidance_contract": [
+      "key",
+      "label",
+      "status",
+      "message",
+      "due_at",
+      "value",
+      "rental_amount",
+      "deposit_amount",
+      "deduction_amount",
+      "refundable_amount"
     ]
   }
 }

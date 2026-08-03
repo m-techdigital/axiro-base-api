@@ -71,7 +71,74 @@ class TransactionLifecycleCatalog
             'actions' => $actions,
             'next_action' => collect($actions)->first(fn (array $action) => $action['enabled']) ?? null,
             'blocking_reasons' => collect($actions)->where('enabled', false)->pluck('blocked_reason')->filter()->unique()->values()->all(),
+            'guidance' => $this->guidance($transaction, $audience, $customerId),
         ];
+    }
+
+    private function guidance(Transaction $transaction, string $audience, ?int $customerId): array
+    {
+        $nextPayment = $transaction->payments
+            ->whereIn('status', ['pending', 'rejected', 'overdue'])
+            ->sortBy(fn ($payment) => $payment->due_date ?? $payment->period_start ?? $payment->created_at)
+            ->first();
+
+        $items = [];
+        if ($nextPayment) {
+            $items[] = [
+                'key' => 'payment',
+                'label' => 'Khoản cần thanh toán',
+                'value' => (string) $nextPayment->amount,
+                'due_at' => optional($nextPayment->due_date)->toDateString(),
+                'status' => $nextPayment->status,
+                'message' => $nextPayment->status === 'overdue'
+                    ? 'Khoản thanh toán đã quá hạn; cần xử lý trước khi giao dịch tiếp tục.'
+                    : 'Hoàn tất khoản đến hạn để mở bước bàn giao tiếp theo.',
+            ];
+        }
+
+        if (in_array($transaction->status, ['paid', 'partially_paid', 'handover_pending'], true)) {
+            $items[] = [
+                'key' => 'handover',
+                'label' => 'Bàn giao',
+                'status' => $transaction->status,
+                'due_at' => optional($transaction->due_date)->toDateString(),
+                'message' => $transaction->status === 'handover_pending'
+                    ? 'Bên nhận cần xác nhận đã nhận tài khoản hoặc mở tranh chấp khi thông tin không đúng.'
+                    : 'Bên giao cần hoàn tất bàn giao sau khi thanh toán đủ điều kiện.',
+            ];
+        }
+
+        if ($transaction->transaction_type === 'rental') {
+            $deduction = (string) ($transaction->rental_deposit_deduction_amount ?? '0.00');
+            $deposit = (string) ($transaction->deposit_amount ?? '0.00');
+            $refundable = MoneyMath::max('0.00', MoneyMath::subtract($deposit, $deduction));
+            $items[] = [
+                'key' => 'rental_settlement',
+                'label' => 'Đối soát tiền thuê và cọc',
+                'status' => $transaction->status,
+                'due_at' => optional($transaction->rental_end_at)->toIso8601String(),
+                'rental_amount' => (string) ($transaction->transaction_value ?? '0.00'),
+                'deposit_amount' => $deposit,
+                'deduction_amount' => $deduction,
+                'refundable_amount' => $refundable,
+                'message' => in_array($transaction->status, ['returned', 'completed'], true)
+                    ? 'Đối chiếu khấu trừ và số cọc hoàn lại theo chứng từ đã ghi nhận.'
+                    : 'Theo dõi hạn thuê, hoàn trả và chứng từ trước khi quyết toán tiền cọc.',
+            ];
+        }
+
+        if ($transaction->status === 'disputed') {
+            $items[] = [
+                'key' => 'dispute',
+                'label' => 'Tranh chấp đang chặn giao dịch',
+                'status' => 'attention',
+                'message' => $audience === 'admin'
+                    ? 'Thu thập bằng chứng hai bên và ra quyết định trước khi giải ngân, hoàn tiền hoặc đóng giao dịch.'
+                    : 'Theo dõi yêu cầu bằng chứng và quyết định của quản trị viên; tiền đang được giữ cho đến khi xử lý xong.',
+            ];
+        }
+
+        return $items;
     }
 
     private function adminAvailable(Transaction $transaction): array

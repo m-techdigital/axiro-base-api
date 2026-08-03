@@ -13,7 +13,7 @@ class DocumentTemplateController extends Controller
 {
     public function index(Request $request)
     {
-        $q = DocumentTemplate::query()->withCount('generatedDocuments')->when($request->keyword, fn ($q, $v) => $q->where(fn ($x) => $x->where('code', 'like', "%$v%")->orWhere('name', 'like', "%$v%")))->when($request->type, fn ($q, $v) => $q->where('type', $v))->latest('updated_at');
+        $q = DocumentTemplate::query()->with(['supersedes:id,code,name,version,status'])->withCount('generatedDocuments')->when($request->keyword, fn ($q, $v) => $q->where(fn ($x) => $x->where('code', 'like', "%$v%")->orWhere('name', 'like', "%$v%")))->when($request->type, fn ($q, $v) => $q->where('type', $v))->latest('updated_at');
         $p = $q->paginate($request->integer('per_page', 20));
 
         return success_response($p->items(), 'Thành công', 200, ['pagination' => ['current_page' => $p->currentPage(), 'last_page' => $p->lastPage(), 'per_page' => $p->perPage(), 'total' => $p->total()]]);

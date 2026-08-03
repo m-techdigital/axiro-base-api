@@ -40,6 +40,8 @@ class MarketplaceContractCompatibilityTest extends TestCase
         $this->assertContains('POST /customer/documents/{generatedDocument}/accept', $contract['customer_endpoints']);
         $this->assertContains('POST /customer/withdrawals/{withdrawal}/cancel', $contract['customer_endpoints']);
         $this->assertContains('cancelled_by_customer', $contract['statuses']['withdrawal']);
+        $this->assertContains('lifecycle.guidance', $contract['transaction_lifecycle']['detail_fields']);
+        $this->assertContains('refundable_amount', $contract['transaction_lifecycle']['guidance_contract']);
     }
 
     public function test_declared_endpoints_exist_in_laravel_router(): void

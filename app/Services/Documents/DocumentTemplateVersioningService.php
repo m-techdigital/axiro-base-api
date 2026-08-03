@@ -4,6 +4,7 @@ namespace App\Services\Documents;
 
 use App\Models\DocumentTemplate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class DocumentTemplateVersioningService
 {
@@ -12,9 +13,19 @@ class DocumentTemplateVersioningService
         app(MarketplaceDocumentTemplateValidator::class)->validateOrFail($data['type'], $data['content_html']);
 
         return DB::transaction(function () use ($template, $data, $adminId) {
-            $template->refresh();
+            $template = DocumentTemplate::query()->lockForUpdate()->findOrFail($template->id);
             $isIssued = $template->generatedDocuments()->exists();
             $data['updated_by'] = $adminId;
+
+            if ($isIssued && $template->successors()->exists()) {
+                $latest = DocumentTemplate::query()
+                    ->where('code', $template->code)
+                    ->latest('version')
+                    ->first();
+                throw ValidationException::withMessages([
+                    'version' => 'Mẫu này đã có phiên bản kế tiếp. Hãy chỉnh sửa phiên bản mới nhất v'.($latest?->version ?? $template->version).'.',
+                ]);
+            }
 
             if (! $isIssued) {
                 $data['published_at'] = ($data['status'] ?? null) === 'published' ? ($template->published_at ?? now()) : null;

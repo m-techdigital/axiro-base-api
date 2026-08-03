@@ -222,8 +222,25 @@ if (file_exists($root.'/'.$actionCenter)) {
     }
 }
 
-if (! file_exists($root.'/scripts/release-all.sh')) {
+$releaseRunner = $root.'/scripts/release-all.sh';
+if (! file_exists($releaseRunner)) {
     $failures[] = 'scripts/release-all.sh: missing one-command release runner.';
+} else {
+    $source = file_get_contents($releaseRunner);
+    foreach (['BUNDLE_BUDGET_STRICT=1', 'AXIRO_RELEASE_ALLOW_BUNDLE_WAIVER', 'e2e:browser-core', 'e2e:transactional-api', 'e2e:browser-crud'] as $needle) {
+        if (! str_contains($source, $needle)) {
+            $failures[] = "scripts/release-all.sh: missing release gate {$needle}.";
+        }
+    }
+}
+
+foreach ([
+    'tests/Feature/MiniCustomerIsolationContractTest.php',
+    'tests/Feature/TransactionCommandCenterContractTest.php',
+] as $testFile) {
+    if (! file_exists($root.'/'.$testFile)) {
+        $failures[] = "{$testFile}: missing Mini customer isolation/lifecycle regression coverage.";
+    }
 }
 
 if ($failures) {

@@ -80,6 +80,31 @@ class MarketplaceDocumentTemplateQualityTest extends TestCase
         $this->assertStringContainsString('Cảnh báo rủi ro bản phát hành mới', $regenerated->rendered_html);
     }
 
+    public function test_used_template_cannot_branch_after_a_successor_exists(): void
+    {
+        $this->seed();
+        $transaction = Transaction::query()->where('code', 'TRX-DEMO-COMPLETED-SALE')->firstOrFail();
+        app(MarketplaceDocumentService::class)->generate($transaction, 'sale_record');
+        $template = DocumentTemplate::query()->where('code', 'sale_record')->where('version', 3)->firstOrFail();
+        $payload = [
+            'code' => $template->code,
+            'name' => $template->name,
+            'type' => $template->type,
+            'target_module' => $template->target_module,
+            'status' => 'published',
+            'version' => $template->version,
+            'merge_fields' => $template->merge_fields,
+            'content_html' => str_replace('Cảnh báo rủi ro:', 'Cảnh báo rủi ro phiên bản mới:', $template->content_html),
+            'description' => $template->description,
+        ];
+
+        $next = app(DocumentTemplateVersioningService::class)->update($template, $payload);
+        $this->assertSame(4, $next->version);
+
+        $this->expectException(ValidationException::class);
+        app(DocumentTemplateVersioningService::class)->update($template->fresh(), $payload);
+    }
+
     public function test_template_validator_requires_core_legal_sections(): void
     {
         $this->expectException(ValidationException::class);
