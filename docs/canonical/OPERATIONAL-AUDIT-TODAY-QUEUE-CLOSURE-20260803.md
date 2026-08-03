@@ -19,3 +19,16 @@
 ## Không mở rộng
 
 Không port RBAC, company/project/team, Accounting, Reports, generic workflow/SLA hoặc fraud engine.
+
+## Deferred SLA clock decision
+
+- The current operational SLA summary intentionally continues using `transactions.updated_at` because the canonical lifecycle does not yet own `status_entered_at`, `current_stage_started_at` or `sla_started_at`.
+- Replacing the clock without a lifecycle-owned timestamp would create inferred state and an unproven migration contract.
+- Introduce a dedicated SLA clock only together with lifecycle mutation coverage; do not add a generic SLA engine in this closure.
+
+## Large-file ownership follow-up — 2026-08-03
+
+- Large files are split only when a stable business owner exists; line count alone is not a reason to introduce another abstraction.
+- `TransactionPaymentPlanService` is the canonical owner for rental pricing snapshots and initial purchase/rental payment-plan generation.
+- `TransactionLifecycleService` remains the public lifecycle facade and transaction-boundary owner; controllers and callers do not depend on payment-plan internals.
+- Payment submission, confirmation, settlement, transition, and dispute ownership remain unchanged in this follow-up.

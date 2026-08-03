@@ -12,7 +12,7 @@ use App\Support\DatabaseExpressions;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
-class ParentDevelopNeutralFoundationV6645Test extends TestCase
+class ParentDevelopNeutralFoundationTest extends TestCase
 {
     public function test_audit_payload_sanitizer_masks_and_limits_parent_contract(): void
     {
@@ -50,7 +50,7 @@ class ParentDevelopNeutralFoundationV6645Test extends TestCase
 
     public function test_parent_heavy_domains_are_not_imported_into_neutral_foundation(): void
     {
-        $manifest = file_get_contents(base_path('docs/canonical/parent-develop-neutral-sync-v66.45.json'));
+        $manifest = file_get_contents(base_path('docs/canonical/parent-develop-neutral-sync.json'));
         $this->assertStringNotContainsString('App\\Models\\Company', file_get_contents(app_path('Support/DatabaseExpressions.php')));
         $this->assertStringContainsString('excluded', $manifest);
     }

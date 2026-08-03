@@ -1,5 +1,5 @@
 {
-  "version": "v66.45",
+  "version": "parent-develop-neutral-sync",
   "parent_snapshot": "mylands-api-develop-20260801-98fe973.zip",
   "mini_baseline": "axiro-base-api-main-20260801.zip",
   "exact_source": [

@@ -1,4 +1,4 @@
-# AXIRO Mini Source-Aligned Base Sync v66.37
+# AXIRO Mini Source-Aligned Base Sync
 
 ## Mục tiêu
 
