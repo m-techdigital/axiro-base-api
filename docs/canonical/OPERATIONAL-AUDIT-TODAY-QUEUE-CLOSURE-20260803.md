@@ -48,4 +48,5 @@ Không port RBAC, company/project/team, Accounting, Reports, generic workflow/SL
 ## Regression guards
 
 - `composer check:maintainability` blocks V55/V66-style temporary file names, parent-only domain imports and operations controller logic drifting back out of service owners.
+- The guard also blocks company/department technical keys from runtime and language sources; docs/tests may mention those domains only as explicit exclusions.
 - The guard intentionally allows Laravel migration timestamps and dated canonical documents; it only targets explicit `vNN` version markers.

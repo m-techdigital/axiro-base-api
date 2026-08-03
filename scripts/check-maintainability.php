@@ -33,6 +33,19 @@ foreach ($tracked as $file) {
     }
 }
 
+foreach ($tracked as $file) {
+    if (! preg_match('#^(app|database|routes|config|lang)/#', $file)) {
+        continue;
+    }
+    if (! preg_match('/\.(php|json|js|jsx|ts|tsx)$/', $file)) {
+        continue;
+    }
+    $source = file_get_contents($root.'/'.$file);
+    if (preg_match('/\b(company_id|company_member_id|company_member_ids|company_name|company_code|company_type|company_types|department_id|department_name|department_code|department_parent_id|department_manager_member_id|investor_company_id|customer_company_id)\b/i', $source)) {
+        $failures[] = "{$file}: runtime/lang source must not carry company or department scope in Mini.";
+    }
+}
+
 $controller = 'app/Http/Controllers/MarketplaceOperationsDashboardController.php';
 if (file_exists($root.'/'.$controller)) {
     $lines = count(file($root.'/'.$controller));
