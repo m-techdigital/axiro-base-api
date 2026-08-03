@@ -7,17 +7,34 @@ use App\Models\CustomerVerification;
 use App\Models\CustomerWallet;
 use App\Models\WithdrawalRequest;
 use App\Services\MediaUploadService;
+use App\Services\Payouts\PayoutJourneyPresenter;
 use App\Services\Payouts\WithdrawalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CustomerPayoutController extends Controller
 {
-    public function overview()
+    public function overview(PayoutJourneyPresenter $presenter)
     {
         $id = auth('customer_api')->id();
+        $wallet = CustomerWallet::firstOrCreate(['customer_id' => $id]);
+        $verification = CustomerVerification::firstOrCreate(
+            ['customer_id' => $id],
+            ['status' => 'unverified'],
+        );
+        $accounts = CustomerPayoutAccount::where('customer_id', $id)->latest()->get();
+        $withdrawals = WithdrawalRequest::with('payoutAccount')
+            ->where('customer_id', $id)
+            ->latest()
+            ->paginate(20);
 
-        return success_response(['wallet' => CustomerWallet::firstOrCreate(['customer_id' => $id]), 'verification' => CustomerVerification::firstOrCreate(['customer_id' => $id], ['status' => 'unverified']), 'accounts' => CustomerPayoutAccount::where('customer_id', $id)->latest()->get(), 'withdrawals' => WithdrawalRequest::with('payoutAccount')->where('customer_id', $id)->latest()->paginate(20)]);
+        return success_response([
+            'wallet' => $wallet,
+            'verification' => $verification,
+            'accounts' => $accounts,
+            'withdrawals' => $withdrawals,
+            'journey' => $presenter->customer($wallet, $verification, $accounts, $withdrawals),
+        ]);
     }
 
     public function submitVerification(Request $r, MediaUploadService $media)

@@ -137,15 +137,37 @@ class TransactionLifecycleCatalog
         $terminal = in_array($transaction->status, ['completed', 'cancelled'], true);
         $openDispute = $transaction->disputes->contains(fn ($dispute) => ! in_array($dispute->status, ['resolved', 'rejected', 'cancelled'], true));
         $unpaid = $transaction->payments->contains(fn ($payment) => ! in_array($payment->status, ['confirmed', 'refunded'], true));
+        $overduePayment = $transaction->payments->first(fn ($payment) => $payment->status === 'overdue');
+        $pendingDocument = $transaction->documents->first(
+            fn ($document) => $audience === 'customer'
+                && ! $document->acceptances->contains('customer_id', (int) $customerId),
+        );
 
         return match ($action) {
-            'complete' => $openDispute ? 'Phải xử lý tranh chấp trước khi hoàn tất.' : ($unpaid ? 'Chưa thể hoàn tất vì còn khoản thanh toán chưa xác nhận.' : null),
+            'complete' => $openDispute
+                ? 'Phải xử lý tranh chấp trước khi hoàn tất.'
+                : ($overduePayment
+                    ? 'Chưa thể hoàn tất vì có khoản thanh toán quá hạn: '.($overduePayment->code ?? '#'.$overduePayment->id).'.'
+                    : ($unpaid
+                        ? 'Chưa thể hoàn tất vì còn khoản thanh toán chưa xác nhận.'
+                        : ($pendingDocument
+                            ? 'Chưa thể hoàn tất vì còn tài liệu chưa được xác nhận: '.($pendingDocument->code ?? '#'.$pendingDocument->id).'.'
+                            : null))),
             'force_handover', 'seller_handover' => $unpaid ? 'Chưa thể bàn giao vì thanh toán chưa đủ điều kiện.' : null,
             'force_return', 'renter_return', 'lessor_receive_return' => $transaction->transaction_type !== 'rental' ? 'Chỉ áp dụng cho giao dịch thuê.' : null,
             'cancel' => $terminal ? 'Giao dịch đã kết thúc.' : null,
             'reopen' => $transaction->status !== 'cancelled' ? 'Chỉ giao dịch đã hủy mới được mở lại.' : null,
             'open_dispute' => $terminal ? 'Giao dịch đã kết thúc.' : ($openDispute ? 'Đã có tranh chấp đang mở.' : null),
-            'pay' => $audience !== 'customer' || (int) $transaction->buyer_customer_id !== (int) $customerId ? 'Chỉ người mua hoặc người thuê được thanh toán.' : null,
+            'pay' => $audience !== 'customer' || (int) $transaction->buyer_customer_id !== (int) $customerId
+                ? 'Chỉ người mua hoặc người thuê được thanh toán.'
+                : ($overduePayment
+                    ? 'Khoản thanh toán '.($overduePayment->code ?? '#'.$overduePayment->id).' đã quá hạn; vui lòng thanh toán hoặc liên hệ hỗ trợ.'
+                    : null),
+            'accept_document' => $audience !== 'customer'
+                ? 'Chỉ khách hàng liên quan được xác nhận tài liệu.'
+                : ($pendingDocument
+                    ? null
+                    : 'Không còn tài liệu nào đang chờ bạn xác nhận.'),
             default => null,
         };
     }

@@ -50,4 +50,9 @@ class Customer extends Authenticatable implements JWTSubject
     {
         return $this->hasOne(CustomerWallet::class);
     }
+
+    public function verification(): HasOne
+    {
+        return $this->hasOne(CustomerVerification::class);
+    }
 }

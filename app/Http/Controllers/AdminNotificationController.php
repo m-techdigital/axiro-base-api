@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Common\ListQueryRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\MarketplaceNotification;
+use App\Support\Marketplace\TransactionLifecycleCatalog;
 use Illuminate\Database\Eloquent\Builder;
 
 class AdminNotificationController extends Controller
@@ -49,8 +50,10 @@ class AdminNotificationController extends Controller
         );
     }
 
-    public function show(MarketplaceNotification $notification)
-    {
+    public function show(
+        MarketplaceNotification $notification,
+        TransactionLifecycleCatalog $catalog,
+    ) {
         $notification->load([
             'customer:id,code,name,email,phone,status',
             'transaction' => fn ($query) => $query->with([
@@ -61,6 +64,26 @@ class AdminNotificationController extends Controller
                 'disputes' => fn ($disputes) => $disputes->latest('id')->limit(20),
             ]),
         ]);
+
+        $actionContext = null;
+        if ($notification->transaction) {
+            $lifecycle = $catalog->describe($notification->transaction, 'admin');
+            $actionContext = [
+                'deep_link' => '/transactions/'.$notification->transaction->id,
+                'next_action' => $lifecycle['next_action'],
+                'blocking_reasons' => array_slice($lifecycle['blocking_reasons'], 0, 3),
+                'transaction_status' => $lifecycle['status'],
+            ];
+        } elseif ($notification->customer_id) {
+            $actionContext = [
+                'deep_link' => '/customers/'.$notification->customer_id.'/edit',
+                'next_action' => null,
+                'blocking_reasons' => [],
+                'transaction_status' => null,
+            ];
+        }
+
+        $notification->setAttribute('action_context', $actionContext);
 
         return ApiResponse::success($notification);
     }

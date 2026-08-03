@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CustomerPayoutAccount;
 use App\Models\CustomerVerification;
 use App\Models\WithdrawalRequest;
+use App\Services\Payouts\PayoutJourneyPresenter;
 use App\Services\Payouts\WithdrawalService;
 use Illuminate\Http\Request;
 
@@ -40,11 +41,25 @@ class PayoutAdminController extends Controller
         return success_response($account->fresh('customer'));
     }
 
-    public function withdrawals(Request $r)
+    public function withdrawals(Request $r, PayoutJourneyPresenter $presenter)
     {
-        $q = WithdrawalRequest::with(['customer:id,code,name,username', 'payoutAccount'])->when($r->status, fn ($q, $v) => $q->where('status', $v))->latest();
+        $page = WithdrawalRequest::with([
+            'customer:id,code,name,username',
+            'customer.verification:id,customer_id,status,review_note',
+            'customer.wallet:id,customer_id,available_balance,held_balance',
+            'payoutAccount',
+        ])
+            ->when($r->status, fn ($q, $v) => $q->where('status', $v))
+            ->latest()
+            ->paginate(min(100, max(1, $r->integer('per_page', 20))));
 
-        return success_response($q->paginate(min(100, max(1, $r->integer('per_page', 20)))));
+        $page->getCollection()->transform(function (WithdrawalRequest $withdrawal) use ($presenter) {
+            $withdrawal->setAttribute('journey', $presenter->adminWithdrawal($withdrawal));
+
+            return $withdrawal;
+        });
+
+        return success_response($page);
     }
 
     public function approve(WithdrawalRequest $withdrawal, WithdrawalService $service)

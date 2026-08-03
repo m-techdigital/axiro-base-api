@@ -22,3 +22,4 @@ AXIRO cha là chuẩn kỹ thuật. Mini chỉ rút gọn miền nghiệp vụ, 
 - `ARCHITECTURE-CANONICAL.md`: transaction là lifecycle owner, document chỉ là hồ sơ giao dịch.
 - `OPERATOR-GUIDE.md`: hướng dẫn admin/customer dùng command center, next action và checklist.
 - `NEXT-BACKLOG.md`: backlog tiếp theo để khép vòng vận hành mà không phình module.
+- `NOTIFICATION-PAYOUT-JOURNEY-CLOSURE-20260803.md`
