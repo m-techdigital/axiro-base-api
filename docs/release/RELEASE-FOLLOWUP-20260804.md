@@ -20,7 +20,7 @@
 
 Runtime verification đã chạy lại trên working tree sau follow-up:
 
-- API full PHPUnit: pass `116 tests / 1033 assertions`.
+- API full PHPUnit: pass `116 tests / 1042 assertions`.
 - API Pint và maintainability guard: pass.
 - Admin `check:all`: pass.
 - Admin `build:analyze`: pass, có cảnh báo budget thật `initial JS 1388.9 KB`, largest bundled vendor asset `1083.2 KB`.
@@ -74,3 +74,54 @@ Browser smoke/E2E mutation vẫn là gate riêng trước merge/tag chính thứ
 - Cấu hình mới trả `undefined` cho ba nhóm dependency này trước nhánh vendor tổng quát, để Rollup giữ dependency chỉ dùng ở route lazy trong route owner tương ứng.
 - Fresh `npm run build:analyze` đo lại initial JS còn `290 KB` thay vì `1388.5 KB`; initial closure đã dưới budget `650 KB`.
 - Route closures vẫn vượt budget, lớn nhất hiện khoảng `1409.4 KB`, vì AntD/rc đã chuyển đúng về route owner. Debt tiếp theo là tách các owner nặng như transaction detail, notification và operation control, không gom lại shared vendor.
+
+## Route-owner follow-up — 2026-08-04
+
+The accepted initial-load measurement remains 290 KB JS / 24.1 KB CSS. Route closure measurements from the previous build are now historical and must be rebuilt after these source changes:
+
+- Login no longer imports the full `BaseForm`; `AuthLoginForm` owns only Form, Input and BaseButton.
+- Transaction Detail defers payment, document, timeline and admin-action panels.
+- Notifications defer the detail drawer until a record is opened.
+- Operations Control defers tab owners and operational modals until selected.
+
+Release evidence must not reuse the previous route-closure values. Run `npm run build:analyze` and record fresh route closures before finalizing evidence.
+
+## Admin UI runtime closure from browser evidence
+
+- Fixed the shared `BaseForm` schema grid to use real CSS-grid column ownership instead of AntD row/span width calculations that collapsed fields into narrow vertical columns.
+- `BaseFilter` now searches automatically on select/date changes and debounces text input; the search button remains as an explicit fallback.
+- Product approval, payment review, wallet-deposit reconciliation, payout decisions and dispute resolution now follow one review pattern: approve requires confirmation, reject opens a BaseForm modal and requires a concrete reason.
+- Audit logs and generated documents now use shared list/page/filter owners, while raw marketplace values are mapped through canonical labels.
+- Action Center and Marketplace Operations statistics use responsive grids instead of one-card-per-row layouts.
+- Demo fixtures now cover wallets/cash-flow, trust/risk/content, marketplace reviews and issued documents for browser verification.
+- These changes are source-verified. Browser UI, full seed/runtime tests, lint and production build must be rerun after applying this source.
+
+
+## Admin base UI consistency follow-up
+
+- BaseForm now maps legacy `span: 4/6/8/12/24` to semantic 12-column widths so small legacy spans cannot collapse labels and controls into unusable narrow columns.
+- BaseFilter now owns a responsive CSS Grid with change-driven search; it no longer depends on fixed AntD Row/Col sizing.
+- Audit logs and generated documents use the shared BaseListView shell without a fixed action column that forces unnecessary horizontal clipping.
+- Audit event/type/entity presentation now uses the canonical marketplace label owner; the MBN customer label owner was synchronized for the same shared values.
+- Existing wallet, payout, trust/risk and generated-document demo fixtures remain the canonical browser-test data owners.
+
+## Admin UI runtime verification - 2026-08-04
+
+- Admin format, lint, check-all and build analyze pass after BaseForm/BaseFilter/review-action cleanup.
+- Local browser CRUD smoke passed login, Product/Transaction/Customer forms, BaseForm relation fields, document-template create modal and payout lifecycle actions. Document-template edit modal/API version mutation is strict in release mode and needs a fresh seeded fixture for a non-skip browser mutation run.
+- The document-template edit modal smoke may skip only in manual mode; release mode now requires a fresh seeded issued template and fails if the immutable-version mutation does not run.
+- Fresh build keeps initial JS at `290.5 KB` / CSS `25.6 KB`; route closures remain over budget and must be split by owner, not by shared vendor.
+
+## Fresh-seed document-template browser gate closure
+
+- `release:all` now runs Admin CRUD smoke with `ADMIN_E2E_REQUIRE_DOCUMENT_VERSION_MUTATION=1`.
+- A fresh demo seed must expose at least one published template with generated documents.
+- The browser gate must open the matching row, create the successor version, and verify `supersedes_template_id`; missing fixture/action/mutation now fails release instead of silently skipping.
+
+
+
+## Strict document-template browser gate verification
+
+- API fresh seed fixture contract now passes in the full PHPUnit suite with `116 tests / 1042 assertions`.
+- Admin release runner enforces `ADMIN_E2E_REQUIRE_DOCUMENT_VERSION_MUTATION=1`; manual smoke may still skip only outside release mode.
+- Browser document-template mutation remains pending until `release:all` runs against a fresh seeded database and promotes the hash-matched release summary.

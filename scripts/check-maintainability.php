@@ -212,6 +212,18 @@ if (file_exists($root.'/'.$documentController)) {
     }
 }
 
+$fixtureContract = 'tests/Feature/MarketplaceDemoFixtureContractTest.php';
+if (! file_exists($root.'/'.$fixtureContract)) {
+    $failures[] = $fixtureContract.': missing fresh-seed fixture contract.';
+} else {
+    $source = file_get_contents($root.'/'.$fixtureContract);
+    foreach (["withCount('generatedDocuments')", 'Fresh demo seed phải có ít nhất một document template đã phát hành tài liệu'] as $needle) {
+        if (! str_contains($source, $needle)) {
+            $failures[] = "{$fixtureContract}: missing issued document-template fixture contract {$needle}.";
+        }
+    }
+}
+
 $actionCenter = 'app/Http/Controllers/AdminActionCenterController.php';
 if (file_exists($root.'/'.$actionCenter)) {
     $source = file_get_contents($root.'/'.$actionCenter);
@@ -227,7 +239,7 @@ if (! file_exists($releaseRunner)) {
     $failures[] = 'scripts/release-all.sh: missing one-command release runner.';
 } else {
     $source = file_get_contents($releaseRunner);
-    foreach (['BUNDLE_BUDGET_STRICT=1', 'AXIRO_RELEASE_ALLOW_BUNDLE_WAIVER', 'e2e:browser-core', 'e2e:transactional-api', 'e2e:browser-crud'] as $needle) {
+    foreach (['BUNDLE_BUDGET_STRICT=1', 'AXIRO_RELEASE_ALLOW_BUNDLE_WAIVER', 'e2e:browser-core', 'e2e:transactional-api', 'e2e:browser-crud', 'ADMIN_E2E_REQUIRE_DOCUMENT_VERSION_MUTATION=1'] as $needle) {
         if (! str_contains($source, $needle)) {
             $failures[] = "scripts/release-all.sh: missing release gate {$needle}.";
         }
@@ -249,6 +261,26 @@ if (file_exists($isolationTest)) {
     foreach (['customer/payouts', 'demo-withdrawal-submitted', 'assertNotFound'] as $needle) {
         if (! str_contains($source, $needle)) {
             $failures[] = "tests/Feature/MiniCustomerIsolationContractTest.php: missing payout isolation marker {$needle}.";
+        }
+    }
+}
+
+$demoSeeder = 'database/seeders/MarketplaceDemoSeeder.php';
+if (file_exists($root.'/'.$demoSeeder)) {
+    $source = file_get_contents($root.'/'.$demoSeeder);
+    foreach (['RISK-DEMO-HIGH', 'demo-chinh-sach-giao-dich-an-toan', 'Giao dịch demo hoàn tất đúng cam kết.'] as $needle) {
+        if (! str_contains($source, $needle)) {
+            $failures[] = "{$demoSeeder}: missing operational demo fixture {$needle}.";
+        }
+    }
+}
+
+$demoFixtureTest = 'tests/Feature/MarketplaceDemoFixtureContractTest.php';
+if (file_exists($root.'/'.$demoFixtureTest)) {
+    $source = file_get_contents($root.'/'.$demoFixtureTest);
+    foreach (['marketplace_risk_flags', 'content_entries', 'GeneratedDocument'] as $needle) {
+        if (! str_contains($source, $needle)) {
+            $failures[] = "{$demoFixtureTest}: missing demo fixture assertion {$needle}.";
         }
     }
 }

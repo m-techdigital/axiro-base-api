@@ -2,12 +2,15 @@
 
 namespace Database\Seeders;
 
+use App\Models\ContentEntry;
 use App\Models\Customer;
 use App\Models\CustomerPayoutAccount;
 use App\Models\CustomerVerification;
 use App\Models\CustomerWallet;
 use App\Models\MarketplaceDispute;
 use App\Models\MarketplaceNotification;
+use App\Models\MarketplaceReview;
+use App\Models\MarketplaceRiskFlag;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TransactionCheckpoint;
@@ -36,6 +39,7 @@ class MarketplaceDemoSeeder extends Seeder
             $this->payments($transactions, $customers, $admin);
             $this->eventsAndCheckpoints($transactions, $customers);
             $this->disputes($transactions, $customers, $admin);
+            $this->trustAndContent($transactions, $products, $customers, $admin);
             $this->notifications($transactions, $customers);
         });
     }
@@ -309,6 +313,78 @@ class MarketplaceDemoSeeder extends Seeder
             'transaction_id' => $transactions['completed']->id, 'opened_by_customer_id' => $customers['buyer']->id,
             'reason' => 'other', 'description' => 'Đã xử lý', 'status' => 'resolved', 'resolution' => 'Hai bên thống nhất', 'resolved_at' => now(), 'resolved_by' => $admin->id,
         ]);
+    }
+
+    private function trustAndContent(array $transactions, array $products, array $customers, User $admin): void
+    {
+        foreach ([
+            [
+                'code' => 'RISK-DEMO-HIGH',
+                'subject_type' => 'transaction',
+                'subject_id' => $transactions['disputed']->id,
+                'rule_code' => 'open_dispute_high_value',
+                'level' => 'high',
+                'status' => 'reviewing',
+                'reason' => 'Giao dịch giá trị cao đang có tranh chấp mở.',
+                'evidence' => ['transaction_code' => $transactions['disputed']->code, 'demo' => true],
+            ],
+            [
+                'code' => 'RISK-DEMO-RESOLVED',
+                'subject_type' => 'customer',
+                'subject_id' => $customers['seller']->id,
+                'rule_code' => 'payout_account_review',
+                'level' => 'medium',
+                'status' => 'resolved',
+                'reason' => 'Tài khoản nhận tiền từng cần đối chiếu bổ sung.',
+                'evidence' => ['customer_code' => $customers['seller']->code, 'demo' => true],
+                'resolution' => 'Đã đối chiếu hồ sơ và xác minh tài khoản nhận tiền.',
+                'resolved_by' => $admin->id,
+                'resolved_at' => now(),
+            ],
+        ] as $row) {
+            MarketplaceRiskFlag::query()->updateOrCreate(['code' => $row['code']], $row);
+        }
+
+        foreach ([
+            [
+                'type' => 'policy',
+                'slug' => 'demo-chinh-sach-giao-dich-an-toan',
+                'title' => 'Chính sách giao dịch tài khoản an toàn',
+                'summary' => 'Nội dung mẫu để kiểm thử quản trị niềm tin và nội dung.',
+                'body' => 'Kiểm tra thông tin sản phẩm, thanh toán, bàn giao và bằng chứng trước khi xác nhận.',
+                'status' => 'published',
+                'requires_acceptance' => true,
+            ],
+            [
+                'type' => 'guide',
+                'slug' => 'demo-huong-dan-xu-ly-tranh-chap',
+                'title' => 'Hướng dẫn cung cấp bằng chứng tranh chấp',
+                'summary' => 'Hướng dẫn mẫu cho khách hàng và quản trị viên.',
+                'body' => 'Cung cấp ảnh, video, lịch sử trao đổi và mốc thời gian liên quan.',
+                'status' => 'draft',
+                'requires_acceptance' => false,
+            ],
+        ] as $row) {
+            ContentEntry::query()->updateOrCreate(
+                ['slug' => $row['slug']],
+                [...$row, 'version' => 1, 'published_at' => $row['status'] === 'published' ? now() : null, 'created_by' => $admin->id, 'updated_by' => $admin->id, 'metadata' => ['demo' => true]],
+            );
+        }
+
+        MarketplaceReview::query()->updateOrCreate(
+            ['transaction_id' => $transactions['completed']->id, 'reviewer_customer_id' => $customers['buyer']->id],
+            [
+                'product_id' => $products['completed']->id,
+                'reviewee_customer_id' => $customers['seller']->id,
+                'rating' => 5,
+                'criteria' => ['handover' => 5, 'description' => 5],
+                'comment' => 'Giao dịch demo hoàn tất đúng cam kết.',
+                'status' => 'published',
+                'moderation_note' => 'Dữ liệu mẫu dùng kiểm thử.',
+                'moderated_by' => $admin->id,
+                'moderated_at' => now(),
+            ],
+        );
     }
 
     private function notifications(array $transactions, array $customers): void
