@@ -28,6 +28,21 @@ class CustomerProfileAvatarAndValidationTest extends TestCase
         $this->assertNotNull($customer->fresh()->avatar_url);
     }
 
+    public function test_avatar_upload_limiter_is_isolated_from_refresh_requests(): void
+    {
+        Storage::fake('public');
+        $customer = Customer::factory()->create();
+        $headers = $this->headers($customer);
+
+        for ($i = 0; $i < 25; $i++) {
+            $this->postJson('/api/v1/auth/customer/refresh', [], $headers);
+        }
+
+        $this->post('/api/v1/customer/profile/avatar', [
+            'avatar' => UploadedFile::fake()->image('avatar.png', 300, 300),
+        ], $headers)->assertOk();
+    }
+
     public function test_profile_validation_is_vietnamese_and_field_addressable(): void
     {
         $customer = Customer::factory()->create();

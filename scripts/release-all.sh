@@ -88,6 +88,7 @@ cd "$API_REPO"
 composer install --no-interaction --prefer-dist
 php artisan optimize:clear
 php artisan migrate:fresh --seed --env=testing
+find "$API_REPO" -name '.phpunit.result.cache' -delete
 composer check:release-package
 composer check:maintainability
 vendor/bin/pint --test
@@ -123,8 +124,12 @@ log_step "Start API/Admin/MBN test servers"
 cd "$API_REPO"
 php artisan serve --host=127.0.0.1 --port="$API_PORT" --env=testing >"$OUT_DIR/api-server.log" 2>&1 & API_PID=$!
 cd "$ADMIN_REPO"
+VITE_API_URL="http://127.0.0.1:$API_PORT/api/v1" \
+VITE_API_PROXY_TARGET="http://127.0.0.1:$API_PORT" \
 npm run dev -- --host 127.0.0.1 --port "$ADMIN_PORT" >"$OUT_DIR/admin-server.log" 2>&1 & ADMIN_PID=$!
 cd "$MBN_REPO"
+VITE_API_URL="http://127.0.0.1:$API_PORT/api/v1" \
+VITE_API_PROXY_TARGET="http://127.0.0.1:$API_PORT" \
 npm run dev -- --host 127.0.0.1 --port "$MBN_PORT" >"$OUT_DIR/mbn-server.log" 2>&1 & MBN_PID=$!
 wait_url "http://127.0.0.1:$API_PORT/api/v1/marketplace/options" API
 wait_url "http://127.0.0.1:$ADMIN_PORT/login" Admin

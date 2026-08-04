@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth.customer')->prefix('customer')->group(function () {
     Route::put('profile', [CustomerProfileController::class, 'update']);
-    Route::post('profile/avatar', [CustomerProfileController::class, 'updateAvatar'])->middleware('throttle:20,1');
+    Route::post('profile/avatar', [CustomerProfileController::class, 'updateAvatar'])->middleware('throttle:customer-avatar-upload');
     Route::post('profile/email-change', [CustomerSecurityController::class, 'requestEmailChange'])->middleware('throttle:5,1');
     Route::put('profile/password', [CustomerSecurityController::class, 'changePassword'])->middleware('throttle:5,1');
     Route::get('security/two-factor', [CustomerSecurityController::class, 'twoFactorStatus']);
