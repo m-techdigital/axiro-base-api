@@ -243,6 +243,16 @@ foreach ([
     }
 }
 
+$isolationTest = $root.'/tests/Feature/MiniCustomerIsolationContractTest.php';
+if (file_exists($isolationTest)) {
+    $source = file_get_contents($isolationTest);
+    foreach (['customer/payouts', 'demo-withdrawal-submitted', 'assertNotFound'] as $needle) {
+        if (! str_contains($source, $needle)) {
+            $failures[] = "tests/Feature/MiniCustomerIsolationContractTest.php: missing payout isolation marker {$needle}.";
+        }
+    }
+}
+
 if ($failures) {
     fwrite(STDERR, implode(PHP_EOL, $failures).PHP_EOL);
     exit(1);

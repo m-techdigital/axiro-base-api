@@ -7,6 +7,7 @@ use App\Models\GeneratedDocument;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\WalletTransaction;
+use App\Models\WithdrawalRequest;
 use Database\Seeders\MarketplaceDemoSeeder;
 use Database\Seeders\MarketplaceDocumentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -72,5 +73,19 @@ class MiniCustomerIsolationContractTest extends TestCase
         $this->withToken($outsiderToken)
             ->get("/api/v1/customer/documents/{$document->id}/download")
             ->assertForbidden();
+
+        $privateWithdrawal = WithdrawalRequest::query()
+            ->where('idempotency_key', 'demo-withdrawal-submitted')
+            ->firstOrFail();
+
+        $this->withToken($outsiderToken)
+            ->getJson('/api/v1/customer/payouts')
+            ->assertOk()
+            ->assertJsonMissing(['id' => $privateWithdrawal->id])
+            ->assertJsonMissing(['idempotency_key' => 'demo-withdrawal-submitted']);
+
+        $this->withToken($outsiderToken)
+            ->postJson("/api/v1/customer/withdrawals/{$privateWithdrawal->id}/cancel")
+            ->assertNotFound();
     }
 }

@@ -12,6 +12,19 @@ MBN_PORT="${AXIRO_RELEASE_MBN_PORT:-5174}"
 RELEASE_LOG="$OUT_DIR/release-${STAMP}.log"
 CURRENT_STEP="bootstrap"
 ADMIN_BUNDLE_STATUS="not_run"
+ADMIN_SOURCE_STATE=""
+API_SOURCE_STATE=""
+MBN_SOURCE_STATE=""
+
+require_clean_pushed_repo() {
+  local repo="$1" label="$2"
+  git -C "$repo" rev-parse --is-inside-work-tree >/dev/null 2>&1 || { echo "$label không phải Git repo thật." >&2; exit 2; }
+  [[ -z "$(git -C "$repo" status --porcelain)" ]] || { echo "$label còn thay đổi chưa commit." >&2; exit 2; }
+  local upstream counts
+  upstream=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null) || { echo "$label chưa có upstream; push trước khi release." >&2; exit 2; }
+  counts=$(git -C "$repo" rev-list --left-right --count "HEAD...$upstream")
+  [[ "$counts" == $'0\t0' || "$counts" == '0 0' ]] || { echo "$label chưa đồng bộ upstream: $counts" >&2; exit 2; }
+}
 
 log_step() {
   CURRENT_STEP="$1"
@@ -22,6 +35,15 @@ log_step() {
 [[ "${APP_ENV:-testing}" == "testing" ]] || { echo "Release runner chỉ chạy với APP_ENV=testing." >&2; exit 2; }
 [[ "${AXIRO_RELEASE_ALLOW_RESET:-0}" == "1" ]] || { echo "Thiết lập AXIRO_RELEASE_ALLOW_RESET=1 để cho phép reset database test." >&2; exit 2; }
 [[ -n "${MBN_E2E_LOGIN:-}" && -n "${MBN_E2E_PASSWORD:-}" ]] || { echo "Thiết lập MBN_E2E_LOGIN/MBN_E2E_PASSWORD." >&2; exit 2; }
+[[ -n "${ADMIN_E2E_LOGIN:-}" && -n "${ADMIN_E2E_PASSWORD:-}" ]] || { echo "Thiết lập ADMIN_E2E_LOGIN/ADMIN_E2E_PASSWORD." >&2; exit 2; }
+if [[ "${AXIRO_RELEASE_REQUIRE_PUSHED_SOURCE:-1}" == "1" ]]; then
+  require_clean_pushed_repo "$API_REPO" API
+  require_clean_pushed_repo "$ADMIN_REPO" Admin
+  require_clean_pushed_repo "$MBN_REPO" MBN
+fi
+API_SOURCE_STATE=$(git -C "$API_REPO" rev-parse HEAD 2>/dev/null || printf 'uncommitted-workspace')
+ADMIN_SOURCE_STATE=$(git -C "$ADMIN_REPO" rev-parse HEAD 2>/dev/null || printf 'uncommitted-workspace')
+MBN_SOURCE_STATE=$(git -C "$MBN_REPO" rev-parse HEAD 2>/dev/null || printf 'uncommitted-workspace')
 
 on_error() {
   code=$?
@@ -34,6 +56,7 @@ cleanup() {
   for pid in "${API_PID:-}" "${ADMIN_PID:-}" "${MBN_PID:-}"; do
     [[ -n "$pid" ]] && kill "$pid" 2>/dev/null || true
   done
+  find "$API_REPO" -name '.phpunit.result.cache' -delete 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -49,6 +72,7 @@ package_repo() {
   rsync -a --delete \
     --exclude='.git' --include='.env.example' --include='.env.production.example' --exclude='.env' --exclude='.env.*' \
     --exclude='node_modules' --exclude='vendor' --exclude='dist' --exclude='build' \
+    --exclude='.phpunit.result.cache' \
     --exclude='storage/logs/*' --exclude='bootstrap/cache/*.php' \
     "$repo/" "$stage/"
   (cd "$stage" && zip -qr "$OUT_DIR/${name}-${STAMP}-clean.zip" .)
@@ -68,6 +92,7 @@ composer check:release-package
 composer check:maintainability
 vendor/bin/pint --test
 php artisan test
+find "$API_REPO" -name '.phpunit.result.cache' -delete
 php artisan marketplace:integrity
 
 log_step "Admin source guards, lint and bundle measurement"
@@ -126,13 +151,15 @@ npm run e2e:browser-crud
 log_step "DOCX render QA"
 if command -v soffice >/dev/null 2>&1; then
   for repo in "$ADMIN_REPO" "$API_REPO" "$MBN_REPO"; do
-    docx="$repo/PRODUCT_ONLY_TRANSACTION_FIRST_NOTES-20260802.docx"
+    docx="$repo/docs/PRODUCT_ONLY_TRANSACTION_FIRST_NOTES-20260802.docx"
     [[ -f "$docx" ]] || continue
     out="$OUT_DIR/docx-$(basename "$repo")"
     mkdir -p "$out"
     soffice --headless --convert-to pdf --outdir "$out" "$docx" >/dev/null
+    pdf="$out/$(basename "${docx%.docx}").pdf"
+    [[ -s "$pdf" ]] || { echo "DOCX render không tạo PDF hợp lệ: $docx" >&2; exit 2; }
   done
-elif [[ "${AXIRO_RELEASE_REQUIRE_DOCX_QA:-0}" == "1" ]]; then
+elif [[ "${AXIRO_RELEASE_REQUIRE_DOCX_QA:-1}" == "1" ]]; then
   echo "Thiếu soffice để render DOCX QA." >&2
   exit 2
 fi
@@ -142,4 +169,4 @@ package_repo "$ADMIN_REPO" axiro-base-admin
 package_repo "$API_REPO" axiro-base-api
 package_repo "$MBN_REPO" mbn-react
 printf '[%s] Release PASS. Artifacts: %s\n' "$(date +%H:%M:%S)" "$OUT_DIR" | tee -a "$RELEASE_LOG"
-printf '{\n  "status": "passed",\n  "verified_at": "%s",\n  "contract_version": "2026-08-04.1",\n  "admin_bundle_status": "%s",\n  "artifacts": "%s",\n  "log": "%s"\n}\n' "$(date -Iseconds)" "$ADMIN_BUNDLE_STATUS" "$OUT_DIR" "$RELEASE_LOG" > "$OUT_DIR/release-summary-${STAMP}.json"
+printf '{\n  "status": "passed",\n  "verified_at": "%s",\n  "contract_version": "2026-08-04.1",\n  "admin_bundle_status": "%s",\n  "source_state": {"admin": "%s", "api": "%s", "mbn": "%s"},\n  "artifacts": "%s",\n  "log": "%s"\n}\n' "$(date -Iseconds)" "$ADMIN_BUNDLE_STATUS" "$ADMIN_SOURCE_STATE" "$API_SOURCE_STATE" "$MBN_SOURCE_STATE" "$OUT_DIR" "$RELEASE_LOG" > "$OUT_DIR/release-summary-${STAMP}.json"
