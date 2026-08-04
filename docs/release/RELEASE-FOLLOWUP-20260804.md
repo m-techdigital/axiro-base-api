@@ -166,3 +166,16 @@ Source state after the latest optimization:
 - MBN ownership, lint and `build:analyze` pass after route-owned CSS and Sass manifest cleanup. Fresh initial closure is `448.8 KB JS / 191.3 KB CSS`; CSS improved from the previous `269.7 KB` but remains the next frontend debt.
 - `src/styles/pages/content-route.css` was removed in favor of the Sass owner `content-route.scss`; maintainability now ignores deleted tracked files while the deletion is staged.
 - Browser, transactional E2E, DOCX visual render and hash-finalized release summary remain pending until the next clean committed/pushed `release:all` cycle.
+
+## 2026-08-05 source-finalization review
+
+Current source adds semantic control/presentation owners for Admin BaseForm, BaseFilter, BaseTable and Reconciliation export progress, plus an MBN global-style boundary guard. Recovery, package, source-closure, renderer, runtime, maintainability and owner guards pass in source-clean package mode.
+
+Fresh local verification on 2026-08-05 passed API PHPUnit/Pint/package guards, Admin `check:all` plus `build:analyze`, and MBN ownership/lint plus `build:analyze`. Admin initial closure is `293.5 KB JS / 25.6 KB CSS`; MBN initial closure is `448.8 KB JS / 177.5 KB CSS`. Browser visual regression, transactional E2E, `release:all`, commit/upstream verification and hash-finalized evidence remain pending for this source.
+
+## 2026-08-05 evidence correction
+
+- The earlier `293.1 KB JS / 25.6 KB CSS` Admin and `448.8 KB JS / 191.3 KB CSS` MBN values are historical measurements from the previous route/CSS split.
+- Fresh local checks on the current source pass with Admin `293.5 KB JS / 25.6 KB CSS` and MBN `448.8 KB JS / 177.5 KB CSS`.
+- DOCX source preview passed through LibreOffice PDF conversion and QuickLook PNG preview for API, Admin and MBN. This is recorded separately from the hash-matched `release:all` DOCX gate, which remains pending until a clean pushed release run.
+- Frontend verification ran on Node `v26.5.0`; release machines must use Node `>=22.22.0` or another version satisfying `react-router@8.3.0` engines.

@@ -19,3 +19,11 @@
 2. Chạy `composer release:all` từ fresh DB với browser credentials và LibreOffice.
 3. Finalize evidence chỉ từ release summary có hash khớp ba HEAD đã push.
 4. Chỉ tối ưu tiếp owner nào còn vượt budget theo bundle report mới; không khôi phục shared AntD vendor.
+
+## Required verification after 2026-08-05 owner split
+
+1. Run Admin and MBN dependency install, lint and `build:analyze` in the supported Node runtime; record fresh initial and route-closure sizes.
+2. Run Admin/MBN visual regression at desktop, tablet and mobile widths after the route/CSS split.
+3. Run API targeted/full tests even though API runtime is unchanged, because release evidence must represent one synchronized three-repo source set.
+4. Commit and push all three repositories, run `composer release:all`, finalize only a hash-matched passed summary, then package directly from the finalized clean HEADs.
+5. Continue splitting only when the fresh bundle report identifies a real route/global dependency owner; do not create cosmetic files or reintroduce shared AntD vendor chunks.

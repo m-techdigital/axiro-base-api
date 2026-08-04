@@ -33,3 +33,11 @@ AXIRO cha là chuẩn kỹ thuật. Mini chỉ rút gọn miền nghiệp vụ, 
 
 - [Recovery audit 2026-08-04](../release/RECOVERY-AUDIT-20260804.md)
 - `docs/release/recovery-baseline.json` là manifest carry-forward bắt buộc; ZIP mới không tự động được xem là mới hơn baseline đã finalize.
+
+## Owner split follow-up — 2026-08-05
+
+- Admin `BaseForm` delegates AntD field controls to `BaseFormControl`; `BaseFilter` delegates filter controls to `BaseFilterControl`; `BaseTable` delegates empty presentation to `BaseTableEmptyState`. Public props and marketplace behavior remain unchanged.
+- Reconciliation export progress is a demand-loaded owner and keeps a visible, accessible loading fallback instead of rendering an empty gap while the chunk loads.
+- MBN global `app.css` no longer imports modal sub-owners twice. Account, purchase-detail and content-route styles remain owned by their route shells/pages. `check:global-style-boundary` prevents route-only styles from leaking back into the global manifest.
+- No API schema, route, transaction, payout, document, customer-isolation or marketplace contract changed in this follow-up.
+- All prior bundle sizes, browser screenshots, transactional E2E and release evidence are historical after this source change. Fresh build, visual regression and `release:all` are required from clean committed/pushed Git HEADs.

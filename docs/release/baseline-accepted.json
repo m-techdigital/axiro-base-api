@@ -13,8 +13,8 @@
     "marketplace_integrity": "passed",
     "transactional_api_e2e": "pending_release_all_rerun_after_source_change",
     "mbn_browser_core_smoke": "pending_release_all_rerun_after_source_change",
-    "admin_checks_build_bundle": "passed_build_analyze_initial_js_293_1_kb_css_25_6_kb_route_over_budget",
-    "mbn_checks_build_bundle": "passed_build_analyze_initial_js_448_8_kb_css_191_3_kb",
+    "admin_checks_build_bundle": "passed_check_all_lint_build_analyze_initial_js_293_5_kb_css_25_6_kb_route_over_budget",
+    "mbn_checks_build_bundle": "passed_ownership_lint_build_analyze_initial_js_448_8_kb_css_177_5_kb",
     "avatar_persistence_after_relogin": "passed_runtime_independent_of_release_summary",
     "admin_browser_crud_smoke": "pending_release_all_rerun_after_source_change",
     "document_template_versioning": "passed_runtime_strict_fresh_seed_browser_mutation_independent_of_release_summary",
@@ -22,7 +22,7 @@
     "admin_bundle_split": "measured_over_budget",
     "mbn_css_domain_split": "source_verified",
     "admin_payout_lifecycle_modal_smoke": "pending_release_all_rerun_after_source_change",
-    "admin_initial_js_kb": 293.1,
+    "admin_initial_js_kb": 293.5,
     "admin_largest_vendor_asset_kb": null,
     "admin_bundle_strategy": "antd_ant_design_rc_bypass_generic_vendor_route_local_owners_measured",
     "admin_import_graph_gate": "source_verified",
@@ -53,50 +53,50 @@
     "admin_bundle_violations": [
       {
         "type": "route_js",
-        "source": "src/modules/operations-control/components/tabs/ReconciliationExportWorkspace.jsx",
-        "actual_kb": 1389.8,
-        "budget_kb": 650
-      },
-      {
-        "type": "route_js",
         "source": "src/modules/transactions/components/TransactionCommandCenter.jsx",
-        "actual_kb": 1383.2,
+        "actual_kb": 1384.1,
         "budget_kb": 650
       },
       {
         "type": "route_js",
         "source": "src/modules/disputes/pages/List.jsx",
-        "actual_kb": 1381.1,
+        "actual_kb": 1382.4,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/operations-control/components/tabs/ReconciliationExportWorkspace.jsx",
+        "actual_kb": 1380.9,
         "budget_kb": 650
       },
       {
         "type": "route_js",
         "source": "src/modules/products/pages/List.jsx",
-        "actual_kb": 1379.5,
+        "actual_kb": 1380.8,
         "budget_kb": 650
       },
       {
         "type": "route_js",
         "source": "src/modules/notifications/pages/List.jsx",
-        "actual_kb": 1379,
+        "actual_kb": 1380.4,
         "budget_kb": 650
       },
       {
         "type": "route_js",
         "source": "src/modules/operations-control/components/tabs/QueuesTab.jsx",
-        "actual_kb": 1378.3,
+        "actual_kb": 1379.6,
         "budget_kb": 650
       },
       {
         "type": "route_js",
         "source": "src/modules/payments/pages/List.jsx",
-        "actual_kb": 1377.9,
+        "actual_kb": 1379.2,
         "budget_kb": 650
       },
       {
         "type": "route_js",
         "source": "src/modules/wallet-deposits/pages/List.jsx",
-        "actual_kb": 1377.7,
+        "actual_kb": 1379,
         "budget_kb": 650
       }
     ],
@@ -105,7 +105,7 @@
     "release_all_runtime_summary": "pending_clean_pushed_hash_matched_release_summary",
     "admin_initial_js_kb_previous": 1388.5,
     "admin_largest_vendor_asset_kb_previous": 1083.2,
-    "admin_bundle_route_violation_count": 40,
+    "admin_bundle_route_violation_count": 41,
     "admin_bundle_violations_previous": [
       {
         "type": "route_js",
@@ -291,7 +291,7 @@
     "mbn_route_css_ownership": "passed_source_guard_and_build_measurement",
     "dependency_security_floor": "passed_axios_1_19_0_form_data_4_0_6_react_router_8_3_0_npm_audit_zero_vulnerabilities",
     "visual_regression_multi_viewport": "passed_admin_and_mbn_runtime_independent_of_release_summary",
-    "mbn_initial_bundle_measurement": "passed_build_initial_js_448_8_kb_css_191_3_kb",
+    "mbn_initial_bundle_measurement": "passed_build_initial_js_448_8_kb_css_177_5_kb",
     "api_avatar_limiter_isolation": "passed_targeted_phpunit_3_tests_9_assertions",
     "admin_dependency_security_audit": "passed_npm_audit_zero_vulnerabilities_react_router_8_3_0",
     "mbn_dependency_security_audit": "passed_npm_audit_zero_vulnerabilities_react_router_8_3_0",
@@ -301,8 +301,14 @@
     "admin_reconciliation_route": "summary_and_export_workspaces_demand_loaded_passed_build_measurement",
     "admin_transaction_detail_route": "command_center_and_detail_sections_lazy_passed_build_measurement",
     "admin_notification_detail_drawer": "lightweight_base_drawer_owner_passed_build_measurement",
-    "mbn_initial_css_route_split": "passed_build_measurement_css_191_3_kb_remaining_global_css_debt",
-    "mbn_sass_module_migration": "passed_source_guard_no_scss_import_remaining"
+    "mbn_initial_css_route_split": "passed_build_measurement_css_177_5_kb_remaining_global_css_debt",
+    "mbn_sass_module_migration": "passed_source_guard_no_scss_import_remaining",
+    "admin_base_control_owner_split": "passed_check_all_lint_build_measurement",
+    "admin_reconciliation_export_progress_owner": "passed_check_all_lint_build_measurement",
+    "mbn_global_style_boundary": "passed_source_guard_and_build_measurement",
+    "docx_source_visual_preview": "passed_libreoffice_quicklook_current_source",
+    "docx_release_all_hash_matched_gate": "pending_clean_pushed_release_all",
+    "node_release_runtime": "local_verified_node_26_5_0_canonical_min_node_22_22_0_required_by_react_router_8_3_0"
   },
   "browser_smoke_required": true,
   "transactional_e2e_requires_fresh_seed": true,
