@@ -144,3 +144,25 @@ Release evidence must not reuse the previous route-closure values. Run `npm run 
 - Browser runtime was rerun locally on fresh seed: MBN core/visual passed avatar upload, logout and avatar persistence after re-login; Admin strict CRUD passed document-template immutable version mutation; Admin visual passed desktop/tablet/mobile route checks.
 - Full `release:all` hash-finalized summary still requires a clean committed and pushed source cycle.
 - Evidence fields now distinguish independent browser/DOCX runtime passes from the pending hash-matched `release:all` summary; pending transactional API and payout-modal entries remain pending until that release cycle reruns them.
+
+## Route closure, initial CSS and Sass module follow-up
+
+Source state after the latest optimization:
+
+- Admin Reconciliation is split into demand-loaded Summary and Export workspaces.
+- Admin Transaction Detail loads the command center and detail sections as lazy route owners; individual payment, document, timeline and admin panels remain active-panel owners.
+- Notification detail keeps BaseDrawer but no longer loads AntD Descriptions, Timeline, Tag or Input presentation modules.
+- MBN account/profile/document/mobile table styles moved from the global manifest to AccountRouteShell.
+- Home and catalog/detail mobile styles are owned by their respective routes.
+- Sass manifest files now use `@forward`; no `.scss` file may reintroduce deprecated Sass `@import`.
+- Previous Admin route-closure and MBN initial-CSS measurements are historical. A fresh `build:analyze` is required.
+- Browser, transactional E2E, DOCX and release evidence must be regenerated from clean pushed source through `composer release:all`.
+
+## Fresh route/CSS measurement after latest source update
+
+- API release-package guard, maintainability guard, Pint and full PHPUnit pass on the current working tree: `117 tests / 1043 assertions`.
+- Admin `check:all` and `build:analyze` pass after the Reconciliation, Transaction Detail and Notification owner split. Fresh initial closure is `293.1 KB JS / 25.6 KB CSS`, under the initial budget.
+- Admin route closures remain over budget; the largest measured lazy route is `ReconciliationExportWorkspace.jsx` at `1389.8 KB JS`. This is accepted as route-level debt, not an initial-load blocker.
+- MBN ownership, lint and `build:analyze` pass after route-owned CSS and Sass manifest cleanup. Fresh initial closure is `448.8 KB JS / 191.3 KB CSS`; CSS improved from the previous `269.7 KB` but remains the next frontend debt.
+- `src/styles/pages/content-route.css` was removed in favor of the Sass owner `content-route.scss`; maintainability now ignores deleted tracked files while the deletion is staged.
+- Browser, transactional E2E, DOCX visual render and hash-finalized release summary remain pending until the next clean committed/pushed `release:all` cycle.

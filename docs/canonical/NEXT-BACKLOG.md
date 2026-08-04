@@ -12,3 +12,10 @@
 3. Reduce the MBN initial CSS payload after the route-owned CSS split; JS initial is measured under 650 KB, CSS remains heavy.
 4. Run Admin and MBN multi-viewport visual regression gates and retain screenshots as release artifacts.
 5. Run `composer release:all`, finalize hash-matched evidence, then regenerate release artifacts from the finalized HEAD.
+
+## Sau vòng route/CSS closure
+
+1. Chạy Admin và MBN `build:analyze` để ghi số đo mới sau route owner/CSS owner split.
+2. Chạy `composer release:all` từ fresh DB với browser credentials và LibreOffice.
+3. Finalize evidence chỉ từ release summary có hash khớp ba HEAD đã push.
+4. Chỉ tối ưu tiếp owner nào còn vượt budget theo bundle report mới; không khôi phục shared AntD vendor.
