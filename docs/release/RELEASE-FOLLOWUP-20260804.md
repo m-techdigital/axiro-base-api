@@ -60,3 +60,17 @@ Browser smoke/E2E mutation vẫn là gate riêng trước merge/tag chính thứ
 
 - Customer payout isolation regression is included in the full API suite and passed with 116 tests / 1033 assertions.
 - API release package guard now catches untracked `.phpunit.result.cache`; release runner deletes PHPUnit cache after the test step, also from trap cleanup on failure, and excludes it from packaged artifacts.
+
+## Remaining-tasks closure update - 2026-08-04
+
+- Admin moved `ConfigProvider`, Vietnamese locale and static message holder out of `main.jsx` into `AdminThemeProvider`, imported only by lazy `Login` and `AdminLayout` owners. Fresh `build:analyze` passes with budget warnings and measures initial JS at `1388.5 KB`, so this is a valid source cleanup but not a meaningful bundle-size closure.
+- `release-all.sh` now writes a structured summary containing each runtime gate and the exact pre-release Git hashes.
+- `finalize-release-evidence.php` only promotes browser, transactional and DOCX evidence when the release summary is `passed` and all three summary hashes match the current pushed HEAD values. It refuses stale summaries.
+- Browser smoke, transactional E2E and DOCX visual render remain pending until `release-all.sh` runs in a release environment with browser credentials and `soffice`.
+
+## Route-local AntD vendor correction
+
+- Phát hiện `manualChunks` vẫn đẩy AntD, `@ant-design/*` và `rc-*` vào nhánh `vendor` chung dù các chunk tên `antd-*` đã bị loại bỏ.
+- Cấu hình mới trả `undefined` cho ba nhóm dependency này trước nhánh vendor tổng quát, để Rollup giữ dependency chỉ dùng ở route lazy trong route owner tương ứng.
+- Fresh `npm run build:analyze` đo lại initial JS còn `290 KB` thay vì `1388.5 KB`; initial closure đã dưới budget `650 KB`.
+- Route closures vẫn vượt budget, lớn nhất hiện khoảng `1409.4 KB`, vì AntD/rc đã chuyển đúng về route owner. Debt tiếp theo là tách các owner nặng như transaction detail, notification và operation control, không gom lại shared vendor.

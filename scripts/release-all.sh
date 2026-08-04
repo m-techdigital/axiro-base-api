@@ -169,4 +169,42 @@ package_repo "$ADMIN_REPO" axiro-base-admin
 package_repo "$API_REPO" axiro-base-api
 package_repo "$MBN_REPO" mbn-react
 printf '[%s] Release PASS. Artifacts: %s\n' "$(date +%H:%M:%S)" "$OUT_DIR" | tee -a "$RELEASE_LOG"
-printf '{\n  "status": "passed",\n  "verified_at": "%s",\n  "contract_version": "2026-08-04.1",\n  "admin_bundle_status": "%s",\n  "source_state": {"admin": "%s", "api": "%s", "mbn": "%s"},\n  "artifacts": "%s",\n  "log": "%s"\n}\n' "$(date -Iseconds)" "$ADMIN_BUNDLE_STATUS" "$ADMIN_SOURCE_STATE" "$API_SOURCE_STATE" "$MBN_SOURCE_STATE" "$OUT_DIR" "$RELEASE_LOG" > "$OUT_DIR/release-summary-${STAMP}.json"
+ADMIN_BUNDLE_REPORT="$ADMIN_REPO/dist/bundle-report.json" \
+RELEASE_SUMMARY="$OUT_DIR/release-summary-${STAMP}.json" \
+VERIFIED_AT="$(date -Iseconds)" \
+ADMIN_BUNDLE_STATUS="$ADMIN_BUNDLE_STATUS" \
+ADMIN_SOURCE_STATE="$ADMIN_SOURCE_STATE" \
+API_SOURCE_STATE="$API_SOURCE_STATE" \
+MBN_SOURCE_STATE="$MBN_SOURCE_STATE" \
+RELEASE_OUT_DIR="$OUT_DIR" \
+RELEASE_LOG_PATH="$RELEASE_LOG" \
+php -r '
+$bundle = is_file(getenv("ADMIN_BUNDLE_REPORT"))
+    ? json_decode((string) file_get_contents(getenv("ADMIN_BUNDLE_REPORT")), true)
+    : null;
+$summary = [
+    "status" => "passed",
+    "verified_at" => getenv("VERIFIED_AT"),
+    "contract_version" => "2026-08-04.1",
+    "admin_bundle_status" => getenv("ADMIN_BUNDLE_STATUS"),
+    "admin_bundle" => $bundle,
+    "source_state" => [
+        "admin" => getenv("ADMIN_SOURCE_STATE"),
+        "api" => getenv("API_SOURCE_STATE"),
+        "mbn" => getenv("MBN_SOURCE_STATE"),
+    ],
+    "gates" => [
+        "api_phpunit_pint_integrity" => "passed",
+        "admin_checks_lint_build" => "passed",
+        "mbn_checks_lint_build" => "passed",
+        "mbn_browser_core" => "passed",
+        "transactional_api_e2e" => "passed",
+        "admin_browser_crud" => "passed",
+        "docx_visual_render" => "passed",
+        "clean_zip_integrity" => "passed",
+    ],
+    "artifacts" => getenv("RELEASE_OUT_DIR"),
+    "log" => getenv("RELEASE_LOG_PATH"),
+];
+file_put_contents(getenv("RELEASE_SUMMARY"), json_encode($summary, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE).PHP_EOL);
+'

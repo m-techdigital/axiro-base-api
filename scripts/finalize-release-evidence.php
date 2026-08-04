@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-$options = getopt('', ['api:', 'admin:', 'mbn:', 'bundle-report::']);
+$options = getopt('', ['api:', 'admin:', 'mbn:', 'bundle-report::', 'release-summary::']);
 
 foreach (['api', 'admin', 'mbn'] as $required) {
     if (empty($options[$required])) {
@@ -83,7 +83,43 @@ function writeJson(string $path, array $data): void
     file_put_contents($path, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT).PHP_EOL);
 }
 
-function updateEvidence(string $repo, array $hashes, ?array $bundle): void
+function latestReleaseSummary(string $apiRepo): ?string
+{
+    $explicit = getenv('AXIRO_RELEASE_SUMMARY');
+    if (is_string($explicit) && $explicit !== '') {
+        return is_file($explicit) ? realpath($explicit) ?: $explicit : null;
+    }
+
+    $candidates = glob(dirname($apiRepo).'/release-artifacts/release-summary-*.json') ?: [];
+    usort($candidates, static fn (string $left, string $right): int => filemtime($right) <=> filemtime($left));
+
+    return $candidates[0] ?? null;
+}
+
+function validatedReleaseSummary(?string $path, array $hashes): ?array
+{
+    if ($path === null || ! is_file($path)) {
+        return null;
+    }
+
+    $summary = readJson($path);
+    if (($summary['status'] ?? null) !== 'passed') {
+        fwrite(STDERR, "Release summary chưa pass: {$path}\n");
+        exit(2);
+    }
+
+    $sourceState = $summary['source_state'] ?? [];
+    foreach ($hashes as $key => $hash) {
+        if (($sourceState[$key] ?? null) !== $hash) {
+            fwrite(STDERR, "Release summary không khớp {$key} HEAD; không tái sử dụng evidence cũ.\n");
+            exit(2);
+        }
+    }
+
+    return $summary;
+}
+
+function updateEvidence(string $repo, array $hashes, ?array $bundle, ?array $releaseSummary): void
 {
     $path = $repo.'/docs/release/baseline-accepted.json';
     $data = readJson($path);
@@ -93,14 +129,33 @@ function updateEvidence(string $repo, array $hashes, ?array $bundle): void
     $data['last_verified_at'] = date('Y-m-d');
 
     $verification = $data['verification'] ?? [];
-    $verification = array_merge($verification, [
-        'release_all_runner' => 'hashes_finalized_after_source_push',
-        'admin_document_version_browser_mutation' => 'source_verified_pending_browser_run',
-        'mbn_responsive_browser_layout' => 'source_verified_pending_browser_run',
-        'customer_payout_isolation' => 'passed_full_phpunit',
-        'docx_visual_render_gate' => 'required_by_release_all',
-        'release_finalize_evidence_hashes' => 'passed',
-    ]);
+    if ($releaseSummary !== null) {
+        $gates = $releaseSummary['gates'] ?? [];
+        $verification['release_all_runner'] = 'passed_hashes_finalized_after_source_push';
+        $verification['transactional_api_e2e'] = $gates['transactional_api_e2e'] ?? 'pending_release_gate';
+        $verification['mbn_browser_core_smoke'] = $gates['mbn_browser_core'] ?? 'pending_release_gate';
+        $verification['avatar_persistence_after_relogin'] = $gates['mbn_browser_core'] ?? 'pending_release_gate';
+        $verification['admin_browser_crud_smoke'] = $gates['admin_browser_crud'] ?? 'pending_release_gate';
+        $verification['admin_payout_lifecycle_modal_smoke'] = $gates['admin_browser_crud'] ?? 'pending_release_gate';
+        $verification['admin_document_version_browser_mutation'] = $gates['admin_browser_crud'] ?? 'pending_release_gate';
+        $verification['mbn_responsive_browser_layout'] = $gates['mbn_browser_core'] ?? 'pending_release_gate';
+        $verification['docx_visual_render_gate'] = $gates['docx_visual_render'] ?? 'pending_release_gate';
+        $verification['release_all_runtime_summary'] = 'passed_and_hash_matched';
+    } else {
+        $verification['release_all_runner'] = 'hashes_finalized_after_source_push_without_runtime_summary';
+        $verification['transactional_api_e2e'] = 'pending_release_all_summary';
+        $verification['mbn_browser_core_smoke'] = 'pending_release_all_summary';
+        $verification['avatar_persistence_after_relogin'] = 'pending_release_all_summary';
+        $verification['admin_browser_crud_smoke'] = 'pending_release_all_summary';
+        $verification['admin_payout_lifecycle_modal_smoke'] = 'pending_release_all_summary';
+        $verification['admin_document_version_browser_mutation'] = 'source_verified_pending_browser_run';
+        $verification['mbn_responsive_browser_layout'] = 'source_verified_pending_browser_run';
+        $verification['docx_visual_render_gate'] = 'required_by_release_all';
+        $verification['release_all_runtime_summary'] = 'pending_release_all_summary';
+    }
+
+    $verification['customer_payout_isolation'] = 'passed_full_phpunit';
+    $verification['release_finalize_evidence_hashes'] = 'passed';
 
     if ($bundle !== null) {
         $initial = $bundle['initial'] ?? [];
@@ -130,12 +185,20 @@ if (! empty($options['bundle-report'])) {
     $bundle = readJson((string) $options['bundle-report']);
 }
 
+$releaseSummaryPath = ! empty($options['release-summary'])
+    ? (string) $options['release-summary']
+    : latestReleaseSummary($repos['api']);
+$releaseSummary = validatedReleaseSummary($releaseSummaryPath, $hashes);
+
 foreach ($repos as $repo) {
-    updateEvidence($repo, $hashes, $bundle);
+    updateEvidence($repo, $hashes, $bundle, $releaseSummary);
 }
 
 echo "Đã cập nhật evidence bằng commit hash thật:\n";
 foreach ($hashes as $key => $hash) {
     echo "  {$key}: {$hash}\n";
 }
+echo $releaseSummary !== null
+    ? "Đã dùng release summary hash-matched để finalize runtime evidence.\n"
+    : "Không có release summary; browser/DOCX runtime evidence vẫn giữ pending.\n";
 echo "Hãy commit/push riêng thay đổi evidence ở cả ba repo.\n";

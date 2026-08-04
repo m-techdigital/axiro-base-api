@@ -1,237 +1,232 @@
 {
-    "contract_version": "2026-08-04.1",
-    "accepted_commits": {
-        "api": "5b88c91f",
-        "admin": "1a88afff",
-        "mbn": "7652ef17"
-    },
-    "parent_alignment": "mini_bounded",
-    "last_verified_at": "2026-08-04",
-    "verification": {
-        "api_full_phpunit": "passed_116_tests_1033_assertions",
-        "api_pint": "passed",
-        "marketplace_integrity": "passed",
-        "transactional_api_e2e": "passed",
-        "mbn_browser_core_smoke": "passed",
-        "admin_checks_build_bundle": "passed_with_initial_js_budget_warning",
-        "mbn_checks_build_bundle": "passed",
-        "avatar_persistence_after_relogin": "passed",
-        "admin_browser_crud_smoke": "passed",
-        "document_template_versioning": "passed",
-        "release_all_runner": "hashes_finalized_after_source_push",
-        "admin_bundle_split": "measured_over_budget",
-        "mbn_css_domain_split": "source_verified",
-        "admin_payout_lifecycle_modal_smoke": "passed",
-        "admin_initial_js_kb": 1388.9,
-        "admin_largest_vendor_asset_kb": 1083.2,
-        "admin_bundle_strategy": "route_local_antd_rc_icons_with_lazy_shell_measured_over_initial_budget",
-        "admin_import_graph_gate": "source_verified",
-        "transaction_lifecycle_guidance": "passed_runtime_tests",
-        "document_template_no_branch_versioning": "passed_runtime_tests",
-        "admin_document_version_browser_mutation": "source_verified_pending_browser_run",
-        "mbn_payment_timeline_owner": "source_verified",
-        "mbn_large_presentation_css_split": "source_verified",
-        "release_all_structured_log": "source_verified",
-        "admin_bundle_deep_lazy_owners": "passed_build_measurement_initial_js_1388_9_kb",
-        "admin_bundle_budget_gate": "strict_by_default_waiver_must_be_explicit",
-        "customer_wallet_document_isolation": "passed_full_phpunit",
-        "rental_guidance_shared_contract": "passed_full_phpunit",
-        "mbn_purchase_policy_semantics": "source_verified_no_fixed_refund_percentages",
-        "react_antd_warning_closure": "source_verified",
-        "release_all_bundle_waiver_recording": "source_verified",
-        "mbn_responsive_browser_layout": "source_verified_pending_browser_run",
-        "docx_visual_render_gate": "required_by_release_all",
-        "admin_lazy_shell_login": "passed_build_measurement",
-        "admin_route_local_antd_dependencies": "passed_build_measurement",
-        "customer_payout_isolation": "passed_full_phpunit",
-        "mbn_payout_state_panel": "source_verified",
-        "admin_bootstrap_direct_antd_imports": "passed_build_measurement",
-        "admin_unused_ant_app_removed": "passed_build_measurement",
-        "release_requires_clean_pushed_source": "source_verified",
-        "release_finalize_evidence_hashes": "passed",
-        "admin_initial_css_kb": 24.1,
-        "admin_bundle_violations": [
-            {
-                "type": "initial_js",
-                "actual_kb": 1388.9,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/operations-control\/pages\/Index.jsx",
-                "actual_kb": 1461.6,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/disputes\/pages\/List.jsx",
-                "actual_kb": 1453.5,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/transactions\/pages\/Detail.jsx",
-                "actual_kb": 1453.4,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/notifications\/pages\/List.jsx",
-                "actual_kb": 1453.1,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/products\/pages\/List.jsx",
-                "actual_kb": 1451.6,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/wallet-deposits\/pages\/List.jsx",
-                "actual_kb": 1450.7,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/payments\/pages\/List.jsx",
-                "actual_kb": 1449.9,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/transactions\/pages\/List.jsx",
-                "actual_kb": 1449.8,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/customers\/pages\/List.jsx",
-                "actual_kb": 1449.5,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/auth\/pages\/Login.jsx",
-                "actual_kb": 1444.7,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/marketplace-operations\/pages\/Index.jsx",
-                "actual_kb": 1441.7,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/marketplace-trust\/pages\/Index.jsx",
-                "actual_kb": 1440.8,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/document-templates\/pages\/List.jsx",
-                "actual_kb": 1440.6,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/audit-logs\/pages\/List.jsx",
-                "actual_kb": 1440.5,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/action-center\/pages\/Index.jsx",
-                "actual_kb": 1439.6,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/generated-documents\/pages\/List.jsx",
-                "actual_kb": 1439.6,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/payment-settings\/pages\/Index.jsx",
-                "actual_kb": 1439.3,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/transactions\/pages\/Form.jsx",
-                "actual_kb": 1439.3,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/wallets\/pages\/List.jsx",
-                "actual_kb": 1439.3,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/products\/pages\/Form.jsx",
-                "actual_kb": 1438.8,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/document-templates\/components\/DocumentTemplateEditorModal.jsx",
-                "actual_kb": 1438.6,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/payouts\/components\/PayoutDecisionModal.jsx",
-                "actual_kb": 1437.5,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/payouts\/pages\/Index.jsx",
-                "actual_kb": 1437.5,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/customers\/pages\/Form.jsx",
-                "actual_kb": 1436.9,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/pages\/Dashboard.jsx",
-                "actual_kb": 1436.9,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/modules\/transactions\/components\/TransactionDetailModals.jsx",
-                "actual_kb": 1435.9,
-                "budget_kb": 650
-            },
-            {
-                "type": "route_js",
-                "source": "src\/layouts\/AdminLayout.jsx",
-                "actual_kb": 1395.4,
-                "budget_kb": 650
-            },
-            {
-                "type": "asset",
-                "name": "vendor-BmsAP8H7.js",
-                "actual_kb": 1083.2,
-                "budget_kb": 650
-            }
-        ]
-    },
-    "browser_smoke_required": true,
-    "transactional_e2e_requires_fresh_seed": true,
-    "merge_policy": "merge only after browser smoke passes or a written waiver is recorded",
-    "verified_source_state": {
-        "api": "5b88c91ff04b7d5387b371c92355154a2c265c6a",
-        "admin": "1a88afffa9e9d06440eae835887c4211641e0d09",
-        "mbn": "7652ef172e117fa09cb702cd6aa3ef2fbc62cd46"
-    }
+  "contract_version": "2026-08-04.1",
+  "accepted_commits": {
+    "api": "pending_source_commit",
+    "admin": "pending_source_commit",
+    "mbn": "pending_source_commit"
+  },
+  "parent_alignment": "mini_bounded",
+  "last_verified_at": "2026-08-04",
+  "verification": {
+    "api_full_phpunit": "passed_116_tests_1033_assertions",
+    "api_pint": "passed",
+    "marketplace_integrity": "passed",
+    "transactional_api_e2e": "pending_release_all_rerun_after_source_change",
+    "mbn_browser_core_smoke": "pending_release_all_rerun_after_source_change",
+    "admin_checks_build_bundle": "passed_initial_js_under_budget_route_closures_over_budget",
+    "mbn_checks_build_bundle": "passed",
+    "avatar_persistence_after_relogin": "pending_release_all_rerun_after_source_change",
+    "admin_browser_crud_smoke": "pending_release_all_rerun_after_source_change",
+    "document_template_versioning": "passed",
+    "release_all_runner": "hashes_finalized_after_source_push",
+    "admin_bundle_split": "initial_passed_routes_measured_over_budget",
+    "mbn_css_domain_split": "source_verified",
+    "admin_payout_lifecycle_modal_smoke": "pending_release_all_rerun_after_source_change",
+    "admin_initial_js_kb": 290,
+    "admin_largest_vendor_asset_kb": null,
+    "admin_bundle_strategy": "antd_ant_design_rc_bypass_generic_vendor_route_local_owners_measured",
+    "admin_import_graph_gate": "source_verified",
+    "transaction_lifecycle_guidance": "passed_runtime_tests",
+    "document_template_no_branch_versioning": "passed_runtime_tests",
+    "admin_document_version_browser_mutation": "pending_release_all_rerun_after_source_change",
+    "mbn_payment_timeline_owner": "source_verified",
+    "mbn_large_presentation_css_split": "source_verified",
+    "release_all_structured_log": "source_verified",
+    "admin_bundle_deep_lazy_owners": "passed_build_measurement_initial_js_290_kb",
+    "admin_bundle_budget_gate": "strict_by_default_waiver_must_be_explicit",
+    "customer_wallet_document_isolation": "passed_full_phpunit",
+    "rental_guidance_shared_contract": "passed_full_phpunit",
+    "mbn_purchase_policy_semantics": "source_verified_no_fixed_refund_percentages",
+    "react_antd_warning_closure": "source_verified",
+    "release_all_bundle_waiver_recording": "source_verified",
+    "mbn_responsive_browser_layout": "pending_release_all_rerun_after_source_change",
+    "docx_visual_render_gate": "pending_current_docx_render_qa",
+    "admin_lazy_shell_login": "passed_build_measurement",
+    "admin_route_local_antd_dependencies": "passed_build_measurement_initial_js_290_kb",
+    "customer_payout_isolation": "passed_full_phpunit",
+    "mbn_payout_state_panel": "source_verified",
+    "admin_bootstrap_direct_antd_imports": "passed_build_measurement",
+    "admin_unused_ant_app_removed": "passed_build_measurement",
+    "release_requires_clean_pushed_source": "source_verified",
+    "release_finalize_evidence_hashes": "source_verified_requires_clean_pushed_head_and_matching_release_summary",
+    "admin_initial_css_kb": 24.1,
+    "admin_bundle_violations": [
+      {
+        "type": "route_js",
+        "source": "src/modules/transactions/pages/Detail.jsx",
+        "actual_kb": 1409.4,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/notifications/pages/List.jsx",
+        "actual_kb": 1396.6,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/operations-control/pages/Index.jsx",
+        "actual_kb": 1388.3,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/disputes/pages/List.jsx",
+        "actual_kb": 1359.5,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/audit-logs/pages/List.jsx",
+        "actual_kb": 1358.5,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/products/pages/List.jsx",
+        "actual_kb": 1357.6,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/wallet-deposits/pages/List.jsx",
+        "actual_kb": 1356.8,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/auth/pages/Login.jsx",
+        "actual_kb": 1356.1,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/payments/pages/List.jsx",
+        "actual_kb": 1356,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/transactions/pages/List.jsx",
+        "actual_kb": 1355.8,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/customers/pages/List.jsx",
+        "actual_kb": 1355.5,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/payouts/components/PayoutDecisionModal.jsx",
+        "actual_kb": 1351.4,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/action-center/pages/Index.jsx",
+        "actual_kb": 1351.3,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/wallets/pages/List.jsx",
+        "actual_kb": 1349.8,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/marketplace-trust/pages/Index.jsx",
+        "actual_kb": 1349.5,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/marketplace-operations/pages/Index.jsx",
+        "actual_kb": 1349.3,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/pages/Dashboard.jsx",
+        "actual_kb": 1347.4,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/document-templates/pages/List.jsx",
+        "actual_kb": 1346.9,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/generated-documents/pages/List.jsx",
+        "actual_kb": 1346.7,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/payment-settings/pages/Index.jsx",
+        "actual_kb": 1346.5,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/transactions/pages/Form.jsx",
+        "actual_kb": 1345.6,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/products/pages/Form.jsx",
+        "actual_kb": 1345.2,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/payouts/pages/Index.jsx",
+        "actual_kb": 1345,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/document-templates/components/DocumentTemplateEditorModal.jsx",
+        "actual_kb": 1344.9,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/customers/pages/Form.jsx",
+        "actual_kb": 1343.3,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/modules/transactions/components/TransactionDetailModals.jsx",
+        "actual_kb": 1342.3,
+        "budget_kb": 650
+      },
+      {
+        "type": "route_js",
+        "source": "src/layouts/AdminLayout.jsx",
+        "actual_kb": 1028.6,
+        "budget_kb": 650
+      }
+    ],
+    "admin_theme_context_lazy_owner": "passed_build_measurement_initial_js_290_kb",
+    "admin_bootstrap_antd_runtime": "removed_passed_build_measurement_initial_js_290_kb",
+    "release_all_runtime_summary": "source_verified_hash_matched_summary_required",
+    "admin_initial_js_kb_previous": 1388.5,
+    "admin_largest_vendor_asset_kb_previous": 1083.2,
+    "admin_bundle_route_violation_count": 27
+  },
+  "browser_smoke_required": true,
+  "transactional_e2e_requires_fresh_seed": true,
+  "merge_policy": "merge only after browser smoke passes or a written waiver is recorded",
+  "verified_source_state": {
+    "api": "pending_commit_push_release_all_and_finalize",
+    "admin": "pending_commit_push_release_all_and_finalize",
+    "mbn": "pending_commit_push_release_all_and_finalize"
+  }
 }
