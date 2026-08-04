@@ -4,6 +4,12 @@ $root = dirname(__DIR__);
 $allowedEnvTemplates = ['.env.example', '.env.production.example'];
 $forbiddenSegments = ['node_modules', 'vendor', 'dist', 'build'];
 $forbiddenBasenames = ['.phpunit.result.cache'];
+$runtimeStorageRoots = [
+    'storage/logs',
+    'storage/app/public',
+    'storage/framework/testing',
+    'storage/app/backups',
+];
 $files = [];
 exec('git ls-files 2>/dev/null', $files, $status);
 
@@ -46,6 +52,11 @@ foreach ($files as $file) {
     }
     if (str_starts_with($basename, '.env') && ! in_array($basename, $allowedEnvTemplates, true)) {
         $failures[] = $file.': release package không được chứa file môi trường thật.';
+    }
+    foreach ($runtimeStorageRoots as $runtimeRoot) {
+        if (($file === $runtimeRoot || str_starts_with($file, $runtimeRoot.'/')) && $basename !== '.gitignore') {
+            $failures[] = $file.': release package không được chứa runtime log/upload/test storage.';
+        }
     }
 }
 

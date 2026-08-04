@@ -179,3 +179,20 @@ Fresh local verification on 2026-08-05 passed API PHPUnit/Pint/package guards, A
 - Fresh local checks on the current source pass with Admin `293.5 KB JS / 25.6 KB CSS` and MBN `448.8 KB JS / 177.5 KB CSS`.
 - DOCX source preview passed through LibreOffice PDF conversion and QuickLook PNG preview for API, Admin and MBN. This is recorded separately from the hash-matched `release:all` DOCX gate, which remains pending until a clean pushed release run.
 - Frontend verification ran on Node `v26.5.0`; release machines must use Node `>=22.22.0` or another version satisfying `react-router@8.3.0` engines.
+### 2026-08-05 source change after 0040 evidence
+
+The route/CSS ownership changes in the next source package invalidate the 0040 bundle and browser measurements as current release evidence. Keep those figures as historical only. Current-source lint/build/browser/E2E/release evidence remains pending until rerun on clean committed and pushed Git HEADs.
+
+## 2026-08-05 current-source verification after new tasks
+
+- API release-package, recovery-baseline and maintainability guards pass after cleaning PHPUnit cache and generated test media. Full PHPUnit/Pint on this source passed earlier in the same verification cycle with `117 tests / 1043 assertions`.
+- Admin `format`, `check:all` and `build:analyze` pass after splitting Transaction Command Center presentation/workflow/pending-payment owners. Fresh initial closure is `294.0 KB JS / 25.6 KB CSS`, still under the initial budget.
+- Admin route closure debt remains real: 44 lazy-route closures exceed the `650 KB` route budget, led by Disputes, Reconciliation Export, Products, Notifications and Operations queues. This is not an initial-load blocker, but it remains the next route-owner optimization target.
+- MBN ownership guards, lint and `build:analyze` pass after moving modal and purchase-modal CSS out of global manifests into component owners. Fresh initial closure is `448.8 KB JS / 160.4 KB CSS`.
+- Browser visual regression, transactional E2E, `release:all`, commit/upstream verification and hash-finalized evidence remain pending until a clean pushed release cycle reruns them.
+
+## 2026-08-05 API source-clean storage guard
+
+- API source-clean package guard now fails on runtime files under `storage/logs`, `storage/app/public`, `storage/framework/testing` and `storage/app/backups`, except `.gitignore` placeholders.
+- Existing runtime logs, uploaded marketplace media and generated test files were removed from source-clean state before repackaging.
+- API release-package, recovery-baseline and maintainability guards pass after the storage cleanup.
