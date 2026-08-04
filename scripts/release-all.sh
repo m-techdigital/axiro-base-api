@@ -90,10 +90,12 @@ php artisan optimize:clear
 php artisan migrate:fresh --seed --env=testing
 find "$API_REPO" -name '.phpunit.result.cache' -delete
 composer check:release-package
+composer check:recovery-baseline
 composer check:maintainability
 vendor/bin/pint --test
 php artisan test
 find "$API_REPO" -name '.phpunit.result.cache' -delete
+find "$API_REPO/storage/framework/testing/disks/public/marketplace/products" -type f ! -name '.gitignore' -delete 2>/dev/null || true
 php artisan marketplace:integrity
 
 log_step "Admin source guards, lint and bundle measurement"

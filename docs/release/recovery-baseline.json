@@ -1,0 +1,38 @@
+{
+  "audit_date": "2026-08-04",
+  "audit_window": "from approximately 18:56 local time through the 23:19 baseline",
+  "repository": "api",
+  "result": "no_missing_functional_capabilities_detected",
+  "contract_sha256": "69a52564e59efe3fa259385dabb26015ea25163d8b31a1c1ef8d20727a98401a",
+  "compared_artifacts": [
+    "axiro-base-api-final-canonical-closure-20260804-clean.zip",
+    "axiro-base-api-bundle-security-visual-closure-20260804-clean.zip",
+    "axiro-base-api-20260804-2217-clean.zip",
+    "axiro-base-api-20260804-2232-clean.zip",
+    "axiro-base-api-route-css-release-20260804-clean.zip"
+  ],
+  "critical_files": [
+    "app/Services/Marketplace/TransactionPaymentPlanService.php",
+    "app/Services/Marketplace/TransactionPaymentCaptureService.php",
+    "app/Services/Marketplace/TransactionSettlementService.php",
+    "app/Services/Marketplace/TransactionDisputeResolutionService.php",
+    "app/Services/Marketplace/TransactionActionPolicy.php",
+    "app/Services/Documents/MarketplaceDocumentPayloadBuilder.php",
+    "app/Services/Documents/MarketplaceDocumentRenderer.php",
+    "app/Services/Payouts/WithdrawalStateTransitionService.php",
+    "tests/Feature/MiniCustomerIsolationContractTest.php",
+    "tests/Feature/MarketplaceDemoFixtureContractTest.php",
+    "scripts/release-all.sh",
+    "scripts/finalize-release-evidence.php",
+    ".env.example",
+    ".env.production.example"
+  ],
+  "recovered_files": [
+    ".env.example",
+    ".env.production.example"
+  ],
+  "cleanup": [
+    "removed_runtime_sqlite_and_generated_test_media_from_api_package"
+  ],
+  "policy": "A newly supplied ZIP is not automatically newer. Compare it with this manifest and the finalized Git hashes before applying changes."
+}

@@ -49,7 +49,7 @@ foreach ($files as $file) {
     }
 }
 
-foreach (['composer.json', 'app', 'routes', 'docs/canonical'] as $required) {
+foreach (['composer.json', 'app', 'routes', 'docs/canonical', '.env.example', '.env.production.example'] as $required) {
     if (! file_exists($root.'/'.$required)) {
         $failures[] = $required.': thiếu release root contract.';
     }

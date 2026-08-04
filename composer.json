@@ -81,7 +81,10 @@
             "@php scripts/check-release-package.php"
         ],
         "release:all": "bash scripts/release-all.sh",
-        "release:finalize-evidence": "@php scripts/finalize-release-evidence.php --api=. --admin=../axiro-base-admin --mbn=../mbn-react --bundle-report=../axiro-base-admin/dist/bundle-report.json"
+        "release:finalize-evidence": "@php scripts/finalize-release-evidence.php --api=. --admin=../axiro-base-admin --mbn=../mbn-react --bundle-report=../axiro-base-admin/dist/bundle-report.json",
+        "check:recovery-baseline": [
+            "@php scripts/check-recovery-baseline.php"
+        ]
     },
     "extra": {
         "laravel": {
