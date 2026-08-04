@@ -125,3 +125,10 @@ Release evidence must not reuse the previous route-closure values. Run `npm run 
 - API fresh seed fixture contract now passes in the full PHPUnit suite with `116 tests / 1042 assertions`.
 - Admin release runner enforces `ADMIN_E2E_REQUIRE_DOCUMENT_VERSION_MUTATION=1`; manual smoke may still skip only outside release mode.
 - Browser document-template mutation remains pending until `release:all` runs against a fresh seeded database and promotes the hash-matched release summary.
+
+## Final canonical documentation closure
+
+- Canonical README now points to Architecture, Operator Guide, Parent-First Policy, Next Backlog and Canonical Changelog.
+- Dated closure notes remain historical audit evidence and are no longer current-status owners.
+- DOCX structural integrity passed locally; independent visual review is recorded as external evidence because local `soffice` is unavailable in this workspace.
+- Runtime browser/E2E evidence remains pending until a passed, hash-matched `release:all` summary is finalized.
