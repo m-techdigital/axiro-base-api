@@ -126,9 +126,21 @@ Release evidence must not reuse the previous route-closure values. Run `npm run 
 - Admin release runner enforces `ADMIN_E2E_REQUIRE_DOCUMENT_VERSION_MUTATION=1`; manual smoke may still skip only outside release mode.
 - Browser document-template mutation remains pending until `release:all` runs against a fresh seeded database and promotes the hash-matched release summary.
 
-## Final canonical documentation closure
 
-- Canonical README now points to Architecture, Operator Guide, Parent-First Policy, Next Backlog and Canonical Changelog.
-- Dated closure notes remain historical audit evidence and are no longer current-status owners.
-- DOCX structural integrity passed locally; independent visual review is recorded as external evidence because local `soffice` is unavailable in this workspace.
-- Runtime browser/E2E evidence remains pending until a passed, hash-matched `release:all` summary is finalized.
+## Route, visual and dependency closure follow-up
+
+- Admin transaction detail now mounts only the active payment/document/timeline/admin panel.
+- MBN theme/application shell is lazy-owned; account and page CSS are loaded by route owners instead of the global entry manifest.
+- Axios security floor is raised to 1.19.0 and form-data to 4.0.6; npm audit is a formal release gate.
+- Admin and MBN visual regression runners capture desktop/tablet/mobile screenshots and fail on horizontal overflow or compressed form controls.
+- Previous bundle measurements remain historical until a fresh build after these source changes.
+
+## Dependency and bundle verification update
+
+- Admin and MBN use `react-router` 8.3.0 directly instead of `react-router-dom`; `npm audit --audit-level=moderate` now reports zero vulnerabilities in both frontend repos.
+- API full PHPUnit now passes with `117 tests / 1043 assertions`, including the isolated avatar upload limiter regression.
+- Fresh Admin `build:analyze` measures initial closure at `292.0 KB JS / 25.6 KB CSS`; route closures remain over budget and must be handled by owner-level splitting.
+- Fresh MBN `build:analyze` measures initial closure at `448.8 KB JS / 269.7 KB CSS`; the CSS payload remains the next frontend debt after route-owned CSS movement.
+- Browser runtime was rerun locally on fresh seed: MBN core/visual passed avatar upload, logout and avatar persistence after re-login; Admin strict CRUD passed document-template immutable version mutation; Admin visual passed desktop/tablet/mobile route checks.
+- Full `release:all` hash-finalized summary still requires a clean committed and pushed source cycle.
+- Evidence fields now distinguish independent browser/DOCX runtime passes from the pending hash-matched `release:all` summary; pending transactional API and payout-modal entries remain pending until that release cycle reruns them.

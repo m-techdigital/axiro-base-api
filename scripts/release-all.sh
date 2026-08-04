@@ -100,6 +100,8 @@ log_step "Admin source guards, lint and bundle measurement"
 cd "$ADMIN_REPO"
 npm ci
 npm run check:all
+npm run check:dependency-security
+npm run audit:security
 if BUNDLE_BUDGET_STRICT=1 npm run build:analyze; then
   ADMIN_BUNDLE_STATUS="passed"
 elif [[ "${AXIRO_RELEASE_ALLOW_BUNDLE_WAIVER:-0}" == "1" ]]; then
@@ -116,6 +118,8 @@ log_step "MBN source guards, lint and bundle measurement"
 cd "$MBN_REPO"
 npm ci
 npm run check:release-readiness
+npm run check:dependency-security
+npm run audit:security
 npm run check:ownership
 npm run lint
 npm run build:analyze
@@ -140,6 +144,7 @@ cd "$MBN_REPO"
 MBN_E2E_URL="http://127.0.0.1:$MBN_PORT" \
 MBN_E2E_AVATAR_PATH="${MBN_E2E_AVATAR_PATH:-$MBN_REPO/tests/fixtures/avatar-e2e.png}" \
 npm run e2e:browser-core
+npm run e2e:visual-regression
 MBN_E2E_ALLOW_MUTATION=1 \
 MBN_E2E_API_URL="http://127.0.0.1:$API_PORT/api/v1" \
 MBN_E2E_ADMIN_LOGIN="${MBN_E2E_ADMIN_LOGIN:-admin}" \
@@ -153,6 +158,7 @@ ADMIN_E2E_LOGIN="${ADMIN_E2E_LOGIN:-admin}" \
 ADMIN_E2E_PASSWORD="${ADMIN_E2E_PASSWORD:-change-me}" \
 ADMIN_E2E_REQUIRE_DOCUMENT_VERSION_MUTATION=1 \
 npm run e2e:browser-crud
+npm run e2e:visual-regression
 
 log_step "DOCX render QA"
 if command -v soffice >/dev/null 2>&1; then
@@ -203,9 +209,13 @@ $summary = [
         "api_phpunit_pint_integrity" => "passed",
         "admin_checks_lint_build" => "passed",
         "mbn_checks_lint_build" => "passed",
+        "admin_npm_audit" => "passed",
+        "mbn_npm_audit" => "passed",
         "mbn_browser_core" => "passed",
         "transactional_api_e2e" => "passed",
         "admin_browser_crud" => "passed",
+        "admin_visual_regression" => "passed",
+        "mbn_visual_regression" => "passed",
         "docx_visual_render" => "passed",
         "clean_zip_integrity" => "passed",
     ],
