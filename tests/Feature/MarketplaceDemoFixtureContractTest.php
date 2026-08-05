@@ -77,6 +77,14 @@ class MarketplaceDemoFixtureContractTest extends TestCase
         $this->assertSame('submitted', WithdrawalRequest::query()->where('idempotency_key', 'demo-withdrawal-submitted')->value('status'));
         $this->assertSame('paid', WithdrawalRequest::query()->where('idempotency_key', 'demo-withdrawal-paid')->value('status'));
         $this->assertSame(3, Product::query()->whereIn('code', ['NSO-0102', 'NSO-0201', 'NRO-0301'])->count());
+        Product::query()
+            ->whereIn('code', ['NSO-0102', 'NSO-0201', 'NRO-0301'])
+            ->get()
+            ->each(fn (Product $product) => $this->assertGreaterThanOrEqual(
+                3,
+                count($product->images),
+                "{$product->code} phải có đủ ảnh demo để kiểm slider detail.",
+            ));
         $this->assertDatabaseHas('marketplace_risk_flags', [
             'code' => 'RISK-DEMO-HIGH',
             'level' => 'high',

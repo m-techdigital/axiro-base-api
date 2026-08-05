@@ -196,3 +196,10 @@ The route/CSS ownership changes in the next source package invalidate the 0040 b
 - API source-clean package guard now fails on runtime files under `storage/logs`, `storage/app/public`, `storage/framework/testing` and `storage/app/backups`, except `.gitignore` placeholders.
 - Existing runtime logs, uploaded marketplace media and generated test files were removed from source-clean state before repackaging.
 - API release-package, recovery-baseline and maintainability guards pass after the storage cleanup.
+
+## 2026-08-05 marketplace demo image fixture pass
+
+- Product resources now expose a stable `images` accessor derived from `image_urls` plus `image_url`, preserving existing offer-mode and transaction-type accessors.
+- Marketplace demo fixtures use restored `https://www.muabannick.pro/` visual assets for Ninja School, Ngoc Rong and Avatar products so the MBN detail gallery has enough real images to demonstrate slider behavior.
+- `MarketplaceDemoFixtureContractTest` now asserts the primary browser/E2E fixture products have at least three images, preventing future source syncs from collapsing the gallery back to a single image.
+- This change stays within Mini marketplace scope and does not add parent HR, company, department, accounting, project or report dependencies.

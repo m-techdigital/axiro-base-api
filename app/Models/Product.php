@@ -36,7 +36,7 @@ class Product extends Model
         'availability_version' => 'integer', 'image_urls' => 'array', 'attributes' => 'array',
     ];
 
-    protected $appends = ['offer_modes', 'transaction_types', 'sale_enabled', 'rental_enabled'];
+    protected $appends = ['offer_modes', 'transaction_types', 'sale_enabled', 'rental_enabled', 'images'];
 
     protected static function booted(): void
     {
@@ -132,6 +132,14 @@ class Product extends Model
         }
 
         return $types;
+    }
+
+    public function getImagesAttribute(): array
+    {
+        return array_values(array_unique(array_filter([
+            ...($this->image_urls ?? []),
+            $this->image_url,
+        ])));
     }
 
     public function getSaleEnabledAttribute(): bool

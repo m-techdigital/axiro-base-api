@@ -171,6 +171,23 @@ class MarketplaceDemoSeeder extends Seeder
 
     private function products(array $customers, User $admin): array
     {
+        $demoImages = [
+            'ninja_school' => [
+                'https://www.muabannick.pro/images/banners/banner_ninja_vip_min.jpg',
+                'https://www.muabannick.pro/images/banners/banner_ninja_cheap_min.jpg',
+                'https://www.muabannick.pro/images/banners/banner_800x294.gif',
+            ],
+            'dragon_ball' => [
+                'https://www.muabannick.pro/images/banners/banner_nro_min.jpg',
+                'https://www.muabannick.pro/images/bg/bg-mbn-violet.png',
+                'https://www.muabannick.pro/images/box/box.jpg',
+            ],
+            'avatar' => [
+                'https://www.muabannick.pro/images/banners/banner_avatar_min.jpg',
+                'https://www.muabannick.pro/images/bg/bg-mbn-violet-mb-min.png',
+                'https://www.muabannick.pro/images/box/box.jpg',
+            ],
+        ];
         $rows = [
             'sale' => ['code' => 'NSO-0102', 'name' => 'Ninja School Kunai cấp 119', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 850000, 'approval_status' => 'approved', 'is_published' => true],
             'rental' => ['code' => 'NSO-0201', 'name' => 'Ninja School Tone cấp 110', 'owner' => 'lessor', 'modes' => ['rent'], 'rental_price' => 120000, 'approval_status' => 'approved', 'is_published' => true],
@@ -188,15 +205,18 @@ class MarketplaceDemoSeeder extends Seeder
             $modes = $row['modes'];
             $owner = $customers[$row['owner']];
             unset($row['modes'], $row['owner']);
+            $gameCode = str_starts_with($row['code'], 'AVA') ? 'avatar' : (str_starts_with($row['code'], 'NRO') ? 'dragon_ball' : 'ninja_school');
             $product = Product::query()->updateOrCreate(['code' => $row['code']], [
                 ...$row,
                 'slug' => Str::slug($row['name'].'-'.$row['code']),
                 'product_type' => 'game_account',
-                'game_code' => str_starts_with($row['code'], 'AVA') ? 'avatar' : (str_starts_with($row['code'], 'NRO') ? 'dragon_ball' : 'ninja_school'),
+                'game_code' => $gameCode,
                 'server_name' => 'Server demo',
                 'status' => 'active',
                 'availability_status' => 'available',
                 'description' => 'Dữ liệu mẫu Product → Transaction.',
+                'image_url' => $demoImages[$gameCode][0],
+                'image_urls' => $demoImages[$gameCode],
                 'owner_customer_id' => $owner->id,
                 'created_by' => $admin->id,
                 'updated_by' => $admin->id,
