@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminActionCenterController;
+use App\Http\Controllers\AdminEscrowBoxController;
 use App\Http\Controllers\AdminNotificationController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
@@ -86,6 +87,13 @@ Route::middleware('auth.api')->group(function () {
     Route::put('content-entries/{contentEntry}', [MarketplaceTrustAdminController::class, 'updateContent']);
     Route::get('risk-flags', [MarketplaceTrustAdminController::class, 'risks']);
     Route::post('risk-flags/{riskFlag}/resolve', [MarketplaceTrustAdminController::class, 'resolveRisk']);
+    Route::get('escrow-boxes', [AdminEscrowBoxController::class, 'index']);
+    Route::get('escrow-boxes/{escrowBox}', [AdminEscrowBoxController::class, 'show']);
+    Route::post('escrow-boxes/{escrowBox}/review', [AdminEscrowBoxController::class, 'review']);
+    Route::post('escrow-boxes/{escrowBox}/handover-steps/{step}/review', [AdminEscrowBoxController::class, 'reviewHandover']);
+    Route::get('escrow-fee-rules', [AdminEscrowBoxController::class, 'feeRules']);
+    Route::post('escrow-fee-rules', [AdminEscrowBoxController::class, 'storeFeeRule']);
+    Route::put('escrow-fee-rules/{rule}', [AdminEscrowBoxController::class, 'updateFeeRule']);
     Route::get('fee-policies', [MarketplaceOperationsAdminController::class, 'feePolicies']);
     Route::post('fee-policies', [MarketplaceOperationsAdminController::class, 'storeFeePolicy']);
     Route::put('fee-policies/{policy}', [MarketplaceOperationsAdminController::class, 'updateFeePolicy']);

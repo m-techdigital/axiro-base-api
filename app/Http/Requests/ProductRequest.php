@@ -29,7 +29,31 @@ class ProductRequest extends FormRequest
             $this->merge(['installment_enabled' => $this->boolean('installment_enabled') || in_array('installment', $legacy, true)]);
         }
 
-        $this->merge(['offer_modes' => array_values(array_unique($modes ?? []))]);
+        $productType = (string) $this->input('product_type', 'game_account');
+        $this->merge([
+            'offer_modes' => array_values(array_unique($modes ?? [])),
+            'delivery_method' => $this->input('delivery_method')
+                ?: ($productType === 'item' ? 'in_game_trade' : 'account_credentials'),
+            'inspection_period_minutes' => $this->input('inspection_period_minutes', 30),
+            'requires_pre_handover_snapshot' => $this->has('requires_pre_handover_snapshot')
+                ? $this->boolean('requires_pre_handover_snapshot')
+                : false,
+        ]);
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $type = $this->input('product_type');
+            $method = $this->input('delivery_method');
+            $allowed = $type === 'item'
+                ? ['in_game_trade', 'gift_code']
+                : ['account_credentials', 'email_transfer'];
+
+            if ($method && ! in_array($method, $allowed, true)) {
+                $validator->errors()->add('delivery_method', 'Phương thức bàn giao không phù hợp với loại sản phẩm.');
+            }
+        });
     }
 
     public function rules(): array
@@ -40,7 +64,10 @@ class ProductRequest extends FormRequest
             'code' => ['required', 'string', 'max:50', Rule::unique('products', 'code')->ignore($id)],
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('products', 'slug')->ignore($id)],
-            'product_type' => ['required', 'string', 'max:50'],
+            'product_type' => ['required', Rule::in(['game_account', 'item'])],
+            'delivery_method' => [Rule::in(['account_credentials', 'email_transfer', 'in_game_trade', 'gift_code'])],
+            'inspection_period_minutes' => ['integer', 'min:5', 'max:1440'],
+            'requires_pre_handover_snapshot' => ['boolean'],
             'game_code' => ['required', 'string', 'max:50'],
             'server_name' => ['nullable', 'string', 'max:100'],
             'level' => ['nullable', 'integer', 'min:0'],

@@ -9,6 +9,9 @@ class TransactionActionRequest extends ApiFormRequest
 {
     public function rules(): array
     {
-        return ['action' => ['required', Rule::in(['seller_handover', 'buyer_receive', 'renter_return', 'lessor_receive_return', 'complete'])]];
+        return [
+            'action' => ['required', Rule::in(['seller_handover', 'buyer_receive', 'renter_return', 'lessor_receive_return', 'complete', 'accept_terms', 'reject_terms'])],
+            'note' => ['nullable', 'string', 'max:2000'],
+        ];
     }
 }

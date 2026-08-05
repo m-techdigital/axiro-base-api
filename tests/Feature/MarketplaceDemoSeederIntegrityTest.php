@@ -22,6 +22,11 @@ class MarketplaceDemoSeederIntegrityTest extends TestCase
         $this->assertSame('submitted', $pending->status);
         $this->assertSame($pending->available_before, $pending->available_after);
 
+        $item = Product::query()->where('code', 'ITEM-0901')->firstOrFail();
+        $this->assertSame('item', $item->product_type);
+        $this->assertSame('in_game_trade', $item->delivery_method);
+        $this->assertTrue($item->requires_pre_handover_snapshot);
+
         Product::query()->where('code', 'like', '%-%')->each(function (Product $product): void {
             $urls = array_values(array_filter($product->image_urls ?? []));
             $this->assertSame($urls, array_values(array_unique($urls)), 'Demo product image_urls must not contain duplicates.');

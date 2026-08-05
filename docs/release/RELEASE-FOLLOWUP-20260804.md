@@ -203,3 +203,25 @@ The route/CSS ownership changes in the next source package invalidate the 0040 b
 - Marketplace demo fixtures use restored `https://www.muabannick.pro/` visual assets for Ninja School, Ngoc Rong and Avatar products so the MBN detail gallery has enough real images to demonstrate slider behavior.
 - `MarketplaceDemoFixtureContractTest` now asserts the primary browser/E2E fixture products have at least three images, preventing future source syncs from collapsing the gallery back to a single image.
 - This change stays within Mini marketplace scope and does not add parent HR, company, department, accounting, project or report dependencies.
+
+## 2026-08-05 escrow box correction pass
+
+- Escrow Box claim notifications no longer use a fake `transaction_id=0`; pre-adapter box notifications point to the box route and keep transaction FK null.
+- Demo seed restores `ITEM-0901` as an approved item/in-game trade fixture and snapshots delivery method, inspection window and pre-handover evidence requirements into demo transactions.
+- The focused Escrow Box, digital-asset handover, demo data and document template quality tests pass with `10 tests / 195 assertions`.
+- API maintainability, digital-asset escrow guard, release-package, recovery-baseline and PHP syntax checks pass after cleaning runtime cache artifacts.
+
+## 2026-08-05 184710 style-baseline carry-forward
+
+- The MBN 184710 deterministic stylesheet manifest, desktop/mobile shell owners, and style architecture guards are retained as the active UI baseline.
+- Escrow Box routes, hooks, repositories, privacy contract, and media/handover flows are carried forward onto that baseline.
+- Escrow Box CSS is registered once in `src/index.css`; route components do not side-effect import CSS.
+- API/Admin Escrow Box owners remain `mini_bounded`; no company, RBAC, HR, accounting, report, or project runtime is introduced.
+- Previous build/browser/release evidence is stale after this merge and must be regenerated from clean pushed Git HEADs.
+
+## 2026-08-05 Mini test-scope cleanup
+
+- API PHPUnit now reflects the Mini bounded runtime after removing stale parent-only Approval, Accounting, HR, Reports, Import/Export, System Operations, Organization, scoped RBAC and legacy transaction-ledger unit contracts.
+- The retained suite covers Mini foundation, marketplace, transaction lifecycle, wallet, payout, documents, media/privacy, Escrow Box and parent-source exclusion boundaries.
+- `AuditPayloadSanitizer` now masks PII/money/signed URL keys while avoiding false positives such as `token_count` and `secretary_name`; large arrays are truncated with explicit evidence.
+- Full API PHPUnit passes on the current source with `132 tests / 1138 assertions`.

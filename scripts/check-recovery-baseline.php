@@ -18,6 +18,7 @@ $runtimeStorageRoots = [
     'storage/app/public/marketplace',
     'storage/framework/testing',
     'storage/app/backups',
+    'public/storage',
 ];
 foreach ($runtimeStorageRoots as $runtimeRoot) {
     $path = $root.'/'.$runtimeRoot;

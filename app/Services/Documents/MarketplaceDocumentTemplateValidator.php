@@ -18,13 +18,13 @@ class MarketplaceDocumentTemplateValidator
         'installment_appendix' => ['{{initial_payment_amount}}', '{{installment_count}}', '{{payment_schedule}}'],
         'deposit_confirmation' => ['{{deposit_amount}}', '{{remaining_amount}}'],
         'payment_confirmation' => ['{{paid_amount}}', '{{remaining_amount}}', '{{payment_schedule}}'],
-        'handover_minutes' => ['{{handover_time}}', '{{product_security_state}}'],
+        'handover_minutes' => ['{{handover_time}}', '{{product_security_state}}', '{{asset_delivery_method_label}}', '{{inspection_period_minutes}}', '{{inspection_deadline_at}}'],
         'return_minutes' => ['{{return_time}}', '{{deposit_amount}}'],
         'dispute_minutes' => ['{{dispute_reason}}', '{{dispute_description}}'],
         'dispute_resolution' => ['{{dispute_resolution}}', '{{dispute_resolved_at}}'],
         'refund_settlement' => ['{{refunded_amount}}', '{{refund_reason}}'],
         'completion_minutes' => ['{{completed_at}}', '{{status}}'],
-        'security_checklist' => ['{{product_security_state}}', '{{handover_time}}'],
+        'security_checklist' => ['{{product_security_state}}', '{{handover_time}}', '{{asset_delivery_method_label}}', '{{requires_pre_handover_snapshot}}'],
         'platform_transaction_record' => ['{{product_code}}', '{{product_type}}', '{{transaction_type}}', '{{purchase_mode}}'],
     ];
 

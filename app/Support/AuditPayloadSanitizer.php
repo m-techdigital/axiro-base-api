@@ -11,6 +11,9 @@ final class AuditPayloadSanitizer
         'token', 'access_token', 'refresh_token', 'authorization', 'cookie',
         'secret', 'jwt_secret', 'otp', 'verification_code', 'two_factor_code',
         'card_number', 'cvv', 'pin', 'private_key', 'recovery_code',
+        'phone', 'phone_number', 'mobile', 'cccd', 'citizen_id', 'identity_number',
+        'signed_url', 'provider_url', 'client_secret',
+        'total_amount', 'transaction_value',
     ];
 
     public static function sanitize(mixed $value, int $depth = 0): mixed
@@ -23,7 +26,14 @@ final class AuditPayloadSanitizer
         }
         if (is_array($value)) {
             $result = [];
-            foreach ($value as $key => $item) {
+            foreach (array_keys($value) as $index => $key) {
+                if ($index >= 50) {
+                    $result['__truncated__'] = true;
+
+                    break;
+                }
+
+                $item = $value[$key];
                 $normalized = strtolower((string) $key);
                 if (self::isSensitive($normalized)) {
                     $result[$key] = '[Đã che]';
@@ -47,12 +57,13 @@ final class AuditPayloadSanitizer
 
     private static function isSensitive(string $key): bool
     {
-        foreach (self::SENSITIVE_KEYS as $sensitive) {
-            if ($key === $sensitive || str_contains($key, $sensitive)) {
-                return true;
-            }
+        if (in_array($key, self::SENSITIVE_KEYS, true)) {
+            return true;
         }
 
-        return false;
+        return str_ends_with($key, '_token')
+            || str_ends_with($key, '_secret')
+            || str_ends_with($key, '_password')
+            || str_ends_with($key, '_authorization');
     }
 }

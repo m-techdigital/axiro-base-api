@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CustomerDocumentController;
+use App\Http\Controllers\CustomerEscrowBoxController;
 use App\Http\Controllers\CustomerMediaController;
 use App\Http\Controllers\CustomerNotificationController;
 use App\Http\Controllers\CustomerPayoutController;
@@ -29,6 +30,19 @@ Route::middleware('auth.customer')->prefix('customer')->group(function () {
     Route::put('products/{product}', [CustomerProductController::class, 'update']);
 
     Route::get('transactions', [CustomerTransactionController::class, 'index']);
+    Route::get('escrow-boxes', [CustomerEscrowBoxController::class, 'index']);
+    Route::post('escrow-boxes', [CustomerEscrowBoxController::class, 'store']);
+    Route::get('escrow-boxes/join/{token}', [CustomerEscrowBoxController::class, 'preview'])->middleware('throttle:60,1');
+    Route::post('escrow-boxes/join/{token}/claim', [CustomerEscrowBoxController::class, 'claim'])->middleware('throttle:20,1');
+    Route::get('escrow-boxes/{escrowBox}', [CustomerEscrowBoxController::class, 'show']);
+    Route::put('escrow-boxes/{escrowBox}/terms', [CustomerEscrowBoxController::class, 'updateTerms']);
+    Route::post('escrow-boxes/{escrowBox}/confirm', [CustomerEscrowBoxController::class, 'confirm']);
+    Route::post('escrow-boxes/{escrowBox}/cancel', [CustomerEscrowBoxController::class, 'cancel']);
+    Route::post('escrow-boxes/{escrowBox}/media', [CustomerEscrowBoxController::class, 'uploadMedia'])->middleware('throttle:20,1');
+    Route::get('escrow-boxes/{escrowBox}/media/{media}', [CustomerEscrowBoxController::class, 'media']);
+    Route::post('escrow-boxes/{escrowBox}/handover/{partySide}', [CustomerEscrowBoxController::class, 'submitHandover']);
+    Route::post('escrow-boxes/{escrowBox}/confirm-receipt', [CustomerEscrowBoxController::class, 'confirmReceipt']);
+    Route::post('escrow-boxes/{escrowBox}/disputes', [CustomerEscrowBoxController::class, 'openDispute']);
     Route::get('transactions/{transaction}', [CustomerTransactionController::class, 'show']);
     Route::post('products/{product}/transact', [CustomerTransactionController::class, 'createFromProduct']);
     Route::get('transactions/{transaction}/next-actions', [CustomerTransactionController::class, 'nextActions']);

@@ -14,6 +14,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->nullable()->unique();
             $table->string('product_type', 50)->default('game_account')->index();
+            $table->string('delivery_method', 40)->default('account_credentials')->index();
+            $table->unsignedSmallInteger('inspection_period_minutes')->default(30);
+            $table->boolean('requires_pre_handover_snapshot')->default(false);
             $table->string('game_code', 50)->nullable()->index();
             $table->string('server_name', 100)->nullable();
             $table->unsignedInteger('level')->nullable();

@@ -55,6 +55,7 @@ class CustomerTransactionController extends Controller
         return ApiResponse::success($service->createFromProduct($product, auth('customer_api')->id(), $request->validated()), 'Đã tạo giao dịch.', 201);
     }
 
+
     public function paymentQr(Transaction $transaction, TransactionPayment $payment, MarketplaceQrService $qr)
     {
         $this->authorizeParty($transaction);
@@ -75,7 +76,9 @@ class CustomerTransactionController extends Controller
     {
         $this->authorizeParty($transaction);
 
-        return ApiResponse::success($service->transition($transaction, $request->validated('action'), 'customer', auth('customer_api')->id()));
+        $data = $request->validated();
+
+        return ApiResponse::success($service->transition($transaction, $data['action'], 'customer', auth('customer_api')->id(), $data['note'] ?? null));
     }
 
     public function openDispute(OpenDisputeRequest $request, Transaction $transaction, TransactionLifecycleService $service)

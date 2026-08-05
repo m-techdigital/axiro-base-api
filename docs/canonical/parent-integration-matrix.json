@@ -164,5 +164,70 @@
       "accounting",
       "reports"
     ]
+  },
+  "digital_asset_escrow_handover": {
+    "classification": "mini_bounded",
+    "parent_patterns": [
+      "transaction_coordinator",
+      "immutable_checkout_snapshot",
+      "lifecycle_checkpoint",
+      "base_form_and_modal",
+      "customer_safe_presenter"
+    ],
+    "mini_owners": [
+      "TransactionEscrowHandoverService",
+      "TransactionLifecycleService",
+      "TransactionAssetSnapshot",
+      "TransactionEscrowPanel",
+      "useTransactionEscrowAction"
+    ],
+    "excluded": [
+      "company_scope",
+      "rbac",
+      "accounting_ledger",
+      "report_hub",
+      "generic_project_workflow",
+      "plaintext_credential_storage"
+    ]
+  },
+  "escrow_box_private_module": {
+    "classification": "mini_bounded",
+    "parent_patterns": [
+      "transactional_mutation_owner",
+      "versioned_agreement",
+      "customer_safe_presenter",
+      "private_media_pipeline",
+      "admin_review_workspace",
+      "fee_snapshot"
+    ],
+    "mini_owners": [
+      "EscrowBoxService",
+      "EscrowBoxFeeService",
+      "EscrowBoxPresenter",
+      "EscrowBoxMediaService",
+      "CustomerEscrowBoxController",
+      "AdminEscrowBoxController",
+      "EscrowBoxCreatePage",
+      "EscrowBoxJoinPage",
+      "EscrowBoxDetailPage"
+    ],
+    "reuses": [
+      "transaction_payment",
+      "wallet_ledger",
+      "transaction_settlement",
+      "transaction_dispute",
+      "document",
+      "payout"
+    ],
+    "excluded": [
+      "company_scope",
+      "rbac",
+      "hr",
+      "accounting",
+      "report_hub",
+      "project_runtime",
+      "public_counterparty_identity",
+      "plaintext_credentials"
+    ]
   }
 }

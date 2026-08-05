@@ -6,7 +6,7 @@ use App\Enums\DisputeOutcome;
 
 final class MarketplaceOptionsCatalog
 {
-    public const VERSION = '2026-08-04.1';
+    public const VERSION = '2026-08-05.2';
 
     public const CACHE_TTL_SECONDS = 300;
 
@@ -21,6 +21,14 @@ final class MarketplaceOptionsCatalog
             ],
             'dispute_outcomes' => DisputeOutcome::options(),
             'transaction_statuses' => TransactionLifecycleCatalog::statusOptions(),
+            'game_account_delivery_methods' => [
+                ['value' => 'account_credentials', 'label' => 'Thông tin đăng nhập qua kênh bảo mật'],
+                ['value' => 'email_transfer', 'label' => 'Chuyển quyền email/liên kết'],
+            ],
+            'item_delivery_methods' => [
+                ['value' => 'in_game_trade', 'label' => 'Giao dịch trực tiếp trong game'],
+                ['value' => 'gift_code', 'label' => 'Mã quà tặng / mã vật phẩm'],
+            ],
         ];
     }
 

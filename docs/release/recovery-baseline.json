@@ -1,9 +1,9 @@
 {
-  "audit_date": "2026-08-04",
+  "audit_date": "2026-08-05",
   "audit_window": "from approximately 18:56 local time through the 23:19 baseline",
   "repository": "api",
   "result": "no_missing_functional_capabilities_detected",
-  "contract_sha256": "69a52564e59efe3fa259385dabb26015ea25163d8b31a1c1ef8d20727a98401a",
+  "contract_sha256": "746a14c14aabda1e18c5707e4b2fe09fc2e79f26614d1f89f4449eb480d591df",
   "compared_artifacts": [
     "axiro-base-api-final-canonical-closure-20260804-clean.zip",
     "axiro-base-api-bundle-security-visual-closure-20260804-clean.zip",
@@ -25,14 +25,28 @@
     "scripts/release-all.sh",
     "scripts/finalize-release-evidence.php",
     ".env.example",
-    ".env.production.example"
+    ".env.production.example",
+    "app/Services/Marketplace/TransactionEscrowHandoverService.php",
+    "tests/Feature/MarketplaceEscrowHandoverTest.php",
+    "docs/canonical/MARKETPLACE_ESCROW_DIGITAL_ASSET_20260805.md",
+    "scripts/check-digital-asset-escrow.php",
+    "scripts/check-release-package.php",
+    "app/Services/Marketplace/EscrowBoxService.php",
+    "app/Services/Marketplace/EscrowBoxFeeService.php",
+    "app/Services/Marketplace/EscrowBoxPresenter.php",
+    "app/Services/Marketplace/EscrowBoxMediaService.php",
+    "app/Http/Controllers/CustomerEscrowBoxController.php",
+    "app/Http/Controllers/AdminEscrowBoxController.php",
+    "tests/Feature/EscrowBoxWorkflowTest.php",
+    "docs/canonical/ESCROW_BOX_CANONICAL_20260805.md"
   ],
   "recovered_files": [
     ".env.example",
     ".env.production.example"
   ],
   "cleanup": [
-    "removed_runtime_sqlite_and_generated_test_media_from_api_package"
+    "removed_runtime_sqlite_and_generated_test_media_from_api_package",
+    "forbid_public_storage_runtime_link_content_and_generated_output_in_api_source_package"
   ],
   "policy": "A newly supplied ZIP is not automatically newer. Compare it with this manifest and the finalized Git hashes before applying changes."
 }

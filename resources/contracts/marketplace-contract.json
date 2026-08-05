@@ -1,7 +1,7 @@
 {
   "contract_name": "axiro-mini-marketplace",
-  "contract_version": "2026-08-04.1",
-  "api_version": "v65",
+  "contract_version": "2026-08-05.3",
+  "api_version": "v66",
   "source_architecture": "AXIRO parent canonical marketplace patterns",
   "response_contract": {
     "success": [
@@ -70,7 +70,14 @@
     "content_management": true,
     "risk_flags": true,
     "two_factor_authentication": true,
-    "cookie_only_customer_refresh": true
+    "cookie_only_customer_refresh": true,
+    "digital_asset_escrow_handover": true,
+    "private_escrow_box": true,
+    "escrow_box_one_time_invite": true,
+    "escrow_box_versioned_agreement": true,
+    "escrow_box_fee_rules": true,
+    "escrow_box_admin_handover": true,
+    "escrow_box_private_optimized_media": true
   },
   "statuses": {
     "product": [
@@ -83,6 +90,7 @@
       "cancelled"
     ],
     "transaction": [
+      "agreement_pending",
       "pending_payment",
       "partially_paid",
       "paid",
@@ -205,6 +213,18 @@
       "draft",
       "published",
       "deprecated"
+    ],
+    "asset_delivery_method": [
+      "account_credentials",
+      "email_transfer",
+      "in_game_trade",
+      "gift_code"
+    ],
+    "escrow_agreement": [
+      "pending_counterparty",
+      "accepted",
+      "rejected",
+      "cancelled"
     ]
   },
   "public_endpoints": [
@@ -287,7 +307,20 @@
     "POST /customer/security/two-factor/confirm",
     "POST /customer/security/two-factor/recovery-codes",
     "DELETE /customer/security/two-factor",
-    "GET /customer/transactions/{transaction}/next-actions"
+    "GET /customer/transactions/{transaction}/next-actions",
+    "GET /customer/escrow-boxes",
+    "POST /customer/escrow-boxes",
+    "GET /customer/escrow-boxes/join/{token}",
+    "POST /customer/escrow-boxes/join/{token}/claim",
+    "GET /customer/escrow-boxes/{escrowBox}",
+    "PUT /customer/escrow-boxes/{escrowBox}/terms",
+    "POST /customer/escrow-boxes/{escrowBox}/confirm",
+    "POST /customer/escrow-boxes/{escrowBox}/cancel",
+    "POST /customer/escrow-boxes/{escrowBox}/media",
+    "GET /customer/escrow-boxes/{escrowBox}/media/{media}",
+    "POST /customer/escrow-boxes/{escrowBox}/handover/{partySide}",
+    "POST /customer/escrow-boxes/{escrowBox}/confirm-receipt",
+    "POST /customer/escrow-boxes/{escrowBox}/disputes"
   ],
   "admin_endpoints": [
     "POST /login",
@@ -390,10 +423,17 @@
     "GET /transactions/{transaction}/next-actions",
     "POST /notifications/{notification}/handle",
     "GET /operations-dashboard/today",
-    "GET /operations-dashboard/timeline/{subjectType}/{subjectId}"
+    "GET /operations-dashboard/timeline/{subjectType}/{subjectId}",
+    "GET /escrow-boxes",
+    "GET /escrow-boxes/{escrowBox}",
+    "POST /escrow-boxes/{escrowBox}/review",
+    "POST /escrow-boxes/{escrowBox}/handover-steps/{step}/review",
+    "GET /escrow-fee-rules",
+    "POST /escrow-fee-rules",
+    "PUT /escrow-fee-rules/{rule}"
   ],
   "option_catalog": {
-    "version": "2026-08-04.1",
+    "version": "2026-08-05.2",
     "cache_ttl_seconds": 300,
     "document_types": [
       {
@@ -530,6 +570,26 @@
         "value": "deprecated",
         "label": "Ngừng sử dụng"
       }
+    ],
+    "game_account_delivery_methods": [
+      {
+        "value": "account_credentials",
+        "label": "Thông tin đăng nhập qua kênh bảo mật"
+      },
+      {
+        "value": "email_transfer",
+        "label": "Chuyển quyền email/liên kết"
+      }
+    ],
+    "item_delivery_methods": [
+      {
+        "value": "in_game_trade",
+        "label": "Giao dịch trực tiếp trong game"
+      },
+      {
+        "value": "gift_code",
+        "label": "Mã quà tặng / mã vật phẩm"
+      }
     ]
   },
   "transaction_lifecycle": {
@@ -540,7 +600,13 @@
       "lifecycle.next_action",
       "lifecycle.blocking_reasons",
       "lifecycle.guidance",
-      "workflow_checklist"
+      "workflow_checklist",
+      "escrow_handover.delivery_method",
+      "escrow_handover.inspection_period_minutes",
+      "escrow_handover.inspection_deadline_at",
+      "escrow_handover.requires_pre_handover_snapshot",
+      "escrow_handover.seller_delivery_note",
+      "escrow_handover.buyer_inspection_note"
     ],
     "admin_next_actions_endpoint": "GET /api/v1/transactions/{transaction}/next-actions",
     "customer_next_actions_endpoint": "GET /api/v1/customer/transactions/{transaction}/next-actions",
@@ -562,6 +628,80 @@
       "deposit_amount",
       "deduction_amount",
       "refundable_amount"
+    ],
+    "escrow_handover_contract": {
+      "product_fields": [
+        "delivery_method",
+        "inspection_period_minutes",
+        "requires_pre_handover_snapshot"
+      ],
+      "transaction_snapshot_fields": [
+        "asset_delivery_method",
+        "inspection_period_minutes",
+        "requires_pre_handover_snapshot"
+      ],
+      "actions": [
+        "seller_handover",
+        "buyer_receive"
+      ],
+      "sensitive_data_policy": "notes_must_not_contain_password_otp_or_recovery_code"
+    }
+  },
+  "escrow_box_contract": {
+    "owner": "escrow_boxes",
+    "requires_public_listing": false,
+    "identity_exposure": "admin_only",
+    "customer_aliases": [
+      "Bên A",
+      "Bên B"
+    ],
+    "invite": {
+      "opaque_token": true,
+      "stored_as_hash": true,
+      "single_claim": true,
+      "invalidated_after_claim": true
+    },
+    "agreement": {
+      "versioned": true,
+      "both_parties_same_version": true,
+      "confirmation_resets_after_change": true
+    },
+    "fees": {
+      "default_base_fee": "50000.00",
+      "default_percentage_rate": "10.0000",
+      "admin_override_requires_reason": true,
+      "snapshot_on_approval": true
+    },
+    "payment": {
+      "created_after_admin_approval": true,
+      "supports_equal_exchange": true,
+      "supports_topup": true,
+      "supports_split_fee": true
+    },
+    "handover": {
+      "admin_sequence": [
+        "party_a_first",
+        "party_b_first",
+        "simultaneous_admin_observed"
+      ],
+      "evidence_required": true,
+      "inspection_after_both_verified": true
+    },
+    "media": {
+      "private_disk": true,
+      "exif_removed_by_reencode": true,
+      "max_edge": 1920,
+      "thumbnail_edge": 480,
+      "dedupe_checksum": true,
+      "retention_lock_on_dispute": true
+    },
+    "reuses": [
+      "transaction_payment",
+      "wallet_ledger",
+      "transaction_settlement",
+      "transaction_dispute",
+      "document",
+      "payout"
     ]
   }
 }

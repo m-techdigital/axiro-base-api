@@ -18,7 +18,7 @@ class Product extends Model
     use HasFactory, HasOfferModes, SoftDeletes, TracksAuditHistory;
 
     protected $fillable = [
-        'code', 'name', 'slug', 'product_type', 'game_code', 'server_name', 'level', 'status',
+        'code', 'name', 'slug', 'product_type', 'delivery_method', 'inspection_period_minutes', 'requires_pre_handover_snapshot', 'game_code', 'server_name', 'level', 'status',
         'approval_status', 'is_published', 'sale_price', 'sale_deposit_amount', 'installment_enabled',
         'max_installment_count', 'minimum_initial_payment', 'installment_interval_unit', 'installment_interval_count',
         'rental_price', 'rental_price_unit', 'minimum_rental_period', 'rental_period_unit', 'rental_billing_mode',
@@ -29,7 +29,7 @@ class Product extends Model
     ];
 
     protected $casts = [
-        'is_published' => 'boolean', 'sale_price' => 'decimal:2', 'sale_deposit_amount' => 'decimal:2',
+        'is_published' => 'boolean', 'inspection_period_minutes' => 'integer', 'requires_pre_handover_snapshot' => 'boolean', 'sale_price' => 'decimal:2', 'sale_deposit_amount' => 'decimal:2',
         'installment_enabled' => 'boolean', 'minimum_initial_payment' => 'decimal:2', 'rental_price' => 'decimal:2',
         'rental_deposit_amount' => 'decimal:2', 'available_from' => 'datetime', 'available_until' => 'datetime',
         'published_at' => 'datetime', 'approved_at' => 'datetime', 'hold_expires_at' => 'datetime',

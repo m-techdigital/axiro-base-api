@@ -15,7 +15,7 @@ Các owner mới hoặc được chuẩn hóa:
 - `BaseListView`: tách filter surface và data surface thống nhất.
 - `BaseTable`: luôn sở hữu horizontal scroll và empty state.
 
-Bốn danh sách lõi `customers`, `products`, `contracts`, `transactions` đã bỏ `Input.Search`, `Card`, `Popconfirm` tự dựng và chuyển sang base owner.
+Bốn nhóm lõi `customers`, `products`, `documents`, `transactions` đã bỏ `Input.Search`, `Card`, `Popconfirm` tự dựng và chuyển sang base owner.
 
 ## CSS foundation
 
@@ -34,7 +34,7 @@ Bốn danh sách lõi `customers`, `products`, `contracts`, `transactions` đã 
 - `ListQueryRequest`: validate keyword, status, listing type, pagination và sorting.
 - `AppliesListQuery`: một pipeline dùng chung cho keyword, exact filter và sort allowlist.
 
-Các controller lõi Product, Customer, Contract, Transaction và Listing đã dùng chung pipeline này.
+Các controller lõi Product, Customer, Document, Transaction và Listing đã dùng chung pipeline này.
 
 ## Formatting
 

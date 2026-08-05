@@ -6,13 +6,19 @@ use App\Models\Transaction;
 
 class TransactionActionPolicy
 {
+    public function __construct(private TransactionEscrowHandoverService $escrowHandover)
+    {
+    }
     public function allowedCustomerActions(Transaction $transaction, int $customerId): array
     {
         $buyer = $transaction->buyer_customer_id === $customerId;
         $seller = $transaction->seller_customer_id === $customerId;
         $actions = [];
 
-        if ($seller && in_array($transaction->status, ['paid', 'partially_paid'], true) && $this->startObligationsSatisfied($transaction)) {
+        if ($seller
+            && in_array($transaction->status, ['paid', 'partially_paid'], true)
+            && $this->startObligationsSatisfied($transaction)
+            && $this->escrowHandover->handoverBlockingReason($transaction) === null) {
             $actions[] = 'seller_handover';
         }
         if ($buyer && $transaction->status === 'handover_pending') {
@@ -31,7 +37,7 @@ class TransactionActionPolicy
             $actions[] = 'complete';
         }
         if (($buyer || $seller)
-            && ! in_array($transaction->status, ['completed', 'cancelled'], true)
+            && ! in_array($transaction->status, ['agreement_pending', 'completed', 'cancelled'], true)
             && ! $transaction->disputes()->where('status', 'open')->exists()) {
             $actions[] = 'open_dispute';
         }

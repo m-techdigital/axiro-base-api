@@ -41,3 +41,7 @@ AXIRO cha là chuẩn kỹ thuật. Mini chỉ rút gọn miền nghiệp vụ, 
 - MBN global `app.css` no longer imports modal sub-owners twice. Account, purchase-detail and content-route styles remain owned by their route shells/pages. `check:global-style-boundary` prevents route-only styles from leaking back into the global manifest.
 - No API schema, route, transaction, payout, document, customer-isolation or marketplace contract changed in this follow-up.
 - All prior bundle sizes, browser screenshots, transactional E2E and release evidence are historical after this source change. Fresh build, visual regression and `release:all` are required from clean committed/pushed Git HEADs.
+
+- `MARKETPLACE_ESCROW_DIGITAL_ASSET_20260805.md`: luồng giao dịch trung gian Mini-bounded cho tài khoản và vật phẩm trong game, snapshot bàn giao, inspection window và ranh giới dữ liệu nhạy cảm.
+
+- [Escrow Box canonical](./ESCROW_BOX_CANONICAL_20260805.md) — private one-time invite, versioned terms, fee snapshot, Admin handover and optimized private media.

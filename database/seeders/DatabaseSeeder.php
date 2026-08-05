@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\EscrowFeeRule;
 use App\Models\MarketplaceFeePolicy;
 use App\Models\MarketplacePaymentSetting;
 use App\Models\User;
@@ -21,6 +22,27 @@ class DatabaseSeeder extends Seeder
         );
 
         $this->call(OfferModeSeeder::class);
+
+        EscrowFeeRule::query()->updateOrCreate(
+            ['code' => 'ESCROW-DEFAULT'],
+            [
+                'name' => 'Phí box giao dịch trung gian mặc định',
+                'minimum_money_amount' => 0,
+                'maximum_money_amount' => null,
+                'base_fee' => 50000,
+                'percentage_rate' => 10,
+                'minimum_fee' => 50000,
+                'maximum_fee' => null,
+                'priority' => 100,
+                'version' => 1,
+                'is_active' => true,
+                'effective_from' => now()->subYear(),
+                'effective_to' => null,
+                'conditions' => ['scope' => 'escrow_box'],
+                'created_by' => $admin->id,
+                'updated_by' => $admin->id,
+            ],
+        );
 
         $seedDemoData = filter_var(
             env('SEED_MARKETPLACE_DEMO', app()->environment(['local', 'testing'])),

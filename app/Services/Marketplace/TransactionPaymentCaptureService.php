@@ -2,6 +2,8 @@
 
 namespace App\Services\Marketplace;
 
+use App\Models\EscrowBox;
+use App\Models\EscrowBoxPaymentObligation;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TransactionEvent;
@@ -35,6 +37,7 @@ class TransactionPaymentCaptureService
                 $this->wallets->creditHeld($transaction->seller_customer_id, (string) $locked->amount, 'escrow_hold', ['idempotency_key' => 'payment:'.$locked->id.':seller-hold', 'transaction_id' => $transaction->id, 'transaction_payment_id' => $locked->id, 'payment_method' => 'wallet', 'reference_type' => 'transaction_payment', 'reference_id' => $locked->id, 'note' => 'Tạm giữ tiền giao dịch '.$transaction->code]);
                 $locked->update(['status' => 'confirmed', 'payment_method' => 'wallet', 'reference' => $data['reference'] ?? $walletEntry->code, 'paid_at' => now(), 'confirmed_at' => now(), 'wallet_transaction_id' => $walletEntry->id, 'settlement_status' => 'held', 'settled_at' => now(), 'note' => $data['note'] ?? null]);
                 $this->recalculateState($transaction);
+                $this->syncEscrowBox($locked, $transaction);
                 $this->event($transaction, 'payment_confirmed', 'customer', $customerId, 'Đã thanh toán bằng số dư ví', 'Khoản '.$locked->code.' đã được xác nhận tự động.', ['payment_id' => $locked->id]);
 
                 return $locked->fresh();
@@ -63,6 +66,7 @@ class TransactionPaymentCaptureService
             $this->wallets->creditHeld($transaction->seller_customer_id, (string) $locked->amount, 'escrow_hold', ['idempotency_key' => 'payment:'.$locked->id.':seller-hold', 'transaction_id' => $transaction->id, 'transaction_payment_id' => $locked->id, 'payment_method' => $locked->payment_method ?? 'bank', 'reference_type' => 'transaction_payment', 'reference_id' => $locked->id, 'confirmed_by' => $adminId, 'note' => 'Đối soát thanh toán '.$locked->code]);
             $locked->update(['status' => 'confirmed', 'confirmed_at' => now(), 'confirmed_by' => $adminId, 'paid_at' => $locked->paid_at ?? now(), 'settlement_status' => 'held', 'settled_at' => now()]);
             $this->recalculateState($transaction);
+            $this->syncEscrowBox($locked, $transaction);
             $this->event($transaction, 'payment_confirmed', 'user', $adminId, 'Đã xác nhận thanh toán', 'Khoản '.$locked->code.' đã được xác nhận.', ['payment_id' => $locked->id]);
             foreach ([$transaction->buyer_customer_id, $transaction->seller_customer_id] as $id) {
                 $this->notifications->transaction($id, 'payment_confirmed', 'Thanh toán đã được xác nhận', 'Khoản '.$locked->code.' đã được đối soát.', $transaction->id, $transaction->code);
@@ -75,6 +79,9 @@ class TransactionPaymentCaptureService
     private function reserveProduct(Transaction $transaction): void
     {
         $product = Product::lockForUpdate()->findOrFail($transaction->product_id);
+        if ($transaction->initiation_source === 'escrow_box' && ($product->attributes['private_escrow_box'] ?? false)) {
+            return;
+        }
         $conflictingTransactionExists = Transaction::query()
             ->where('product_id', $product->id)
             ->where('id', '!=', $transaction->id)
@@ -99,6 +106,31 @@ class TransactionPaymentCaptureService
         $status = in_array($transaction->status, ['pending_payment', 'partially_paid', 'paid', 'overdue'], true) ? $paymentStatus : $transaction->status;
         $next = $transaction->payments()->whereIn('status', ['pending', 'rejected'])->orderBy('due_date')->value('due_date');
         $transaction->update(['paid_amount' => $paid, 'wallet_paid_amount' => $walletPaid, 'escrow_amount' => $paid, 'status' => $status, 'next_payment_due_at' => $next]);
+    }
+
+    private function syncEscrowBox(TransactionPayment $payment, Transaction $transaction): void
+    {
+        if ($transaction->initiation_source !== 'escrow_box') {
+            return;
+        }
+        $box = EscrowBox::query()->where('transaction_id', $transaction->id)->lockForUpdate()->first();
+        if (! $box) {
+            return;
+        }
+        EscrowBoxPaymentObligation::query()
+            ->where('transaction_payment_id', $payment->id)
+            ->update(['status' => 'paid', 'paid_at' => now()]);
+        $hasPending = EscrowBoxPaymentObligation::query()
+            ->where('escrow_box_id', $box->id)
+            ->where('status', '!=', 'paid')
+            ->exists();
+        if (! $hasPending) {
+            $firstStep = $box->handoverSteps()->orderBy('sequence_no')->first();
+            if ($firstStep && $firstStep->status === 'blocked') {
+                $firstStep->update(['status' => 'ready', 'expected_version' => $firstStep->expected_version + 1]);
+            }
+            $box->update(['status' => 'handover_in_progress', 'expected_version' => $box->expected_version + 1]);
+        }
     }
 
     private function event(Transaction $transaction, string $type, ?string $actorType, ?int $actorId, string $title, ?string $description = null, array $metadata = []): TransactionEvent

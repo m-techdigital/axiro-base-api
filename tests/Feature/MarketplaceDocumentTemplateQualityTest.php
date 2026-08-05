@@ -34,6 +34,10 @@ class MarketplaceDocumentTemplateQualityTest extends TestCase
         GeneratedDocument::query()->where('transaction_id', $transaction->id)->each(function (GeneratedDocument $document) {
             $this->assertDoesNotMatchRegularExpression('/\{\{[^}]+\}\}/', $document->rendered_html);
             $this->assertStringContainsString($document->transaction->code, $document->rendered_html);
+            if (in_array($document->document_type, ['handover_minutes', 'security_checklist'], true)) {
+                $this->assertStringContainsString('Bàn giao quyền truy cập tài khoản', $document->rendered_html);
+                $this->assertStringContainsString('30 phút', $document->rendered_html);
+            }
         });
     }
 

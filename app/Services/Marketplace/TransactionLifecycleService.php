@@ -22,7 +22,7 @@ use Illuminate\Validation\ValidationException;
 
 class TransactionLifecycleService
 {
-    public function __construct(private MarketplaceNotificationService $notifications, private MarketplaceFeeCalculator $fees, private ProductAvailabilityService $availability, private ProductSelectionService $selection, private TransactionPaymentPlanService $paymentPlans, private TransactionPaymentCaptureService $paymentCapture, private TransactionSettlementService $settlements, private TransactionActionPolicy $actionPolicy, private TransactionDisputeResolutionService $disputes) {}
+    public function __construct(private MarketplaceNotificationService $notifications, private MarketplaceFeeCalculator $fees, private ProductAvailabilityService $availability, private ProductSelectionService $selection, private TransactionPaymentPlanService $paymentPlans, private TransactionPaymentCaptureService $paymentCapture, private TransactionSettlementService $settlements, private TransactionActionPolicy $actionPolicy, private TransactionDisputeResolutionService $disputes, private TransactionEscrowHandoverService $escrowHandover) {}
 
     public function createFromProduct(Product $product, int $buyerId, array $data): Transaction
     {
@@ -70,6 +70,8 @@ class TransactionLifecycleService
             }
             $transaction = Transaction::create([
                 'code' => 'TRX-'.strtoupper(Str::random(10)), 'idempotency_key' => $idempotencyKey, 'request_hash' => $requestHash, 'transaction_type' => $isRental ? 'rental' : 'purchase', 'purchase_mode' => $mode,
+                'asset_delivery_method' => $locked->delivery_method, 'inspection_period_minutes' => $locked->inspection_period_minutes,
+                'requires_pre_handover_snapshot' => $locked->requires_pre_handover_snapshot,
                 'product_id' => $locked->id, 'buyer_customer_id' => $buyerId, 'seller_customer_id' => $locked->owner_customer_id,
                 'transaction_value' => $value, 'service_fee' => $fee['service_fee'], 'buyer_fee_amount' => $fee['buyer_fee_amount'], 'seller_fee_amount' => $fee['seller_fee_amount'], 'tax_amount' => $fee['tax_amount'], 'seller_net_amount' => $fee['seller_net_amount'], 'fee_policy_version' => $fee['fee_policy_version'], 'fee_snapshot' => $fee['fee_snapshot'], 'discount' => 0, 'deposit_amount' => $deposit, 'initial_payment_amount' => $initial,
                 'installment_count' => $mode === 'installment' ? ($data['installment_count'] ?? $locked->max_installment_count ?? 2) : null,
@@ -105,23 +107,31 @@ class TransactionLifecycleService
         return $this->actionPolicy->allowedCustomerActions($t, $customerId);
     }
 
-    public function transition(Transaction $transaction, string $action, string $actorType, int $actorId): Transaction
+    public function transition(Transaction $transaction, string $action, string $actorType, int $actorId, ?string $note = null): Transaction
     {
-        return DB::transaction(function () use ($transaction, $action, $actorType, $actorId) {
+        return DB::transaction(function () use ($transaction, $action, $actorType, $actorId, $note) {
             $t = Transaction::lockForUpdate()->findOrFail($transaction->id);
             if ($actorType === 'customer' && ! in_array($action, $this->allowedActions($t, $actorId), true)) {
-                throw ValidationException::withMessages(['action' => 'Bạn không có quyền thực hiện hành động này ở trạng thái hiện tại.']);
-            }$next = $t->status;
+                throw ValidationException::withMessages([
+                    'action' => 'Bạn không có quyền thực hiện hành động này ở trạng thái hiện tại.',
+                ]);
+            }
+
+            $next = $t->status;
+            $updates = null;
             $checkpoint = null;
             $title = 'Đã cập nhật giao dịch';
+
             if ($action === 'seller_handover') {
-                $next = 'handover_pending';
+                $updates = $this->escrowHandover->sellerHandover($t, $note);
+                $next = $updates['status'];
                 $checkpoint = 'seller_handover';
                 $title = 'Bên giao đã xác nhận bàn giao';
             } elseif ($action === 'buyer_receive') {
-                $next = $t->transaction_type === 'rental' ? 'active' : 'handed_over';
+                $updates = $this->escrowHandover->buyerReceive($t, $note);
+                $next = $updates['status'];
                 $checkpoint = 'buyer_received';
-                $title = 'Bên nhận đã xác nhận nhận tài khoản';
+                $title = 'Bên nhận đã xác nhận nhận và kiểm tra tài sản';
             } elseif ($action === 'renter_return') {
                 $next = 'return_pending';
                 $checkpoint = 'renter_returned';
@@ -138,22 +148,55 @@ class TransactionLifecycleService
                 $title = 'Giao dịch đã hủy';
             } else {
                 throw ValidationException::withMessages(['action' => 'Hành động không hợp lệ.']);
-            }$updates = ['status' => $next];
+            }
+
+            $updates ??= ['status' => $next];
             if (in_array($next, ['handover_pending', 'handed_over', 'active'], true) && ! $t->handed_over_at) {
                 $updates['handed_over_at'] = now();
-            }if ($next === 'returned') {
+            }
+            if ($next === 'returned') {
                 $updates['returned_at'] = now();
-            }if ($next === 'completed') {
+            }
+            if ($next === 'completed') {
                 $updates['completed_at'] = now();
-            }$t->update($updates);
+            }
+
+            $t->update($updates);
+
             if ($checkpoint) {
-                TransactionCheckpoint::updateOrCreate(['transaction_id' => $t->id, 'checkpoint' => $checkpoint], ['customer_id' => $actorType === 'customer' ? $actorId : null, 'actor_type' => $actorType, 'actor_id' => $actorId, 'confirmed_at' => now()]);
-            }if ($next === 'completed') {
+                TransactionCheckpoint::updateOrCreate(
+                    ['transaction_id' => $t->id, 'checkpoint' => $checkpoint],
+                    [
+                        'customer_id' => $actorType === 'customer' ? $actorId : null,
+                        'actor_type' => $actorType,
+                        'actor_id' => $actorId,
+                        'confirmed_at' => now(),
+                    ],
+                );
+            }
+
+            if ($next === 'completed') {
                 $this->settlements->settleCompleted($t);
-                $t->product && $this->availability->transition($t->product, $t->transaction_type === 'rental' ? ProductAvailabilityStatus::AVAILABLE : ProductAvailabilityStatus::SOLD, $t, 'Giao dịch hoàn tất');
-            }if ($next === 'cancelled') {
+                if ($t->product) {
+                    $this->availability->transition(
+                        $t->product,
+                        $t->transaction_type === 'rental'
+                            ? ProductAvailabilityStatus::AVAILABLE
+                            : ProductAvailabilityStatus::SOLD,
+                        $t,
+                        'Giao dịch hoàn tất',
+                    );
+                }
+            }
+            if ($next === 'cancelled') {
                 $this->settlements->releaseProductAfterCancellation($t);
-            }$this->event($t, $action, $actorType, $actorId, $title, null, ['checkpoint' => $checkpoint]);
+            }
+
+            $this->event($t, $action, $actorType, $actorId, $title, $note, [
+                'checkpoint' => $checkpoint,
+                'asset_delivery_method' => $t->asset_delivery_method,
+                'inspection_deadline_at' => $t->inspection_deadline_at,
+            ]);
 
             return $this->load($t);
         });

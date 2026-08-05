@@ -10,7 +10,10 @@ use App\Services\ProductAvailabilityService;
 
 class ProductHoldReleaseService
 {
-    public function __construct(private readonly ProductAvailabilityService $availability) {}
+    public function __construct(
+        private readonly ProductAvailabilityService $availability,
+    ) {
+    }
 
     public function release(ProductHold $hold, array $data): Product
     {

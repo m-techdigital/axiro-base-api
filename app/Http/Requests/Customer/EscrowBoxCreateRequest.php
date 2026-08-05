@@ -1,0 +1,36 @@
+<?php
+
+namespace App\Http\Requests\Customer;
+
+use App\Rules\EscrowBoxPublicText;
+use App\Http\Requests\ApiFormRequest;
+
+class EscrowBoxCreateRequest extends ApiFormRequest
+{
+    public function rules(): array
+    {
+        return [
+            'deal_type' => ['required', 'in:exchange,exchange_with_topup'],
+            'party_a_asset' => ['required', 'array'],
+            'party_a_asset.type' => ['required', 'in:game_account,item,redeem_code,other'],
+            'party_a_asset.title' => ['required', 'string', 'max:180'],
+            'party_a_asset.description' => ['required', 'string', 'max:4000', new EscrowBoxPublicText],
+            'party_a_asset.reference_value' => ['nullable', 'numeric', 'min:0', 'max:999999999999'],
+            'party_a_asset.delivery_method' => ['required', 'in:email_transfer,account_credentials,in_game_trade,redeem_code,admin_observed,other'],
+            'party_b_asset' => ['required', 'array'],
+            'party_b_asset.type' => ['required', 'in:game_account,item,redeem_code,other'],
+            'party_b_asset.title' => ['required', 'string', 'max:180'],
+            'party_b_asset.description' => ['required', 'string', 'max:4000', new EscrowBoxPublicText],
+            'party_b_asset.reference_value' => ['nullable', 'numeric', 'min:0', 'max:999999999999'],
+            'party_b_asset.delivery_method' => ['required', 'in:email_transfer,account_credentials,in_game_trade,redeem_code,admin_observed,other'],
+            'topup_payer_side' => ['nullable', 'required_if:deal_type,exchange_with_topup', 'in:party_a,party_b'],
+            'topup_amount' => ['nullable', 'required_if:deal_type,exchange_with_topup', 'numeric', 'min:1000', 'max:999999999999'],
+            'fee_payer_mode' => ['required', 'in:party_a,party_b,split_equal'],
+            'inspection_period_minutes' => ['required', 'integer', 'min:15', 'max:1440'],
+            'success_conditions' => ['required', 'string', 'max:4000', new EscrowBoxPublicText],
+            'cancellation_conditions' => ['nullable', 'string', 'max:3000', new EscrowBoxPublicText],
+            'additional_terms' => ['nullable', 'string', 'max:3000', new EscrowBoxPublicText],
+            'expires_in_hours' => ['nullable', 'integer', 'min:1', 'max:168'],
+        ];
+    }
+}

@@ -27,3 +27,18 @@
 3. Run API targeted/full tests even though API runtime is unchanged, because release evidence must represent one synchronized three-repo source set.
 4. Commit and push all three repositories, run `composer release:all`, finalize only a hash-matched passed summary, then package directly from the finalized clean HEADs.
 5. Continue splitting only when the fresh bundle report identifies a real route/global dependency owner; do not create cosmetic files or reintroduce shared AntD vendor chunks.
+
+
+## Digital asset escrow release verification
+
+1. Run fresh migration/seed and the API escrow/document tests on the canonical database matrix.
+2. Run MBN transactional E2E for account rental and `ITEM-0901` in-game item handover, including snapshot, inspection deadline, buyer confirmation, documents and payout continuity.
+3. Run Admin/MBN visual regression at desktop, tablet and mobile for product configuration, transaction escrow panel, snapshot evidence and handover modal.
+4. Finalize only from a passed `release:all` summary whose three repository hashes match clean pushed HEADs.
+
+## Escrow Box release execution
+
+- Run fresh migration/seed, targeted EscrowBoxWorkflowTest, full PHPUnit/Pint.
+- Run Admin/MBN lint/build and browser visual regression for create/join/detail/admin review at desktop/tablet/mobile.
+- Run transactional E2E for equal exchange, top-up payment, fee payer modes, ordered handover, receipt confirmation and dispute.
+- Run `composer release:all` from clean pushed HEADs and finalize hash-matched evidence.

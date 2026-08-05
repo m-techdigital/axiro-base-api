@@ -83,6 +83,13 @@ class MarketplaceDocumentPayloadBuilder
             'status' => $this->label($transaction->status),
             'payment_method' => $transaction->payment_method ?: 'Chưa xác định',
             'payment_schedule' => $payments,
+            'asset_delivery_method' => $transaction->asset_delivery_method ?: '—',
+            'asset_delivery_method_label' => $this->deliveryMethodLabel($transaction->asset_delivery_method),
+            'inspection_period_minutes' => $transaction->inspection_period_minutes ?: '—',
+            'inspection_deadline_at' => optional($transaction->inspection_deadline_at)->format('d/m/Y H:i') ?: 'Chưa bắt đầu',
+            'requires_pre_handover_snapshot' => $transaction->requires_pre_handover_snapshot ? 'Có' : 'Không',
+            'seller_delivery_note' => $transaction->seller_delivery_note ?: 'Chưa có ghi chú bàn giao.',
+            'buyer_inspection_note' => $transaction->buyer_inspection_note ?: 'Chưa có ghi chú kiểm tra.',
             'handover_time' => optional($transaction->handed_over_at)->format('d/m/Y H:i') ?: 'Chưa xác nhận',
             'return_time' => optional($transaction->returned_at)->format('d/m/Y H:i') ?: 'Chưa xác nhận',
             'completed_at' => optional($transaction->completed_at)->format('d/m/Y H:i') ?: 'Chưa hoàn tất',
@@ -94,6 +101,17 @@ class MarketplaceDocumentPayloadBuilder
             'refund_reason' => $transaction->note ?: 'Theo kết quả đối soát giao dịch.',
             'note' => $transaction->note ?: 'Không có ghi chú.',
         ];
+    }
+
+    private function deliveryMethodLabel(?string $value): string
+    {
+        return match ($value) {
+            'account_credentials' => 'Bàn giao quyền truy cập tài khoản',
+            'email_transfer' => 'Chuyển quyền qua thư điện tử liên kết',
+            'in_game_trade' => 'Giao dịch trực tiếp trong trò chơi',
+            'gift_code' => 'Bàn giao mã quà tặng / mã kích hoạt',
+            default => $value ?: 'Chưa xác định',
+        };
     }
 
     private function money(mixed $value): string

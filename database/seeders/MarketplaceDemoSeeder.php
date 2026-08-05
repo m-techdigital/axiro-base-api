@@ -192,8 +192,9 @@ class MarketplaceDemoSeeder extends Seeder
             'sale' => ['code' => 'NSO-0102', 'name' => 'Ninja School Kunai cấp 119', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 850000, 'approval_status' => 'approved', 'is_published' => true],
             'rental' => ['code' => 'NSO-0201', 'name' => 'Ninja School Tone cấp 110', 'owner' => 'lessor', 'modes' => ['rent'], 'rental_price' => 120000, 'approval_status' => 'approved', 'is_published' => true],
             'installment' => ['code' => 'NRO-0301', 'name' => 'Ngọc Rồng máy chủ 3', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 2400000, 'installment_enabled' => true, 'approval_status' => 'approved', 'is_published' => true],
+            'item_trade' => ['code' => 'ITEM-0901', 'name' => 'Vật phẩm giao dịch trong game', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 720000, 'approval_status' => 'approved', 'is_published' => true, 'product_type' => 'item', 'delivery_method' => 'in_game_trade', 'requires_pre_handover_snapshot' => true],
             'installment_history' => ['code' => 'NRO-0302', 'name' => 'Ngọc Rồng lịch sử trả góp', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 2400000, 'installment_enabled' => true, 'approval_status' => 'pending', 'is_published' => false],
-            'completed' => ['code' => 'AVA-0401', 'name' => 'Avatar 250 ô đất', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 650000, 'approval_status' => 'pending', 'is_published' => false],
+            'completed' => ['code' => 'AVA-0401', 'name' => 'Avatar 250 ô đất', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 650000, 'approval_status' => 'pending', 'is_published' => false, 'delivery_method' => 'account_credentials'],
             'active_rental' => ['code' => 'NSO-0501', 'name' => 'Ninja School Sanzu cấp 125', 'owner' => 'lessor', 'modes' => ['rent'], 'rental_price' => 180000, 'approval_status' => 'pending', 'is_published' => false],
             'returned_rental_history' => ['code' => 'NSO-0202', 'name' => 'Ninja School lịch sử hoàn trả', 'owner' => 'lessor', 'modes' => ['rent'], 'rental_price' => 120000, 'approval_status' => 'pending', 'is_published' => false],
             'disputed' => ['code' => 'NRO-0601', 'name' => 'Ngọc Rồng máy chủ 6', 'owner' => 'seller', 'modes' => ['sell'], 'sale_price' => 3200000, 'approval_status' => 'pending', 'is_published' => false],
@@ -206,15 +207,21 @@ class MarketplaceDemoSeeder extends Seeder
             $owner = $customers[$row['owner']];
             unset($row['modes'], $row['owner']);
             $gameCode = str_starts_with($row['code'], 'AVA') ? 'avatar' : (str_starts_with($row['code'], 'NRO') ? 'dragon_ball' : 'ninja_school');
+            $productType = $row['product_type'] ?? 'game_account';
+            $deliveryMethod = $row['delivery_method'] ?? 'account_credentials';
+            $requiresSnapshot = (bool) ($row['requires_pre_handover_snapshot'] ?? false);
+            unset($row['product_type'], $row['delivery_method'], $row['requires_pre_handover_snapshot']);
             $product = Product::query()->updateOrCreate(['code' => $row['code']], [
                 ...$row,
                 'slug' => Str::slug($row['name'].'-'.$row['code']),
-                'product_type' => 'game_account',
+                'product_type' => $productType,
                 'game_code' => $gameCode,
                 'server_name' => 'Server demo',
                 'status' => 'active',
                 'availability_status' => 'available',
                 'description' => 'Dữ liệu mẫu Product → Transaction.',
+                'delivery_method' => $deliveryMethod,
+                'requires_pre_handover_snapshot' => $requiresSnapshot,
                 'image_url' => $demoImages[$gameCode][0],
                 'image_urls' => $demoImages[$gameCode],
                 'owner_customer_id' => $owner->id,
@@ -249,13 +256,17 @@ class MarketplaceDemoSeeder extends Seeder
         ];
 
         foreach ($rows as $key => $row) {
+            $product = $products[$row['product']];
             $total = $row['value'] + $row['deposit'];
             $transaction = Transaction::query()->updateOrCreate(['code' => $row['code']], [
-                'product_id' => $products[$row['product']]->id,
+                'product_id' => $product->id,
                 'buyer_customer_id' => $customers[$row['buyer']]->id,
                 'seller_customer_id' => $customers[$row['seller']]->id,
                 'transaction_type' => $row['transaction_type'],
                 'purchase_mode' => $row['purchase_mode'],
+                'asset_delivery_method' => $product->delivery_method,
+                'inspection_period_minutes' => $product->inspection_period_minutes ?? 30,
+                'requires_pre_handover_snapshot' => $product->requires_pre_handover_snapshot,
                 'transaction_value' => $row['value'],
                 'deposit_amount' => $row['deposit'],
                 'initial_payment_amount' => $row['paid'],

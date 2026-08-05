@@ -84,6 +84,9 @@
         "release:finalize-evidence": "@php scripts/finalize-release-evidence.php --api=. --admin=../axiro-base-admin --mbn=../mbn-react --bundle-report=../axiro-base-admin/dist/bundle-report.json",
         "check:recovery-baseline": [
             "@php scripts/check-recovery-baseline.php"
+        ],
+        "check:digital-asset-escrow": [
+            "@php scripts/check-digital-asset-escrow.php"
         ]
     },
     "extra": {

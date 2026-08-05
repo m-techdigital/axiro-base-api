@@ -2,13 +2,14 @@
 
 $root = dirname(__DIR__);
 $allowedEnvTemplates = ['.env.example', '.env.production.example'];
-$forbiddenSegments = ['node_modules', 'vendor', 'dist', 'build'];
+$forbiddenSegments = ['node_modules', 'vendor', 'dist', 'build', 'coverage', 'artifacts', 'test-results'];
 $forbiddenBasenames = ['.phpunit.result.cache'];
 $runtimeStorageRoots = [
     'storage/logs',
     'storage/app/public',
     'storage/framework/testing',
     'storage/app/backups',
+    'public/storage',
 ];
 $files = [];
 exec('git ls-files 2>/dev/null', $files, $status);

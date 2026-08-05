@@ -3,10 +3,16 @@
 namespace App\Support\Marketplace;
 
 use App\Models\Transaction;
+use App\Services\Marketplace\TransactionEscrowHandoverService;
 
 class TransactionLifecycleCatalog
 {
+    public function __construct(private TransactionEscrowHandoverService $escrowHandover)
+    {
+    }
+
     private const STATUS = [
+        'agreement_pending' => ['label' => 'Chờ đối tác chấp nhận', 'color' => 'purple', 'phase' => 'agreement'],
         'pending_payment' => ['label' => 'Chờ thanh toán', 'color' => 'gold', 'phase' => 'payment'],
         'partially_paid' => ['label' => 'Thanh toán một phần', 'color' => 'orange', 'phase' => 'payment'],
         'paid' => ['label' => 'Đã thanh toán', 'color' => 'blue', 'phase' => 'handover'],
@@ -44,7 +50,7 @@ class TransactionLifecycleCatalog
 
     public function describe(Transaction $transaction, string $audience, ?int $customerId = null): array
     {
-        $transaction->loadMissing(['payments', 'documents.acceptances', 'disputes', 'checkpoints']);
+        $transaction->loadMissing(['product', 'payments', 'documents.acceptances', 'disputes', 'checkpoints']);
         $available = $audience === 'admin'
             ? $this->adminAvailable($transaction)
             : $this->customerAvailable($transaction, (int) $customerId);
@@ -105,6 +111,20 @@ class TransactionLifecycleCatalog
                 'message' => $transaction->status === 'handover_pending'
                     ? 'Bên nhận cần xác nhận đã nhận tài khoản hoặc mở tranh chấp khi thông tin không đúng.'
                     : 'Bên giao cần hoàn tất bàn giao sau khi thanh toán đủ điều kiện.',
+            ];
+        }
+
+        if ($transaction->asset_delivery_method) {
+            $handoverReason = $this->escrowHandover->handoverBlockingReason($transaction);
+            $items[] = [
+                'key' => 'digital_asset_escrow',
+                'label' => 'Bàn giao trung gian tài sản số',
+                'status' => $handoverReason ? 'blocked' : $transaction->status,
+                'due_at' => optional($transaction->inspection_deadline_at)->toIso8601String(),
+                'message' => $handoverReason
+                    ?: ($transaction->inspection_deadline_at
+                        ? 'Bên nhận đang trong thời gian kiểm tra tài sản trước khi xác nhận.'
+                        : 'Tiền được giữ theo settlement lifecycle cho đến khi bàn giao và xác nhận hoàn tất.'),
             ];
         }
 
@@ -174,7 +194,9 @@ class TransactionLifecycleCatalog
         if ($buyer && $transaction->payments->contains(fn ($payment) => in_array($payment->status, ['pending', 'rejected', 'overdue'], true))) {
             $actions[] = 'pay';
         }
-        if ($seller && in_array($transaction->status, ['paid', 'partially_paid'], true)) {
+        if ($seller
+            && in_array($transaction->status, ['paid', 'partially_paid'], true)
+            && $this->escrowHandover->handoverBlockingReason($transaction) === null) {
             $actions[] = 'seller_handover';
         }
         if ($buyer && $transaction->status === 'handover_pending') {
@@ -220,7 +242,10 @@ class TransactionLifecycleCatalog
                         : ($pendingDocument
                             ? 'Chưa thể hoàn tất vì còn tài liệu chưa được xác nhận: '.($pendingDocument->code ?? '#'.$pendingDocument->id).'.'
                             : null))),
-            'force_handover', 'seller_handover' => $unpaid ? 'Chưa thể bàn giao vì thanh toán chưa đủ điều kiện.' : null,
+            'force_handover' => $unpaid ? 'Chưa thể bàn giao vì thanh toán chưa đủ điều kiện.' : null,
+            'seller_handover' => $unpaid
+                ? 'Chưa thể bàn giao vì thanh toán chưa đủ điều kiện.'
+                : $this->escrowHandover->handoverBlockingReason($transaction),
             'force_return', 'renter_return', 'lessor_receive_return' => $transaction->transaction_type !== 'rental' ? 'Chỉ áp dụng cho giao dịch thuê.' : null,
             'cancel' => $terminal ? 'Giao dịch đã kết thúc.' : null,
             'reopen' => $transaction->status !== 'cancelled' ? 'Chỉ giao dịch đã hủy mới được mở lại.' : null,

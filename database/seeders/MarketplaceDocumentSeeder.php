@@ -31,7 +31,7 @@ class MarketplaceDocumentSeeder extends Seeder
             'transaction_code', 'transaction_type', 'purchase_mode', 'product_name', 'product_code', 'product_type', 'product_offer_modes', 'game_code', 'server_name', 'level', 'product_attributes', 'product_security_state',
             'buyer_name', 'buyer_code', 'buyer_phone', 'buyer_email', 'seller_name', 'seller_code', 'seller_phone', 'seller_email',
             'transaction_value', 'service_fee', 'discount', 'deposit_amount', 'initial_payment_amount', 'installment_count', 'total_payable', 'paid_amount', 'remaining_amount', 'refunded_amount',
-            'transaction_date', 'due_date', 'rental_start', 'rental_end', 'status', 'payment_method', 'payment_schedule', 'handover_time', 'return_time', 'completed_at',
+            'transaction_date', 'due_date', 'rental_start', 'rental_end', 'status', 'payment_method', 'payment_schedule', 'asset_delivery_method', 'asset_delivery_method_label', 'inspection_period_minutes', 'inspection_deadline_at', 'requires_pre_handover_snapshot', 'seller_delivery_note', 'buyer_inspection_note', 'handover_time', 'return_time', 'completed_at',
             'checkpoint_summary', 'dispute_reason', 'dispute_description', 'dispute_resolution', 'dispute_resolved_at', 'refund_reason', 'note', 'document_date', 'document_time',
         ];
     }
@@ -39,18 +39,18 @@ class MarketplaceDocumentSeeder extends Seeder
     private function templates(): array
     {
         return [
-            'sale_record' => $this->template('Mẫu hồ sơ mua bán tài khoản trò chơi', 'sale_record', 'HỒ SƠ MUA BÁN TÀI KHOẢN TRÒ CHƠI', $this->saleBody()),
+            'sale_record' => $this->template('Mẫu hồ sơ mua bán tài sản số trong trò chơi', 'sale_record', 'HỒ SƠ MUA BÁN TÀI SẢN SỐ TRONG TRÒ CHƠI', $this->saleBody()),
             'rental_record' => $this->template('Mẫu hồ sơ thuê tài khoản trò chơi', 'rental_record', 'HỒ SƠ THUÊ TÀI KHOẢN TRÒ CHƠI', $this->rentalBody()),
             'installment_appendix' => $this->template('Phụ lục lịch thanh toán trả góp', 'installment_appendix', 'PHỤ LỤC LỊCH THANH TOÁN TRẢ GÓP', $this->installmentBody()),
             'deposit_confirmation' => $this->template('Thỏa thuận đặt cọc giữ tài khoản', 'deposit_confirmation', 'THỎA THUẬN ĐẶT CỌC GIỮ TÀI KHOẢN', $this->depositBody()),
             'payment_confirmation' => $this->template('Xác nhận thanh toán giao dịch', 'payment_confirmation', 'XÁC NHẬN THANH TOÁN GIAO DỊCH', $this->paymentBody()),
-            'handover_minutes' => $this->template('Biên bản bàn giao tài khoản', 'handover_minutes', 'BIÊN BẢN BÀN GIAO TÀI KHOẢN', $this->handoverBody()),
+            'handover_minutes' => $this->template('Biên bản bàn giao tài sản số', 'handover_minutes', 'BIÊN BẢN BÀN GIAO TÀI SẢN SỐ', $this->handoverBody()),
             'return_minutes' => $this->template('Biên bản hoàn trả tài khoản thuê', 'return_minutes', 'BIÊN BẢN HOÀN TRẢ TÀI KHOẢN THUÊ', $this->returnBody()),
             'dispute_minutes' => $this->template('Biên bản tiếp nhận tranh chấp', 'dispute_minutes', 'BIÊN BẢN TIẾP NHẬN TRANH CHẤP', $this->disputeBody()),
             'dispute_resolution' => $this->template('Biên bản xử lý tranh chấp', 'dispute_resolution', 'BIÊN BẢN XỬ LÝ TRANH CHẤP', $this->disputeResolutionBody()),
             'refund_settlement' => $this->template('Biên bản hoàn tiền và đối soát', 'refund_settlement', 'BIÊN BẢN HOÀN TIỀN VÀ ĐỐI SOÁT', $this->refundBody()),
             'completion_minutes' => $this->template('Biên bản hoàn tất giao dịch', 'completion_minutes', 'BIÊN BẢN HOÀN TẤT GIAO DỊCH', $this->completionBody()),
-            'security_checklist' => $this->template('Phiếu kiểm tra bảo mật khi bàn giao', 'security_checklist', 'PHIẾU KIỂM TRA BẢO MẬT TÀI KHOẢN', $this->securityBody()),
+            'security_checklist' => $this->template('Phiếu kiểm tra an toàn khi bàn giao', 'security_checklist', 'PHIẾU KIỂM TRA AN TOÀN BÀN GIAO TÀI SẢN SỐ', $this->securityBody()),
             'platform_transaction_record' => $this->template('Phiếu ghi nhận giao dịch trên nền tảng', 'platform_transaction_record', 'PHIẾU GHI NHẬN GIAO DỊCH TRÊN NỀN TẢNG', $this->platformBody()),
         ];
     }
@@ -87,7 +87,7 @@ class MarketplaceDocumentSeeder extends Seeder
 
     private function account(): string
     {
-        return '<h3>II. Đối tượng giao dịch</h3><table><tr><td class="label">Sản phẩm</td><td>{{product_code}} — {{product_name}}</td></tr><tr><td class="label">Loại sản phẩm</td><td>{{product_type}}</td></tr><tr><td class="label">Mục đích thương mại</td><td>{{product_offer_modes}}</td></tr><tr><td class="label">Trò chơi / máy chủ / cấp độ</td><td>{{game_code}} / {{server_name}} / {{level}}</td></tr><tr><td class="label">Thuộc tính đã công bố</td><td>{{product_attributes}}</td></tr><tr><td class="label">Tình trạng bảo mật đã khai báo</td><td>{{product_security_state}}</td></tr></table>';
+        return '<h3>II. Đối tượng giao dịch</h3><table><tr><td class="label">Sản phẩm</td><td>{{product_code}} — {{product_name}}</td></tr><tr><td class="label">Loại sản phẩm</td><td>{{product_type}}</td></tr><tr><td class="label">Mục đích thương mại</td><td>{{product_offer_modes}}</td></tr><tr><td class="label">Trò chơi / máy chủ / cấp độ</td><td>{{game_code}} / {{server_name}} / {{level}}</td></tr><tr><td class="label">Thuộc tính đã công bố</td><td>{{product_attributes}}</td></tr><tr><td class="label">Tình trạng bảo mật đã khai báo</td><td>{{product_security_state}}</td></tr><tr><td class="label">Phương thức bàn giao</td><td>{{asset_delivery_method_label}}</td></tr><tr><td class="label">Thời gian kiểm tra</td><td>{{inspection_period_minutes}} phút</td></tr><tr><td class="label">Biên bản trước bàn giao</td><td>{{requires_pre_handover_snapshot}}</td></tr></table>';
     }
 
     private function money(): string
@@ -127,7 +127,7 @@ class MarketplaceDocumentSeeder extends Seeder
 
     private function handoverBody(): string
     {
-        return $this->parties().$this->account().$this->money().'<h3>IV. Thông tin bàn giao</h3><table><tr><td class="label">Thời điểm bàn giao</td><td>{{handover_time}}</td></tr><tr><td class="label">Tình trạng bảo mật</td><td>{{product_security_state}}</td></tr><tr><td class="label">Các mốc xác nhận</td><td>{{checkpoint_summary}}</td></tr><tr><td class="label">Ghi chú</td><td>{{note}}</td></tr></table><ol><li>Bên giao xác nhận đã cung cấp thông tin trong phạm vi thỏa thuận.</li><li>Bên nhận phải kiểm tra đăng nhập, nhân vật, vật phẩm và liên kết bảo mật trước khi xác nhận.</li><li>Nếu có sai lệch, bên nhận không xác nhận hoàn tất và phải mở yêu cầu tranh chấp.</li></ol>'.$this->commonTerms();
+        return $this->parties().$this->account().$this->money().'<h3>IV. Thông tin bàn giao trung gian</h3><table><tr><td class="label">Phương thức bàn giao</td><td>{{asset_delivery_method_label}}</td></tr><tr><td class="label">Thời điểm bàn giao</td><td>{{handover_time}}</td></tr><tr><td class="label">Thời hạn kiểm tra</td><td>{{inspection_period_minutes}} phút, đến {{inspection_deadline_at}}</td></tr><tr><td class="label">Yêu cầu biên bản trước bàn giao</td><td>{{requires_pre_handover_snapshot}}</td></tr><tr><td class="label">Tình trạng bảo mật</td><td>{{product_security_state}}</td></tr><tr><td class="label">Ghi chú bên giao</td><td>{{seller_delivery_note}}</td></tr><tr><td class="label">Ghi chú bên nhận</td><td>{{buyer_inspection_note}}</td></tr><tr><td class="label">Các mốc xác nhận</td><td>{{checkpoint_summary}}</td></tr></table><ol><li>Bên giao xác nhận đã cung cấp thông tin trong phạm vi thỏa thuận.</li><li>Bên nhận phải kiểm tra đăng nhập, nhân vật, vật phẩm và liên kết bảo mật trước khi xác nhận.</li><li>Nếu có sai lệch, bên nhận không xác nhận hoàn tất và phải mở yêu cầu tranh chấp.</li></ol>'.$this->commonTerms();
     }
 
     private function returnBody(): string
@@ -157,7 +157,7 @@ class MarketplaceDocumentSeeder extends Seeder
 
     private function securityBody(): string
     {
-        return $this->parties().$this->account().$this->money().'<h3>IV. Danh sách kiểm tra bảo mật</h3><table><tr><td class="label">Tình trạng khai báo</td><td>{{product_security_state}}</td></tr><tr><td class="label">Thời điểm bàn giao</td><td>{{handover_time}}</td></tr></table><ol><li>Đăng nhập thành công trên thiết bị của bên nhận.</li><li>Đối chiếu máy chủ, nhân vật, vật phẩm và thông tin sản phẩm.</li><li>Kiểm tra thư điện tử, số điện thoại, mạng xã hội, thiết bị tin cậy và xác thực hai lớp đang liên kết.</li><li>Không trao đổi OTP, mật khẩu thư điện tử, mã khôi phục hoặc cookie.</li><li>Ghi lại video hoặc ảnh liên tục tại thời điểm bàn giao.</li><li>Đăng xuất phiên lạ và thay đổi thông tin chỉ khi nhà phát hành và giao dịch cho phép.</li></ol>'.$this->commonTerms();
+        return $this->parties().$this->account().$this->money().'<h3>IV. Danh sách kiểm tra an toàn bàn giao</h3><table><tr><td class="label">Phương thức bàn giao</td><td>{{asset_delivery_method_label}}</td></tr><tr><td class="label">Tình trạng khai báo</td><td>{{product_security_state}}</td></tr><tr><td class="label">Biên bản trước bàn giao</td><td>{{requires_pre_handover_snapshot}}</td></tr><tr><td class="label">Thời điểm bàn giao</td><td>{{handover_time}}</td></tr></table><ol><li>Đăng nhập thành công trên thiết bị của bên nhận.</li><li>Đối chiếu máy chủ, nhân vật, vật phẩm và thông tin sản phẩm.</li><li>Kiểm tra thư điện tử, số điện thoại, mạng xã hội, thiết bị tin cậy và xác thực hai lớp đang liên kết.</li><li>Không trao đổi OTP, mật khẩu thư điện tử, mã khôi phục hoặc cookie.</li><li>Ghi lại video hoặc ảnh liên tục tại thời điểm bàn giao.</li><li>Đăng xuất phiên lạ và thay đổi thông tin chỉ khi nhà phát hành và giao dịch cho phép.</li></ol>'.$this->commonTerms();
     }
 
     private function platformBody(): string
