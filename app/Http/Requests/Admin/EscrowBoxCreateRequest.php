@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Customer;
+namespace App\Http\Requests\Admin;
 
 use App\Http\Requests\ApiFormRequest;
 use App\Http\Requests\Concerns\HasEscrowBoxValidationAttributes;
@@ -13,6 +13,13 @@ class EscrowBoxCreateRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
+            'party_a_customer_id' => ['required', 'integer', 'exists:customers,id'],
+            'party_b_customer_id' => [
+                'required',
+                'integer',
+                'exists:customers,id',
+                'different:party_a_customer_id',
+            ],
             'deal_type' => ['required', 'in:exchange,exchange_with_topup'],
             'party_a_asset' => ['required', 'array'],
             'party_a_asset.type' => ['required', 'in:game_account,item,redeem_code,other'],

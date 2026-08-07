@@ -1,19 +1,19 @@
 {
-  "contract_version": "2026-08-05.3",
+  "contract_version": "2026-08-06.6",
   "accepted_commits": {
     "api": "f72e63c0",
     "admin": "2cf13156",
     "mbn": "fa3d37f1"
   },
   "parent_alignment": "mini_bounded",
-  "last_verified_at": "2026-08-04",
+  "last_verified_at": "2026-08-06",
   "verification": {
-    "api_full_phpunit": "pending_rerun_after_escrow_box_source_change",
-    "api_pint": "pending_rerun_after_escrow_box_source_change",
+    "api_full_phpunit": "pending_rerun_after_timeline_query_optimization",
+    "api_pint": "pending_rerun_after_timeline_query_optimization",
     "marketplace_integrity": "passed",
     "transactional_api_e2e": "pending_release_all_rerun_after_source_change",
     "mbn_browser_core_smoke": "pending_release_all_rerun_after_source_change",
-    "admin_checks_build_bundle": "pending_rerun_after_escrow_box_source_change",
+    "admin_checks_build_bundle": "pending_rerun_after_contract_sync",
     "mbn_checks_build_bundle": "pending_rerun_after_escrow_box_source_change",
     "avatar_persistence_after_relogin": "passed_runtime_independent_of_release_summary",
     "admin_browser_crud_smoke": "pending_release_all_rerun_after_source_change",
@@ -304,7 +304,7 @@
     "admin_base_control_owner_split": "passed_check_all_lint_build_measurement",
     "admin_reconciliation_export_progress_owner": "passed_check_all_lint_build_measurement",
     "mbn_global_style_boundary": "passed_source_guard_and_build_measurement",
-    "docx_source_visual_preview": "passed_libreoffice_quicklook_current_source",
+    "docx_source_visual_preview": "passed_libreoffice_current_source_8_pages",
     "docx_release_all_hash_matched_gate": "pending_clean_pushed_release_all",
     "node_release_runtime": "local_verified_node_26_5_0_canonical_min_node_22_22_0_required_by_react_router_8_3_0",
     "historical_mbn_initial_bundle_measurement_before_modal_owner_split": "passed_build_initial_js_448_8_kb_css_177_5_kb",
@@ -314,8 +314,25 @@
     "escrow_box_privacy": "one_time_hashed_invite_alias_only_customer_contract",
     "escrow_box_fee_and_handover": "versioned_terms_admin_review_fee_snapshot_payment_obligations_ordered_handover",
     "escrow_box_static_contract": "passed_source_guards_privacy_claim_agreement_fee_payment_handover_media",
-    "escrow_box_runtime_workflow": "pending_phpunit_and_transactional_e2e_on_clean_git_head",
-    "escrow_box_frontend_runtime": "pending_lint_build_browser_on_clean_git_head"
+    "escrow_box_runtime_workflow": "pending_phpunit_and_transactional_e2e_after_admin_assigned_source_change",
+    "escrow_box_frontend_runtime": "pending_lint_build_browser_after_admin_assigned_source_change",
+    "escrow_box_admin_assigned_creation": "source_implemented_pending_runtime_verification",
+    "escrow_box_dual_private_acceptance": "source_implemented_pending_runtime_verification",
+    "escrow_box_detail_hook_order": "source_guard_passed_pending_browser_runtime",
+    "escrow_box_field_validation_mapping": "source_guard_passed_pending_frontend_runtime",
+    "escrow_box_horizontal_exchange_topup_exclusion": "request_and_payload_contract_passed_pending_phpunit",
+    "escrow_box_phone_invite_cancel_replace": "source_and_test_contract_passed_pending_phpunit",
+    "escrow_box_current_runtime_suite": "pending_dependencies_and_clean_git_release_rerun",
+    "escrow_box_parent_activity_timeline": "source_verified_with_db_pagination_and_contract_routes_pending_runtime_tests",
+    "parent_timeline_hook": "exact_parent_source",
+    "api_bootstrap_cache_source_clean_guard": "source_verified_regression_probe_passed",
+    "parent_activity_timeline_static_contract": "passed",
+    "parent_activity_timeline_sql_pagination": "source_and_guard_verified_pending_phpunit",
+    "parent_activity_timeline_customer_privacy": "source_and_test_contract_verified_pending_phpunit",
+    "source_package_bootstrap_cache_closure": "passed_regression_probe",
+    "frontend_dependency_install": "blocked_internal_registry_zod_validation_error_4_0_2",
+    "frontend_runtime_node": "container_22_16_0_below_react_router_required_22_22_0",
+    "api_runtime_test_environment": "composer_unavailable_in_container"
   },
   "browser_smoke_required": true,
   "transactional_e2e_requires_fresh_seed": true,
@@ -337,7 +354,24 @@
     "digital_asset_escrow_documents": "source_verified_merge_payload_and_template_contract_pending_phpunit",
     "digital_asset_escrow_demo_fixture": "source_verified_item_0901_pending_fresh_seed_test",
     "digital_asset_escrow_transactional_e2e": "source_updated_pending_clean_pushed_release_all_execution",
-    "escrow_box_source": "implemented_pending_fresh_migration_phpunit_lint_build_browser_e2e"
+    "escrow_box_source": "implemented_pending_fresh_migration_phpunit_lint_build_browser_e2e",
+    "admin_assigned_escrow_box": "admin_selects_two_customers_dual_bound_links_both_accept_before_review_pending_runtime"
   },
-  "contract_sha256": "746a14c14aabda1e18c5707e4b2fe09fc2e79f26614d1f89f4449eb480d591df"
+  "contract_sha256": "6692ffbd845cc89ebb9939f509ee677d14ec1a5f513275ddf662c2d7852848c7",
+  "escrow_box_counterparty_resolution": "source_verified_pending_runtime",
+  "escrow_box_update_history_detail": "source_verified_pending_browser",
+  "activity_timeline_alignment": "source_verified_parent_contract_runtime_pending",
+  "release_all": "pending_clean_pushed_hash_matched_summary",
+  "parent_base_form_alignment": {
+    "status": "source_verified_pending_frontend_runtime",
+    "parent_snapshot": "axiro-admin-develop-reviewed-source-clean-20260806-181500.zip",
+    "base_form_owner": "parent_field_registry_and_field_container",
+    "validation_owner": "parent_laravel_error_mapping_and_form_item_rules",
+    "mini_bounded_adapters": [
+      "single_admin_permission_adapter",
+      "12_to_24_column_span_adapter",
+      "money_field_alias"
+    ],
+    "forbidden_parallel_owner": "BaseFormControl_as_BaseForm_renderer"
+  }
 }

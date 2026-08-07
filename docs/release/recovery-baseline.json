@@ -1,9 +1,9 @@
 {
-  "audit_date": "2026-08-05",
+  "audit_date": "2026-08-06",
   "audit_window": "from approximately 18:56 local time through the 23:19 baseline",
   "repository": "api",
   "result": "no_missing_functional_capabilities_detected",
-  "contract_sha256": "746a14c14aabda1e18c5707e4b2fe09fc2e79f26614d1f89f4449eb480d591df",
+  "contract_sha256": "6692ffbd845cc89ebb9939f509ee677d14ec1a5f513275ddf662c2d7852848c7",
   "compared_artifacts": [
     "axiro-base-api-final-canonical-closure-20260804-clean.zip",
     "axiro-base-api-bundle-security-visual-closure-20260804-clean.zip",
@@ -38,7 +38,19 @@
     "app/Http/Controllers/CustomerEscrowBoxController.php",
     "app/Http/Controllers/AdminEscrowBoxController.php",
     "tests/Feature/EscrowBoxWorkflowTest.php",
-    "docs/canonical/ESCROW_BOX_CANONICAL_20260805.md"
+    "docs/canonical/ESCROW_BOX_CANONICAL_20260805.md",
+    "app/Http/Requests/Admin/EscrowBoxCreateRequest.php",
+    "app/Support/AuditPayloadSanitizer.php",
+    "tests/Unit/AuditPayloadSanitizerTest.php",
+    "app/Http/Requests/Concerns/HasEscrowBoxValidationAttributes.php",
+    "app/Http/Requests/Customer/EscrowBoxCounterpartyInviteRequest.php",
+    "app/Http/Requests/Customer/EscrowBoxCreateRequest.php",
+    "app/Http/Requests/Customer/EscrowBoxTermsRequest.php",
+    "app/Http/Requests/Customer/EscrowBoxCounterpartyResolveRequest.php",
+    "app/Services/Marketplace/EscrowBoxTimelineService.php",
+    "tests/Feature/EscrowBoxTimelineContractTest.php",
+    "scripts/check-parent-activity-timeline.php",
+    "scripts/check-phpunit-style.php"
   ],
   "recovered_files": [
     ".env.example",

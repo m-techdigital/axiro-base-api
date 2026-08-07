@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests\Customer;
 
-use App\Rules\EscrowBoxPublicText;
 use App\Http\Requests\ApiFormRequest;
+use App\Http\Requests\Concerns\HasEscrowBoxValidationAttributes;
+use App\Rules\EscrowBoxPublicText;
 
 class EscrowBoxTermsRequest extends ApiFormRequest
 {
+    use HasEscrowBoxValidationAttributes;
+
     public function rules(): array
     {
         return [
@@ -24,8 +27,8 @@ class EscrowBoxTermsRequest extends ApiFormRequest
             'party_a_asset.delivery_method' => ['required', 'in:email_transfer,account_credentials,in_game_trade,redeem_code,admin_observed,other'],
             'party_b_asset.delivery_method' => ['required', 'in:email_transfer,account_credentials,in_game_trade,redeem_code,admin_observed,other'],
             'deal_type' => ['required', 'in:exchange,exchange_with_topup'],
-            'topup_payer_side' => ['nullable', 'required_if:deal_type,exchange_with_topup', 'in:party_a,party_b'],
-            'topup_amount' => ['nullable', 'required_if:deal_type,exchange_with_topup', 'numeric', 'min:1000', 'max:999999999999'],
+            'topup_payer_side' => ['exclude_unless:deal_type,exchange_with_topup', 'required', 'in:party_a,party_b'],
+            'topup_amount' => ['exclude_unless:deal_type,exchange_with_topup', 'required', 'numeric', 'min:1000', 'max:999999999999'],
             'fee_payer_mode' => ['required', 'in:party_a,party_b,split_equal'],
             'inspection_period_minutes' => ['required', 'integer', 'min:15', 'max:1440'],
             'success_conditions' => ['required', 'string', 'max:4000', new EscrowBoxPublicText],

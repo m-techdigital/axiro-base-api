@@ -10,6 +10,7 @@ $runtimeStorageRoots = [
     'storage/framework/testing',
     'storage/app/backups',
     'public/storage',
+    'bootstrap/cache',
 ];
 $files = [];
 exec('git ls-files 2>/dev/null', $files, $status);

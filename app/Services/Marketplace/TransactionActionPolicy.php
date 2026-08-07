@@ -6,9 +6,8 @@ use App\Models\Transaction;
 
 class TransactionActionPolicy
 {
-    public function __construct(private TransactionEscrowHandoverService $escrowHandover)
-    {
-    }
+    public function __construct(private TransactionEscrowHandoverService $escrowHandover) {}
+
     public function allowedCustomerActions(Transaction $transaction, int $customerId): array
     {
         $buyer = $transaction->buyer_customer_id === $customerId;

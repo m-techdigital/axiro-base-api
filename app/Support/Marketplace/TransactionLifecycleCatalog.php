@@ -7,9 +7,7 @@ use App\Services\Marketplace\TransactionEscrowHandoverService;
 
 class TransactionLifecycleCatalog
 {
-    public function __construct(private TransactionEscrowHandoverService $escrowHandover)
-    {
-    }
+    public function __construct(private TransactionEscrowHandoverService $escrowHandover) {}
 
     private const STATUS = [
         'agreement_pending' => ['label' => 'Chờ đối tác chấp nhận', 'color' => 'purple', 'phase' => 'agreement'],

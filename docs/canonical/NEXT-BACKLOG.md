@@ -42,3 +42,11 @@
 - Run Admin/MBN lint/build and browser visual regression for create/join/detail/admin review at desktop/tablet/mobile.
 - Run transactional E2E for equal exchange, top-up payment, fee payer modes, ordered handover, receipt confirmation and dispute.
 - Run `composer release:all` from clean pushed HEADs and finalize hash-matched evidence.
+
+## Escrow Box remaining release evidence
+
+- Run focused and full PHPUnit/Pint for validation, phone invite cancel/replace, privacy, and settlement races.
+- Run Admin/MBN lint and production builds on Node >=22.22.0.
+- Add browser coverage for detail loading, nested field errors, horizontal exchange, cancel/replace invite, and mobile layouts.
+- Run transactional Escrow Box E2E, then `release:all` and hash-finalize evidence from clean pushed HEADs.
+

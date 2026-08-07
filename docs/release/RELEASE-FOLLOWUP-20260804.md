@@ -219,9 +219,109 @@ The route/CSS ownership changes in the next source package invalidate the 0040 b
 - API/Admin Escrow Box owners remain `mini_bounded`; no company, RBAC, HR, accounting, report, or project runtime is introduced.
 - Previous build/browser/release evidence is stale after this merge and must be regenerated from clean pushed Git HEADs.
 
-## 2026-08-05 Mini test-scope cleanup
+### 2026-08-06 — Admin-assigned Escrow Box
 
-- API PHPUnit now reflects the Mini bounded runtime after removing stale parent-only Approval, Accounting, HR, Reports, Import/Export, System Operations, Organization, scoped RBAC and legacy transaction-ledger unit contracts.
-- The retained suite covers Mini foundation, marketplace, transaction lifecycle, wallet, payout, documents, media/privacy, Escrow Box and parent-source exclusion boundaries.
-- `AuditPayloadSanitizer` now masks PII/money/signed URL keys while avoiding false positives such as `token_count` and `secretary_name`; large arrays are truncated with explicit evidence.
-- Full API PHPUnit passes on the current source with `132 tests / 1138 assertions`.
+- Admin can create a box, select two active customers, and receive two separate customer-bound acceptance links.
+- Both parties must accept the same agreement version before Admin review starts.
+- Third parties cannot preview or accept a leaked link.
+- Admin can rotate links only for parties that have not accepted.
+- Runtime lint/build/Pint/PHPUnit/browser/E2E evidence must be regenerated after this source change.
+
+
+## 2026-08-06 Escrow Box ownership and recovery closure
+
+- Nút tạo Box nằm trong trang danh sách Box; menu riêng tạo Box đã được loại khỏi MBN.
+- Trang chi tiết hiển thị lịch sử, trạng thái điều khoản, nghĩa vụ thanh toán và checkpoint bàn giao.
+- Người tạo không thể mở hoặc nhận link Bên B của chính mình.
+- Người tạo có thể xoay link trước khi Bên B tham gia; link cũ mất hiệu lực ngay.
+- Chỉ người tạo được tự hủy trước xử lý tài chính; Admin có quyền hủy khi chưa có nghĩa vụ đã thanh toán.
+- Box đã hủy/từ chối/hết hạn có thể sao chép thành Box mới với link mới.
+- Contract 2026-08-06.3; runtime build/test/browser evidence phải chạy lại sau source change.
+
+## 2026-08-06 audit sanitizer correction
+
+`AuditPayloadSanitizer` now uses normalized exact-key and credential-suffix boundaries. This closes the regression where phone/business-money/signed URL values were not masked while safe keys such as `token_count` and `secretary_name` were masked by substring matching. Focused sanitizer tests were added. Full PHPUnit and Pint must be rerun on the committed API HEAD; no prior runtime evidence is promoted by this source change.
+
+
+## Escrow Box lifecycle closure 2026-08-06
+
+- Sửa Rules of Hooks ở `EscrowBoxDetailPage`: mọi hook chạy trước loading/error return.
+- Trao đổi ngang không còn gửi/validate `topup_amount`; chỉ giao dịch có bù mới yêu cầu tối thiểu 1.000đ.
+- Validation API được map về đúng `FormField` dùng chung của BaseForm.
+- Người tạo có thể mời Bên B bằng số điện thoại đã được Bên B chủ động cung cấp; lời mời xuất hiện trong Box/notification nhưng không lộ danh tính chéo.
+- Người tạo được hủy lời mời trước khi Bên B chấp nhận và có thể mời người khác hoặc quay lại dùng link mới.
+- Bên B phải chủ động chấp nhận lời mời trước khi Box chuyển sang rà soát điều khoản.
+- Contract `2026-08-06.3`; runtime lint/build/Pint/PHPUnit/browser evidence phải chạy lại sau source change.
+
+## 2026-08-06 Escrow Box validation and counterparty lifecycle hardening
+
+- `EscrowBoxDetailPage` now keeps every React hook above loading/error returns; the source guard rejects conditional hook ordering regressions.
+- Create and terms-edit flows share `escrowBoxFormModel`, `useBaseForm`, `EscrowBoxAssetFields`, and field-level API error mapping instead of maintaining parallel form state.
+- Horizontal exchange payloads omit `topup_amount` and `topup_payer_side`; only `exchange_with_topup` validates a minimum top-up of 1,000 VND.
+- `MoneyInput` exposes `aria-invalid` and works with the canonical `FormField` error surface.
+- Phone invitations use a dedicated FormRequest, normalize to 9-15 digits, query active customers under row lock, accept local/`84` variants, and never enumerate all customers in PHP.
+- Before acceptance, the creator may cancel a mistaken phone invitation; the removed invitee receives a neutral cancellation notification and the Box returns to `awaiting_counterparty` for a replacement invite or a new link.
+- After acceptance, participant replacement remains forbidden. Existing payment, wallet, document, handover, dispute, and settlement owners remain unchanged.
+- Source/package/recovery/ownership guards pass. Pint, PHPUnit, frontend lint/build, browser regression, transactional E2E, `release:all`, and hash-finalized evidence remain pending rerun on clean Git repositories with dependencies installed.
+## 2026-08-06 — Escrow Box candidate resolution and update history
+
+- Lời mời Bên B chuyển sang hai bước: tìm chính xác bằng số điện thoại, xem ứng viên đã che thông tin, sau đó chọn ứng viên mới gửi lời mời.
+- Customer API không trả customer id; candidate token được mã hóa, gắn với Box/người tạo và hết hạn sau 10 phút.
+- MBN detail có nút tải lại và nút Cập nhật Box; nút Hủy trang cập nhật nằm ngoài form và căn phải.
+- Admin detail hiển thị lịch sử từng phiên bản điều khoản, lý do, người cập nhật và snapshot chi tiết.
+- Contract nâng lên 2026-08-06.4; runtime/browser evidence phải chạy lại sau source change.
+
+## 2026-08-06 — Escrow Box UI regression closure
+
+- Không hiển thị copy kỹ thuật về độ dài/implementation validation trên customer UI; form chỉ hướng dẫn hành động người dùng.
+- Detail phải bọc các `PageSection` trong `PageStack`/owner spacing; card không được dính liền do render trực tiếp dưới `PageShell`.
+- Nút hủy/clone là lifecycle action độc lập, `type=button`, nằm ngoài mọi form và căn phải trong action bar riêng.
+- Admin lịch sử điều khoản và sự kiện dùng Timeline owner theo pattern AXIRO Cha, có actor, thời gian và snapshot mở rộng; không quay lại bảng lịch sử ghép ô.
+- Static guards khóa cả bốn regression trên để tránh tái diễn.
+
+### 2026-08-06 — Escrow Box update action placement
+
+- MBN detail đặt nút `Cập nhật` cạnh `Hủy box` trong lifecycle action bar; cả hai nằm ngoài form.
+- Route cập nhật riêng `/account/escrow-boxes/:id/edit` tiếp tục dùng `EscrowBoxTermsPage` và BaseForm owners.
+- Source/static guard đã cập nhật; lint/build/browser evidence phải chạy lại sau source change này.
+- Escrow Box update UX closure: action label is now `Cập nhật`; `Hủy` and `Cập nhật` share one right-aligned action row outside the form on desktop, with an intentional two-column mobile layout. Static guards prevent the old `Lưu phiên bản mới` label and accidental line breaks from returning.
+
+### 2026-08-06 — Escrow Box mutation feedback
+
+- Source closure: create success hiển thị toast rồi chuyển đến Detail; update success hiển thị toast và ở lại edit page.
+- Detail nhận one-time invite path qua navigation state; raw token không được ghi vào persistent store.
+- MBN Escrow Box guard, recovery baseline, release-package, style/semantic owner checks đã PASS trong source-clean audit.
+- Frontend lint/build/browser và full API runtime suite vẫn cần chạy lại trên Git HEAD có dependencies; không tái sử dụng evidence trước source change.
+
+## Parent activity/timeline alignment — 2026-08-06
+
+- Reviewed against `axiro-admin-develop-reviewed-source-clean-20260806-181500.zip` and `axiro-api-develop-reviewed-source-clean-20260806-181500.zip`.
+- Escrow Box now exposes the same normalized activity keys as AXIRO Cha and Admin uses shared `BaseTimeline` plus a module schema instead of a separate AntD Timeline/table owner.
+- The Mini adapter remains bounded: `EscrowBoxEvent` is retained as the domain store and customer actors remain masked as Bên A/B/Nền tảng.
+- Existing build/browser/release evidence is stale after this source change; rerun runtime gates from clean Git HEADs.
+
+## 2026-08-06 — Parent Activity Timeline runtime closure
+
+- `useTimeline` dùng nguyên source AXIRO Cha; `BaseTimeline`, `TimelineChangeItem` và CSS là bounded adapter do AXIRO Mini không mang Tailwind/company/RBAC runtime.
+- Contract `2026-08-06.6` / API `v70` khai báo rõ cả hai endpoint timeline Escrow Box cho Admin và Customer.
+- Backend timeline lọc và phân trang tại SQL boundary, chỉ tải actor và agreement version cần cho trang hiện tại; cấm tải toàn bộ event collection rồi phân trang trong PHP.
+- Customer timeline tiếp tục che actor thành Bên A/B/Nền tảng và không trả customer id hoặc tên đối tác.
+- `terms_updated` trả old/new đã qua `AuditPayloadSanitizer`; filter `activity_type` và `activity_subtype` được khóa bằng test.
+- Static/source/package gates đã chạy lại; Pint, PHPUnit, frontend lint/build, browser và release evidence phải chạy lại trên Git HEAD có dependency đầy đủ.
+
+## 2026-08-06 — Source package cache closure
+
+- API source package đã loại `bootstrap/cache/packages.php` và `bootstrap/cache/services.php`; đây là Composer/Laravel generated cache, không phải source.
+- `check-release-package.php` và `check-recovery-baseline.php` hiện fail-closed với mọi file trong `bootstrap/cache/**` ngoại trừ `.gitignore`.
+- Regression probe đã xác nhận cả hai checker đều fail khi cố tình thêm lại generated cache.
+
+### 2026-08-06 — BaseForm/PHPUnit/dependency integrity correction
+
+- Đã sửa lỗi hệ thống ở Admin: `BaseFormControl` trước đây làm rơi controlled props được `Form.Item` inject, dẫn đến field nhìn như đã nhập nhưng form state vẫn rỗng và validation tiếp tục báo bắt buộc.
+- Đã chuyển `AuditPayloadSanitizerTest` từ Pest DSL sang PHPUnit class và thêm guard cấm Pest DSL trong project PHPUnit-only.
+- Đã thêm MBN dependency doctor để chẩn đoán `node_modules` bị cài thiếu/hỏng. Cần dừng Vite và cài sạch dependencies khi thiếu file nội bộ của Vite, React DOM hoặc Ant Design.
+- Full lint/build/PHPUnit vẫn cần chạy trên máy local sau khi dependencies được cài sạch.
+
+## 2026-08-06 Parent BaseForm synchronization
+
+Admin BaseForm was synchronized with the reviewed AXIRO parent source. API contracts and business semantics are unchanged in this round; API package remains synchronized for three-repository delivery.

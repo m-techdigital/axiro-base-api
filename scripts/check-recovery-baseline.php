@@ -19,6 +19,7 @@ $runtimeStorageRoots = [
     'storage/framework/testing',
     'storage/app/backups',
     'public/storage',
+    'bootstrap/cache',
 ];
 foreach ($runtimeStorageRoots as $runtimeRoot) {
     $path = $root.'/'.$runtimeRoot;

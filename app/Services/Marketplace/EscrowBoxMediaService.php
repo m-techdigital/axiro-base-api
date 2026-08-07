@@ -21,7 +21,9 @@ class EscrowBoxMediaService
         return collect($files)->map(function (UploadedFile $file) use ($box, $customerId, $partySide, $handoverStepId) {
             $checksum = hash_file('sha256', $file->getRealPath());
             $existing = $box->media()->where('checksum', $checksum)->first();
-            if ($existing) return $existing;
+            if ($existing) {
+                return $existing;
+            }
 
             [$content, $mime, $width, $height] = $this->optimize($file, 1920, 82);
             [$thumb, $thumbMime] = $this->optimize($file, 480, 76);
@@ -55,6 +57,7 @@ class EscrowBoxMediaService
     {
         $path = $thumbnail && $media->thumbnail_path ? $media->thumbnail_path : $media->path;
         abort_unless(Storage::disk($media->disk)->exists($path), 404);
+
         return response(Storage::disk($media->disk)->get($path), 200, [
             'Content-Type' => $media->mime,
             'Cache-Control' => 'private, max-age=300',
@@ -66,10 +69,15 @@ class EscrowBoxMediaService
     {
         $raw = file_get_contents($file->getRealPath());
         $info = @getimagesizefromstring($raw);
-        if (! $info) throw ValidationException::withMessages(['images' => 'Ảnh không hợp lệ.']);
+        if (! $info) {
+            throw ValidationException::withMessages(['images' => 'Ảnh không hợp lệ.']);
+        }
         [$width, $height] = $info;
         if (! function_exists('imagecreatefromstring')) {
-            if (strlen($raw) > 2_000_000) throw ValidationException::withMessages(['images' => 'Máy chủ chưa hỗ trợ tối ưu ảnh dung lượng lớn.']);
+            if (strlen($raw) > 2_000_000) {
+                throw ValidationException::withMessages(['images' => 'Máy chủ chưa hỗ trợ tối ưu ảnh dung lượng lớn.']);
+            }
+
             return [$raw, $info['mime'], $width, $height];
         }
         $source = imagecreatefromstring($raw);
@@ -91,6 +99,7 @@ class EscrowBoxMediaService
         $content = ob_get_clean();
         imagedestroy($source);
         imagedestroy($target);
+
         return [$content, $mime, $targetWidth, $targetHeight];
     }
 }

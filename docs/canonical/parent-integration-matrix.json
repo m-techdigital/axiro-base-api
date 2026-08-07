@@ -1,8 +1,8 @@
 {
-  "version": "2026-08-02",
+  "version": "2026-08-06",
   "parent_sources": {
-    "admin": "mylands-admin-develop-data-quality-20260802-190905.zip",
-    "api": "mylands-api-develop-data-quality-20260802-190905.zip"
+    "admin": "axiro-admin-develop-reviewed-source-clean-20260806-181500.zip",
+    "api": "axiro-api-develop-reviewed-source-clean-20260806-181500.zip"
   },
   "product": {
     "shared": [
@@ -228,6 +228,67 @@
       "project_runtime",
       "public_counterparty_identity",
       "plaintext_credentials"
+    ]
+  },
+  "activity_timeline": {
+    "classification": "mixed_exact_source_and_bounded_adapter",
+    "parent_owners": [
+      "app/Services/ActivityService.php",
+      "app/Http/Resources/ActivityResource.php",
+      "src/components/base/BaseTimeline.jsx",
+      "src/hooks/useTimeline.js",
+      "src/components/timeline/TimelineChangeItem.jsx",
+      "src/utils/timeline.js"
+    ],
+    "shared_contract_keys": [
+      "activity_type",
+      "activity_subtype",
+      "old",
+      "new",
+      "changed_by",
+      "created_at",
+      "event",
+      "description",
+      "actor",
+      "subject",
+      "module",
+      "metadata",
+      "occurred_at"
+    ],
+    "mini_owners": [
+      "app/Services/Marketplace/EscrowBoxTimelineService.php",
+      "src/components/base/BaseTimeline.jsx",
+      "src/modules/escrow-boxes/timeline.js",
+      "src/modules/escrow-boxes/components/EscrowBoxHistoryTimeline.jsx"
+    ],
+    "mini_specific": [
+      "EscrowBoxEvent domain store",
+      "Bên A/B customer masking",
+      "Escrow Box agreement snapshot diff"
+    ],
+    "excluded": [
+      "company scope",
+      "project scope",
+      "RBAC",
+      "Audit Center",
+      "global Activity inbox"
+    ],
+    "exact_source": [
+      "src/hooks/useTimeline.js"
+    ],
+    "bounded_adapter": [
+      "app/Services/Marketplace/EscrowBoxTimelineService.php",
+      "src/components/base/BaseTimeline.jsx",
+      "src/components/timeline/TimelineChangeItem.jsx",
+      "src/utils/timeline.js",
+      "src/modules/escrow-boxes/timeline.js",
+      "src/modules/escrow-boxes/components/EscrowBoxHistoryTimeline.jsx"
+    ],
+    "runtime_contract": [
+      "SQL pagination and filtering before presentation",
+      "parent activity keys and pagination meta",
+      "customer actor masking",
+      "agreement old/new diff sanitization"
     ]
   }
 }

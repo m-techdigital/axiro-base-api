@@ -311,6 +311,6 @@ Product
 └── Transaction snapshot
 ```
 
-`ProductListing` không còn là owner nghiệp vụ. Mini không giữ standalone `Contract`; tài liệu/hợp đồng là generated document phát sinh từ `Transaction`.
+`ProductListing` không còn là owner nghiệp vụ. `Contract` vẫn giữ tạm thời đến khi có quyết định riêng.
 
 Trước khi mở rộng Product lần tiếp theo, phải đối chiếu lại các source cha nêu ở Mục 2 và cập nhật ma trận tích hợp nếu AXIRO cha thay đổi.

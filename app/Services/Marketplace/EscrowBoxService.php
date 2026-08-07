@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TransactionPayment;
 use App\Support\Marketplace\MoneyMath;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -70,10 +71,148 @@ class EscrowBoxService
         });
     }
 
-    public function preview(string $rawToken): EscrowBox
+    public function createByAdmin(int $adminId, array $data): array
+    {
+        return DB::transaction(function () use ($adminId, $data) {
+            $partyA = Customer::query()->lockForUpdate()->findOrFail($data['party_a_customer_id']);
+            $partyB = Customer::query()->lockForUpdate()->findOrFail($data['party_b_customer_id']);
+            if ((int) $partyA->id === (int) $partyB->id) {
+                throw ValidationException::withMessages(['party_b_customer_id' => 'Hai bên giao dịch phải là hai khách hàng khác nhau.']);
+            }
+            if ($partyA->status !== 'active' || $partyB->status !== 'active') {
+                throw ValidationException::withMessages(['customers' => 'Cả hai khách hàng phải đang hoạt động.']);
+            }
+
+            $partyAToken = Str::random(64);
+            $partyBToken = Str::random(64);
+            $expiresAt = now()->addHours((int) ($data['expires_in_hours'] ?? 72));
+            $terms = $this->terms($data);
+            $box = EscrowBox::query()->create([
+                'code' => 'BOX-'.strtoupper(Str::random(10)),
+                'created_by_user_id' => $adminId,
+                'initiation_source' => 'admin_assigned',
+                'party_a_customer_id' => $partyA->id,
+                'party_b_customer_id' => $partyB->id,
+                'party_a_invite_token_hash' => hash('sha256', $partyAToken),
+                'party_b_invite_token_hash' => hash('sha256', $partyBToken),
+                'party_a_invite_expires_at' => $expiresAt,
+                'party_b_invite_expires_at' => $expiresAt,
+                'status' => 'awaiting_party_acceptance',
+                'deal_type' => $data['deal_type'],
+                'agreement_version' => 1,
+                'agreement_terms' => $terms,
+                'topup_payer_side' => $data['deal_type'] === 'exchange_with_topup' ? $data['topup_payer_side'] : null,
+                'topup_amount' => $data['deal_type'] === 'exchange_with_topup' ? $data['topup_amount'] : '0.00',
+                'fee_payer_mode' => $data['fee_payer_mode'],
+                'inspection_period_minutes' => $data['inspection_period_minutes'],
+                'expected_version' => 1,
+                'expires_at' => now()->addDays(14),
+            ]);
+            EscrowBoxAgreementVersion::query()->create([
+                'escrow_box_id' => $box->id,
+                'version' => 1,
+                'terms' => $terms,
+                'changed_by_user_id' => $adminId,
+                'change_note' => 'Admin khởi tạo box và chỉ định hai khách hàng.',
+            ]);
+            $this->applyFee($box, $this->fees->calculate($box));
+            $this->event($box, 'admin_box_created', 'user', $adminId, null, [
+                'agreement_version' => 1,
+                'party_a_customer_id' => $partyA->id,
+                'party_b_customer_id' => $partyB->id,
+            ]);
+            foreach ([[$partyA, 'party_a'], [$partyB, 'party_b']] as [$customer, $side]) {
+                $this->notifications->send(
+                    $customer->id,
+                    'escrow_box_invited',
+                    'Bạn được mời vào Box giao dịch trung gian',
+                    'Admin đã tạo một box riêng và chỉ định bạn tham gia. Admin sẽ gửi link xác nhận riêng cho đúng tài khoản của bạn.',
+                    null,
+                    ['escrow_box_id' => $box->id, 'escrow_box_code' => $box->code, 'party_side' => $side],
+                );
+            }
+
+            return [
+                'box' => $this->load($box),
+                'party_a_invite_token' => $partyAToken,
+                'party_b_invite_token' => $partyBToken,
+                'party_a_invite_path' => '/escrow-box/accept/'.$partyAToken,
+                'party_b_invite_path' => '/escrow-box/accept/'.$partyBToken,
+            ];
+        });
+    }
+
+    public function rotateAssignedInvites(EscrowBox $box, int $adminId): array
+    {
+        return DB::transaction(function () use ($box, $adminId) {
+            $locked = EscrowBox::query()->lockForUpdate()->findOrFail($box->id);
+            if ($locked->initiation_source !== 'admin_assigned' || $locked->status !== 'awaiting_party_acceptance') {
+                throw ValidationException::withMessages(['status' => 'Chỉ có thể tạo lại link khi box đang chờ hai bên xác nhận.']);
+            }
+            $expiresAt = now()->addHours(72);
+            $result = ['box' => $locked];
+            $updates = ['expected_version' => $locked->expected_version + 1];
+            foreach (['party_a', 'party_b'] as $side) {
+                if ($locked->{$side.'_invite_accepted_at'}) {
+                    continue;
+                }
+                $token = Str::random(64);
+                $updates[$side.'_invite_token_hash'] = hash('sha256', $token);
+                $updates[$side.'_invite_expires_at'] = $expiresAt;
+                $result[$side.'_invite_token'] = $token;
+                $result[$side.'_invite_path'] = '/escrow-box/accept/'.$token;
+            }
+            $locked->update($updates);
+            $this->event($locked, 'assigned_invites_rotated', 'user', $adminId, null, [
+                'party_a_rotated' => array_key_exists('party_a_invite_token', $result),
+                'party_b_rotated' => array_key_exists('party_b_invite_token', $result),
+            ]);
+            $result['box'] = $this->load($locked);
+
+            return $result;
+        });
+    }
+
+    public function previewAssignedInvite(string $rawToken, int $customerId): array
+    {
+        [$box, $side] = $this->assignedInvite($rawToken, $customerId, false);
+
+        return ['box' => $box, 'party_side' => $side];
+    }
+
+    public function acceptAssignedInvite(string $rawToken, int $customerId): EscrowBox
+    {
+        return DB::transaction(function () use ($rawToken, $customerId) {
+            [$box, $side] = $this->assignedInvite($rawToken, $customerId, true);
+            $acceptedAtField = $side.'_invite_accepted_at';
+            $tokenField = $side.'_invite_token_hash';
+            $confirmedAtField = $side.'_confirmed_at';
+            $confirmedVersionField = $side.'_confirmed_version';
+            $box->update([
+                $acceptedAtField => now(),
+                $tokenField => null,
+                $confirmedAtField => now(),
+                $confirmedVersionField => $box->agreement_version,
+                'expected_version' => $box->expected_version + 1,
+            ]);
+            $box->refresh();
+            $bothAccepted = $box->party_a_invite_accepted_at && $box->party_b_invite_accepted_at;
+            if ($bothAccepted) {
+                $box->update(['status' => 'admin_review', 'expected_version' => $box->expected_version + 1]);
+                $this->event($box, 'assigned_parties_accepted', 'system', null, null, ['agreement_version' => $box->agreement_version]);
+            } else {
+                $this->event($box, 'assigned_party_accepted', 'customer', $customerId, $side, ['agreement_version' => $box->agreement_version]);
+            }
+
+            return $this->load($box);
+        });
+    }
+
+    public function preview(string $rawToken, int $customerId): EscrowBox
     {
         $box = EscrowBox::query()->where('invite_token_hash', hash('sha256', $rawToken))->first();
         abort_unless($box && $box->status === 'awaiting_counterparty' && $box->invite_expires_at?->isFuture(), 404, 'Box giao dịch này không còn khả dụng.');
+        abort_if((int) $box->created_by_customer_id === $customerId, 404, 'Box giao dịch này không còn khả dụng.');
 
         return $box;
     }
@@ -117,9 +256,13 @@ class EscrowBoxService
             $side = $this->side($locked, $customerId);
             abort_unless($side, 403);
             $this->guardVersion($locked, (int) $data['expected_version']);
-            if (! in_array($locked->status, ['terms_pending', 'changes_requested'], true)) {
+            $editableBeforeCounterpartyAcceptance = (int) $locked->created_by_customer_id === $customerId
+                && in_array($locked->status, ['awaiting_counterparty', 'awaiting_party_acceptance'], true);
+            $editableAfterAcceptance = in_array($locked->status, ['terms_pending', 'changes_requested'], true);
+            if (! $editableBeforeCounterpartyAcceptance && ! $editableAfterAcceptance) {
                 throw ValidationException::withMessages(['status' => 'Box không còn cho phép sửa điều khoản.']);
             }
+            $nextStatus = $editableBeforeCounterpartyAcceptance ? $locked->status : 'terms_pending';
             $version = $locked->agreement_version + 1;
             $terms = $this->terms($data);
             $locked->update([
@@ -134,7 +277,7 @@ class EscrowBoxService
                 'topup_amount' => $data['deal_type'] === 'exchange_with_topup' ? $data['topup_amount'] : '0.00',
                 'fee_payer_mode' => $data['fee_payer_mode'],
                 'inspection_period_minutes' => $data['inspection_period_minutes'],
-                'status' => 'terms_pending',
+                'status' => $nextStatus,
                 'admin_review_note' => null,
                 'expected_version' => $locked->expected_version + 1,
             ]);
@@ -185,13 +328,231 @@ class EscrowBoxService
     {
         return DB::transaction(function () use ($box, $customerId, $expectedVersion) {
             $locked = EscrowBox::query()->lockForUpdate()->findOrFail($box->id);
-            abort_unless($this->side($locked, $customerId), 403);
+            abort_unless((int) $locked->created_by_customer_id === $customerId, 403, 'Chỉ người tạo box mới có quyền hủy.');
             $this->guardVersion($locked, $expectedVersion);
-            if (! in_array($locked->status, ['awaiting_counterparty', 'terms_pending', 'changes_requested', 'admin_review'], true)) {
-                throw ValidationException::withMessages(['status' => 'Box đã bước vào xử lý và không thể tự hủy.']);
+            if (! in_array($locked->status, ['awaiting_counterparty', 'terms_pending', 'changes_requested', 'admin_review', 'awaiting_party_acceptance'], true)) {
+                throw ValidationException::withMessages(['status' => 'Box đã phát sinh xử lý tài chính hoặc bàn giao; vui lòng yêu cầu Admin giải quyết.']);
             }
-            $locked->update(['status' => 'cancelled', 'invite_token_hash' => null, 'expected_version' => $locked->expected_version + 1]);
+            $locked->update(['status' => 'cancelled', 'invite_token_hash' => null, 'party_a_invite_token_hash' => null, 'party_b_invite_token_hash' => null, 'expected_version' => $locked->expected_version + 1]);
             $this->event($locked, 'box_cancelled', 'customer', $customerId, $this->side($locked, $customerId));
+
+            return $this->load($locked);
+        });
+    }
+
+    public function resolveCounterpartyByPhone(EscrowBox $box, int $customerId, int $expectedVersion, string $phone): array
+    {
+        $locked = EscrowBox::query()->findOrFail($box->id);
+        abort_unless((int) $locked->created_by_customer_id === $customerId, 403, 'Chỉ người tạo box mới có quyền tìm Bên B.');
+        $this->guardVersion($locked, $expectedVersion);
+
+        if ($locked->status !== 'awaiting_counterparty' || $locked->party_b_customer_id !== null) {
+            throw ValidationException::withMessages(['phone' => 'Box đã có lời mời hoặc đã có Bên B tham gia.']);
+        }
+
+        $counterparty = $this->findActiveCustomerByPhone($phone);
+        if (! $counterparty || (int) $counterparty->id === $customerId) {
+            throw ValidationException::withMessages(['phone' => 'Không tìm thấy khách hàng phù hợp với số điện thoại này.']);
+        }
+
+        $candidateToken = Crypt::encryptString(json_encode([
+            'box_id' => $locked->id,
+            'creator_id' => $customerId,
+            'candidate_id' => $counterparty->id,
+            'expires_at' => now()->addMinutes(10)->timestamp,
+        ], JSON_THROW_ON_ERROR));
+
+        return [
+            'candidate_token' => $candidateToken,
+            'candidate' => [
+                'label' => $this->maskedCustomerLabel($counterparty),
+                'phone_hint' => '••••'.substr(preg_replace('/\D+/', '', (string) $counterparty->phone), -4),
+                'status_label' => 'Tài khoản đang hoạt động',
+            ],
+        ];
+    }
+
+    public function inviteCounterpartyCandidate(EscrowBox $box, int $customerId, int $expectedVersion, string $candidateToken): EscrowBox
+    {
+        return DB::transaction(function () use ($box, $customerId, $expectedVersion, $candidateToken) {
+            $locked = EscrowBox::query()->lockForUpdate()->findOrFail($box->id);
+            abort_unless((int) $locked->created_by_customer_id === $customerId, 403, 'Chỉ người tạo box mới có quyền mời Bên B.');
+            $this->guardVersion($locked, $expectedVersion);
+            if ($locked->status !== 'awaiting_counterparty' || $locked->party_b_customer_id !== null) {
+                throw ValidationException::withMessages(['candidate_token' => 'Box đã có lời mời hoặc đã có Bên B tham gia.']);
+            }
+
+            try {
+                $candidate = json_decode(Crypt::decryptString($candidateToken), true, 512, JSON_THROW_ON_ERROR);
+            } catch (\Throwable) {
+                throw ValidationException::withMessages(['candidate_token' => 'Kết quả tìm kiếm đã hết hiệu lực. Vui lòng tìm lại khách hàng.']);
+            }
+
+            if ((int) ($candidate['box_id'] ?? 0) !== (int) $locked->id
+                || (int) ($candidate['creator_id'] ?? 0) !== $customerId
+                || (int) ($candidate['expires_at'] ?? 0) < now()->timestamp) {
+                throw ValidationException::withMessages(['candidate_token' => 'Kết quả tìm kiếm đã hết hiệu lực. Vui lòng tìm lại khách hàng.']);
+            }
+
+            $counterparty = Customer::query()
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->find($candidate['candidate_id'] ?? 0);
+
+            if (! $counterparty || (int) $counterparty->id === $customerId) {
+                throw ValidationException::withMessages(['candidate_token' => 'Khách hàng được chọn không còn khả dụng.']);
+            }
+
+            $locked->update([
+                'party_b_customer_id' => $counterparty->id,
+                'initiation_source' => 'customer_phone_invite',
+                'status' => 'awaiting_party_acceptance',
+                'invite_token_hash' => null,
+                'party_b_invite_accepted_at' => null,
+                'party_b_confirmed_at' => null,
+                'party_b_confirmed_version' => null,
+                'expected_version' => $locked->expected_version + 1,
+            ]);
+            $this->event($locked, 'counterparty_invited_by_phone', 'customer', $customerId, 'party_a');
+            $this->notifications->send(
+                $counterparty->id,
+                'escrow_box_invited',
+                'Bạn có lời mời tham gia Box trung gian',
+                'Một người dùng đã mời bạn tham gia Box giao dịch trung gian. Danh tính hai bên được nền tảng bảo vệ.',
+                "/account/escrow-boxes/{$locked->id}",
+                ['escrow_box_id' => $locked->id, 'escrow_box_code' => $locked->code, 'party_side' => 'party_b'],
+            );
+
+            return $this->load($locked);
+        });
+    }
+
+    public function cancelCounterpartyInvite(EscrowBox $box, int $customerId, int $expectedVersion): EscrowBox
+    {
+        return DB::transaction(function () use ($box, $customerId, $expectedVersion) {
+            $locked = EscrowBox::query()->lockForUpdate()->findOrFail($box->id);
+            abort_unless((int) $locked->created_by_customer_id === $customerId, 403, 'Chỉ người tạo box mới có quyền hủy lời mời.');
+            $this->guardVersion($locked, $expectedVersion);
+            if ($locked->initiation_source !== 'customer_phone_invite' || $locked->status !== 'awaiting_party_acceptance' || $locked->party_b_invite_accepted_at !== null) {
+                throw ValidationException::withMessages(['status' => 'Lời mời không còn có thể hủy hoặc thay đổi.']);
+            }
+            $cancelledCustomerId = (int) $locked->party_b_customer_id;
+            $locked->update([
+                'party_b_customer_id' => null,
+                'initiation_source' => 'customer_link',
+                'status' => 'awaiting_counterparty',
+                'party_b_invite_accepted_at' => null,
+                'party_b_confirmed_at' => null,
+                'party_b_confirmed_version' => null,
+                'expected_version' => $locked->expected_version + 1,
+            ]);
+            $this->event($locked, 'counterparty_invite_cancelled', 'customer', $customerId, 'party_a');
+            $this->notifications->send(
+                $cancelledCustomerId,
+                'escrow_box_invite_cancelled',
+                'Lời mời Box đã được hủy',
+                'Người tạo đã hủy lời mời trước khi bạn chấp nhận. Box không còn xuất hiện trong danh sách của bạn.',
+                '/account/escrow-boxes',
+                ['escrow_box_id' => $locked->id, 'escrow_box_code' => $locked->code],
+            );
+
+            return $this->load($locked);
+        });
+    }
+
+    public function acceptCounterpartyInvite(EscrowBox $box, int $customerId, int $expectedVersion): EscrowBox
+    {
+        return DB::transaction(function () use ($box, $customerId, $expectedVersion) {
+            $locked = EscrowBox::query()->lockForUpdate()->findOrFail($box->id);
+            $this->guardVersion($locked, $expectedVersion);
+            abort_unless((int) $locked->party_b_customer_id === $customerId, 404);
+            if ($locked->initiation_source !== 'customer_phone_invite' || $locked->status !== 'awaiting_party_acceptance' || $locked->party_b_invite_accepted_at !== null) {
+                throw ValidationException::withMessages(['status' => 'Lời mời không còn khả dụng.']);
+            }
+            $locked->update([
+                'party_b_invite_accepted_at' => now(),
+                'status' => 'terms_pending',
+                'expected_version' => $locked->expected_version + 1,
+            ]);
+            $this->event($locked, 'counterparty_invite_accepted', 'customer', $customerId, 'party_b');
+            $this->notifications->send(
+                $locked->party_a_customer_id,
+                'escrow_box_invite_accepted',
+                'Bên B đã chấp nhận lời mời',
+                'Bên B đã tham gia Box. Hai bên có thể rà soát và xác nhận điều khoản.',
+                "/account/escrow-boxes/{$locked->id}",
+                ['escrow_box_id' => $locked->id, 'escrow_box_code' => $locked->code],
+            );
+
+            return $this->load($locked);
+        });
+    }
+
+    public function rotateCustomerInvite(EscrowBox $box, int $customerId, int $expectedVersion): array
+    {
+        return DB::transaction(function () use ($box, $customerId, $expectedVersion) {
+            $locked = EscrowBox::query()->lockForUpdate()->findOrFail($box->id);
+            abort_unless((int) $locked->created_by_customer_id === $customerId, 403, 'Chỉ người tạo box mới có quyền lấy link mới.');
+            $this->guardVersion($locked, $expectedVersion);
+            if ($locked->status !== 'awaiting_counterparty' || $locked->party_b_customer_id !== null) {
+                throw ValidationException::withMessages(['status' => 'Chỉ có thể lấy link mới trước khi có Bên B tham gia.']);
+            }
+            $token = Str::random(64);
+            $locked->update([
+                'invite_token_hash' => hash('sha256', $token),
+                'invite_expires_at' => now()->addHours(72),
+                'invite_generation' => ((int) $locked->invite_generation) + 1,
+                'expected_version' => $locked->expected_version + 1,
+            ]);
+            $this->event($locked, 'invite_rotated', 'customer', $customerId, 'party_a', ['invite_generation' => $locked->invite_generation]);
+
+            return ['box' => $this->load($locked), 'invite_token' => $token, 'invite_path' => '/escrow-box/join/'.$token];
+        });
+    }
+
+    public function cloneCancelled(EscrowBox $box, int $customerId): array
+    {
+        abort_unless((int) $box->created_by_customer_id === $customerId, 403, 'Chỉ người tạo box mới có quyền sao chép.');
+        if (! in_array($box->status, ['cancelled', 'rejected', 'expired'], true)) {
+            throw ValidationException::withMessages(['status' => 'Chỉ box đã hủy, bị từ chối hoặc hết hạn mới được sao chép.']);
+        }
+        $terms = $box->agreement_terms ?? [];
+
+        return $this->create($customerId, [
+            'deal_type' => $box->deal_type,
+            'party_a_asset' => $terms['party_a_asset'] ?? [],
+            'party_b_asset' => $terms['party_b_asset'] ?? [],
+            'success_conditions' => $terms['success_conditions'] ?? '',
+            'cancellation_conditions' => $terms['cancellation_conditions'] ?? null,
+            'additional_terms' => $terms['additional_terms'] ?? null,
+            'topup_payer_side' => $box->topup_payer_side,
+            'topup_amount' => $box->topup_amount,
+            'fee_payer_mode' => $box->fee_payer_mode,
+            'inspection_period_minutes' => $box->inspection_period_minutes,
+            'expires_in_hours' => 72,
+        ]);
+    }
+
+    public function cancelByAdmin(EscrowBox $box, int $adminId, int $expectedVersion, ?string $reason = null): EscrowBox
+    {
+        return DB::transaction(function () use ($box, $adminId, $expectedVersion, $reason) {
+            $locked = EscrowBox::query()->with(['obligations'])->lockForUpdate()->findOrFail($box->id);
+            $this->guardVersion($locked, $expectedVersion);
+            if (in_array($locked->status, ['settled', 'cancelled'], true)) {
+                throw ValidationException::withMessages(['status' => 'Box đã kết thúc và không thể hủy lại.']);
+            }
+            if ($locked->obligations->contains(fn ($item) => $item->status === 'paid')) {
+                throw ValidationException::withMessages(['status' => 'Box đã có khoản thanh toán; phải xử lý hoàn tiền/tranh chấp thay vì hủy trực tiếp.']);
+            }
+            $locked->update([
+                'status' => 'cancelled',
+                'invite_token_hash' => null,
+                'party_a_invite_token_hash' => null,
+                'party_b_invite_token_hash' => null,
+                'admin_review_note' => $reason ?: $locked->admin_review_note,
+                'expected_version' => $locked->expected_version + 1,
+            ]);
+            $this->event($locked, 'box_cancelled_by_admin', 'user', $adminId, null, ['reason' => $reason]);
 
             return $this->load($locked);
         });
@@ -364,7 +725,7 @@ class EscrowBoxService
             'purchase_mode' => 'full',
             'initiation_source' => 'escrow_box',
             'agreement_status' => 'accepted',
-            'initiated_by_customer_id' => $box->created_by_customer_id,
+            'initiated_by_customer_id' => $box->created_by_customer_id ?: $box->party_a_customer_id,
             'agreement_version' => $box->agreement_version,
             'agreement_terms' => $terms,
             'buyer_accepted_at' => $box->party_a_confirmed_at,
@@ -495,6 +856,59 @@ class EscrowBoxService
         return null;
     }
 
+    private function assignedInvite(string $rawToken, int $customerId, bool $lock): array
+    {
+        $hash = hash('sha256', $rawToken);
+        $query = EscrowBox::query()->where(function ($nested) use ($hash) {
+            $nested->where('party_a_invite_token_hash', $hash)
+                ->orWhere('party_b_invite_token_hash', $hash);
+        });
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+        $box = $query->first();
+        abort_unless($box && $box->initiation_source === 'admin_assigned' && $box->status === 'awaiting_party_acceptance', 404, 'Lời mời không còn khả dụng.');
+        $side = hash_equals((string) $box->party_a_invite_token_hash, $hash) ? 'party_a' : 'party_b';
+        $assignedCustomerId = $side === 'party_a' ? $box->party_a_customer_id : $box->party_b_customer_id;
+        $expiresAt = $side === 'party_a' ? $box->party_a_invite_expires_at : $box->party_b_invite_expires_at;
+        abort_unless((int) $assignedCustomerId === $customerId && $expiresAt?->isFuture(), 404, 'Lời mời không còn khả dụng.');
+
+        return [$box, $side];
+    }
+
+    private function findActiveCustomerByPhone(string $phone): ?Customer
+    {
+        $phoneVariants = $this->phoneLookupVariants($phone);
+        $normalizedPhoneColumn = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '')";
+
+        return Customer::query()
+            ->where('status', 'active')
+            ->where(function ($query) use ($phoneVariants, $normalizedPhoneColumn) {
+                $query->whereIn('phone', $phoneVariants)
+                    ->orWhereIn(DB::raw($normalizedPhoneColumn), $phoneVariants);
+            })
+            ->first();
+    }
+
+    private function maskedCustomerLabel(Customer $customer): string
+    {
+        $name = trim((string) ($customer->name ?: $customer->username ?: 'Khách hàng'));
+        $parts = preg_split('/\s+/u', $name) ?: [];
+        $masked = collect($parts)->map(function (string $part): string {
+            $length = mb_strlen($part);
+            if ($length <= 1) {
+                return '*';
+            }
+            if ($length === 2) {
+                return mb_substr($part, 0, 1).'*';
+            }
+
+            return mb_substr($part, 0, 1).str_repeat('*', min(3, $length - 2)).mb_substr($part, -1);
+        })->implode(' ');
+
+        return $masked !== '' ? $masked : 'Khách hàng phù hợp';
+    }
+
     private function guardVersion(EscrowBox $box, int $expectedVersion): void
     {
         if ($box->expected_version !== $expectedVersion) {
@@ -505,5 +919,19 @@ class EscrowBoxService
     private function event(EscrowBox $box, string $type, string $actorType, ?int $actorId, ?string $actorSide, array $metadata = []): void
     {
         EscrowBoxEvent::query()->create(['escrow_box_id' => $box->id, 'event_type' => $type, 'actor_type' => $actorType, 'actor_id' => $actorId, 'actor_side' => $actorSide, 'metadata' => $metadata, 'occurred_at' => now()]);
+    }
+
+    private function phoneLookupVariants(string $phone): array
+    {
+        $digits = preg_replace('/\D+/', '', $phone);
+        $variants = [$digits];
+
+        if (str_starts_with($digits, '84') && strlen($digits) > 2) {
+            $variants[] = '0'.substr($digits, 2);
+        } elseif (str_starts_with($digits, '0') && strlen($digits) > 1) {
+            $variants[] = '84'.substr($digits, 1);
+        }
+
+        return array_values(array_unique(array_filter($variants)));
     }
 }

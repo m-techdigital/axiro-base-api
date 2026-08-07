@@ -88,7 +88,11 @@ Route::middleware('auth.api')->group(function () {
     Route::get('risk-flags', [MarketplaceTrustAdminController::class, 'risks']);
     Route::post('risk-flags/{riskFlag}/resolve', [MarketplaceTrustAdminController::class, 'resolveRisk']);
     Route::get('escrow-boxes', [AdminEscrowBoxController::class, 'index']);
+    Route::post('escrow-boxes', [AdminEscrowBoxController::class, 'store']);
     Route::get('escrow-boxes/{escrowBox}', [AdminEscrowBoxController::class, 'show']);
+    Route::get('escrow-boxes/{escrowBox}/timeline', [AdminEscrowBoxController::class, 'timeline']);
+    Route::post('escrow-boxes/{escrowBox}/invites/rotate', [AdminEscrowBoxController::class, 'rotateInvites']);
+    Route::post('escrow-boxes/{escrowBox}/cancel', [AdminEscrowBoxController::class, 'cancel']);
     Route::post('escrow-boxes/{escrowBox}/review', [AdminEscrowBoxController::class, 'review']);
     Route::post('escrow-boxes/{escrowBox}/handover-steps/{step}/review', [AdminEscrowBoxController::class, 'reviewHandover']);
     Route::get('escrow-fee-rules', [AdminEscrowBoxController::class, 'feeRules']);

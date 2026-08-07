@@ -55,7 +55,6 @@ class CustomerTransactionController extends Controller
         return ApiResponse::success($service->createFromProduct($product, auth('customer_api')->id(), $request->validated()), 'Đã tạo giao dịch.', 201);
     }
 
-
     public function paymentQr(Transaction $transaction, TransactionPayment $payment, MarketplaceQrService $qr)
     {
         $this->authorizeParty($transaction);
